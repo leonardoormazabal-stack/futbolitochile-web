@@ -276,11 +276,11 @@ ul {
 }
 
 .card--piscina {
-    background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.25) 40%, rgba(0, 0, 0, 0.75) 100%), url("https://placehold.co/600x400/4a9fe0/4a9fe0?text=+");
+    background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.25) 40%, rgba(0, 0, 0, 0.75) 100%), url("pictures/piscina.jpeg");
 }
 
 .card--kiosco {
-    background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.25) 40%, rgba(0, 0, 0, 0.75) 100%), url("https://placehold.co/600x400/c0392b/c0392b?text=+");
+    background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.25) 40%, rgba(0, 0, 0, 0.75) 100%), url("pictures/kiosco.jpg");
 }
 
 .card h3 {
