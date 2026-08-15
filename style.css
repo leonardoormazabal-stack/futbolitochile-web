@@ -188,7 +188,7 @@ ul {
    ========================================================================== */
 .hero {
     background:
-        linear-gradient(135deg, rgba(13, 59, 102, 0.88) 0%, rgba(26, 107, 181, 0.82) 55%, rgba(74, 159, 224, 0.75) 100%),
+        linear-gradient(180deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.35) 50%, rgba(0, 0, 0, 0.6) 100%),
         url("https://futbolitochile.cl/wp-content/uploads/2016/03/5.jpg") center/cover no-repeat;
     text-align: center;
     padding: 140px 20px;
