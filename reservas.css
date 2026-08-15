@@ -1,0 +1,628 @@
+/* ==========================================================================
+   RESERVAS — WIZARD DE AGENDAMIENTO
+   Usa las variables de color definidas en style.css (:root)
+   ========================================================================== */
+
+.nav-links a.active {
+    color: var(--rojo);
+    border-bottom-color: var(--rojo);
+}
+
+/* ENCABEZADO DE LA PÁGINA */
+.wizard-hero {
+    background: linear-gradient(135deg, var(--azul-oscuro) 0%, var(--azul-primario) 100%);
+    color: var(--blanco);
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.wizard-hero h1 {
+    font-size: 38px;
+    margin-bottom: 10px;
+}
+
+.wizard-hero p {
+    font-size: 17px;
+    color: #dceafb;
+}
+
+/* CONTENEDOR PRINCIPAL */
+.wizard-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 50px 20px 90px;
+}
+
+/* INDICADOR DE PASOS */
+.steps-indicator {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    list-style: none;
+    margin-bottom: 45px;
+    flex-wrap: wrap;
+}
+
+.step-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+    border-radius: 30px;
+    background-color: var(--gris-claro);
+    color: var(--gris-texto);
+    font-size: 14px;
+    font-weight: 600;
+    transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.step-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background-color: var(--blanco);
+    color: var(--gris-texto);
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.step-indicator.active {
+    background-color: var(--azul-primario);
+    color: var(--blanco);
+}
+
+.step-indicator.active .step-number {
+    background-color: var(--rojo);
+    color: var(--blanco);
+}
+
+.step-indicator.completed {
+    background-color: var(--azul-oscuro);
+    color: var(--blanco);
+}
+
+.step-indicator.completed .step-number {
+    background-color: var(--rojo);
+    color: var(--blanco);
+}
+
+/* CUERPO DEL WIZARD */
+.wizard-body {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 30px;
+    align-items: start;
+}
+
+.wizard-main {
+    background-color: var(--blanco);
+    border-radius: 16px;
+    box-shadow: var(--sombra);
+    padding: 40px;
+    min-height: 380px;
+}
+
+.wizard-step {
+    display: none;
+}
+
+.wizard-step.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.wizard-step h2 {
+    color: var(--azul-oscuro);
+    font-size: 24px;
+    margin-bottom: 24px;
+}
+
+.wizard-step h3 {
+    color: var(--azul-oscuro);
+    font-size: 18px;
+    margin: 30px 0 16px;
+}
+
+/* PASO 1 — SELECTOR DE DEPORTE */
+.sport-selector {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.sport-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 30px 20px;
+    border: 2px solid var(--gris-claro);
+    border-radius: 14px;
+    background-color: var(--gris-claro);
+    cursor: pointer;
+    font-family: inherit;
+    transition: border-color 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+}
+
+.sport-card:hover {
+    transform: translateY(-4px);
+}
+
+.sport-card.selected {
+    border-color: var(--rojo);
+    background-color: #fdeceb;
+}
+
+.sport-icon {
+    font-size: 40px;
+}
+
+.sport-name {
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--azul-oscuro);
+}
+
+.sport-desc {
+    font-size: 14px;
+    color: var(--gris-texto);
+}
+
+/* SELECTOR DE CANCHA */
+.cancha-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.cancha-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 18px;
+    border: 2px solid var(--gris-claro);
+    border-radius: 12px;
+    background-color: var(--blanco);
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.cancha-card:hover {
+    transform: translateY(-3px);
+}
+
+.cancha-card.selected {
+    border-color: var(--rojo);
+    background-color: #fdeceb;
+}
+
+.cancha-nombre {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--azul-oscuro);
+}
+
+.cancha-desc {
+    font-size: 13px;
+    color: var(--gris-texto);
+}
+
+.cancha-precio {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--rojo);
+    margin-top: 4px;
+}
+
+/* PASO 2 — CALENDARIO */
+.calendar-wrapper {
+    max-width: 380px;
+}
+
+.calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.calendar-month-label {
+    font-weight: 700;
+    color: var(--azul-oscuro);
+    text-transform: capitalize;
+    font-size: 16px;
+}
+
+.calendar-nav {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: none;
+    background-color: var(--gris-claro);
+    color: var(--azul-oscuro);
+    font-size: 18px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.calendar-nav:hover {
+    background-color: var(--azul-claro);
+    color: var(--blanco);
+}
+
+.calendar-nav:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--gris-texto);
+    margin-bottom: 6px;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+
+.calendar-day {
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: none;
+    background-color: var(--gris-claro);
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--gris-texto);
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.calendar-day:hover:not(:disabled):not(.empty) {
+    background-color: var(--azul-claro);
+    color: var(--blanco);
+}
+
+.calendar-day.empty {
+    background: none;
+    cursor: default;
+}
+
+.calendar-day:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.calendar-day.today {
+    box-shadow: inset 0 0 0 2px var(--azul-primario);
+}
+
+.calendar-day.selected {
+    background-color: var(--rojo);
+    color: var(--blanco);
+}
+
+/* SELECTOR DE HORARIO */
+.horario-legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--gris-texto);
+}
+
+.legend-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+.legend-disponible { background-color: #2e9e50; }
+.legend-seleccionado { background-color: var(--rojo); }
+.legend-ocupado { background-color: #9aa1a8; }
+
+.horario-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 10px;
+}
+
+.horario-slot {
+    padding: 12px 8px;
+    border-radius: 10px;
+    border: none;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--blanco);
+    background-color: #2e9e50;
+    transition: transform 0.15s ease, background-color 0.2s ease;
+}
+
+.horario-slot:hover:not(:disabled) {
+    transform: translateY(-2px);
+}
+
+.horario-slot.seleccionado {
+    background-color: var(--rojo);
+}
+
+.horario-slot:disabled {
+    background-color: #d4d8db;
+    color: #7c8388;
+    cursor: not-allowed;
+}
+
+/* PASO 3 — FORMULARIO */
+#reservaForm {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--azul-oscuro);
+}
+
+.form-group input {
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 2px solid var(--gris-claro);
+    font-family: inherit;
+    font-size: 15px;
+    transition: border-color 0.2s ease;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--azul-primario);
+}
+
+.form-group input.invalid {
+    border-color: var(--rojo);
+}
+
+.form-error {
+    font-size: 12px;
+    color: var(--rojo);
+    min-height: 16px;
+}
+
+/* PASO 4 — PAGO */
+.payment-intro {
+    margin-bottom: 24px;
+    color: var(--gris-texto);
+}
+
+.payment-methods {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.payment-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 26px 14px;
+    border: 2px solid var(--gris-claro);
+    border-radius: 12px;
+    background-color: var(--gris-claro);
+    cursor: pointer;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.payment-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--azul-primario);
+}
+
+.payment-card.selected {
+    border-color: var(--rojo);
+    background-color: #fdeceb;
+}
+
+.payment-logo {
+    font-weight: 800;
+    font-size: 15px;
+    text-align: center;
+    line-height: 1.2;
+}
+
+.payment-logo--mp { color: #009ee3; }
+.payment-logo--webpay { color: #ee2b39; }
+.payment-logo--getnet { color: #ff6600; }
+.payment-logo--card { color: var(--azul-oscuro); }
+
+.payment-status {
+    margin-top: 24px;
+    padding: 16px 20px;
+    border-radius: 10px;
+    background-color: var(--gris-claro);
+    color: var(--azul-oscuro);
+    font-weight: 600;
+    text-align: center;
+}
+
+.payment-confirmation {
+    margin-top: 24px;
+    padding: 24px;
+    border-radius: 12px;
+    background-color: #eafaf0;
+    border: 2px solid #2e9e50;
+    text-align: center;
+}
+
+.payment-confirmation h3 {
+    color: #1f7a3d;
+    margin: 0 0 10px;
+}
+
+.payment-confirmation p {
+    color: var(--gris-texto);
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+/* RESUMEN LATERAL */
+.wizard-summary {
+    position: sticky;
+    top: 90px;
+    background-color: var(--azul-oscuro);
+    color: var(--blanco);
+    border-radius: 16px;
+    padding: 28px 24px;
+    box-shadow: var(--sombra);
+}
+
+.wizard-summary h3 {
+    font-size: 17px;
+    margin-bottom: 18px;
+    color: var(--blanco);
+}
+
+.summary-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    padding-bottom: 10px;
+}
+
+.summary-row dt {
+    color: #b9cdc0;
+}
+
+.summary-row dd {
+    font-weight: 600;
+    text-align: right;
+}
+
+.summary-row.total {
+    border-bottom: none;
+    padding-top: 4px;
+    font-size: 18px;
+}
+
+.summary-row.total dd {
+    color: var(--rojo);
+    font-size: 22px;
+}
+
+/* ACCIONES DEL WIZARD */
+.wizard-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+}
+
+.btn-outline {
+    background-color: transparent;
+    color: var(--azul-oscuro);
+    border: 2px solid var(--azul-oscuro);
+}
+
+.btn-outline:hover {
+    background-color: var(--azul-oscuro);
+    color: var(--blanco);
+}
+
+.btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+@media (max-width: 900px) {
+    .wizard-body {
+        grid-template-columns: 1fr;
+    }
+
+    .wizard-summary {
+        position: static;
+        order: -1;
+    }
+
+    .cancha-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .payment-methods {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .wizard-main {
+        padding: 24px 18px;
+    }
+
+    .sport-selector {
+        grid-template-columns: 1fr;
+    }
+
+    .cancha-grid {
+        grid-template-columns: 1fr;
+    }
+
+    #reservaForm {
+        grid-template-columns: 1fr;
+    }
+
+    .payment-methods {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .steps-indicator {
+        gap: 6px;
+    }
+
+    .step-label {
+        display: none;
+    }
+
+    .wizard-hero h1 {
+        font-size: 28px;
+    }
+}

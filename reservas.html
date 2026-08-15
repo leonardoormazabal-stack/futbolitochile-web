@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservas — Futbolito Chile</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="reservas.css">
+    <link rel="icon" type="image/webp" href="pictures/logo-1024x852.webp">
+</head>
+<body>
+
+    <!-- BARRA DE NAVEGACIÓN -->
+    <header class="navbar">
+        <nav class="nav-container">
+            <a href="index.html#inicio" class="logo">
+                <img src="pictures/logo-1024x852.webp" alt="Futbolito Chile" class="logo-icon">
+                <span>Futbolito Chile</span>
+            </a>
+
+            <input type="checkbox" id="menu-toggle" class="menu-toggle">
+            <label for="menu-toggle" class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </label>
+
+            <ul class="nav-links">
+                <li><a href="index.html#inicio">Inicio</a></li>
+                <li><a href="reservas.html" class="active">Reservas</a></li>
+                <li><a href="index.html#instalaciones">Instalaciones</a></li>
+                <li><a href="index.html#tarifas">Tarifas y Planes</a></li>
+                <li><a href="index.html#eventos">Eventos</a></li>
+                <li><a href="index.html#escuelas">Escuelas y Ligas</a></li>
+                <li><a href="index.html#publicidad">Publicidad</a></li>
+                <li><a href="index.html#nosotros">Quiénes Somos</a></li>
+                <li><a href="index.html#contacto">Contacto</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- ENCABEZADO -->
+    <section class="wizard-hero">
+        <h1>Reserva tu Cancha</h1>
+        <p>Elige tu deporte, cancha, fecha y horario en simples pasos</p>
+    </section>
+
+    <main class="wizard-page">
+
+        <!-- INDICADOR DE PASOS -->
+        <ol class="steps-indicator" id="stepsIndicator">
+            <li class="step-indicator active" data-step="1">
+                <span class="step-number">1</span>
+                <span class="step-label">Deporte y Cancha</span>
+            </li>
+            <li class="step-indicator" data-step="2">
+                <span class="step-number">2</span>
+                <span class="step-label">Fecha y Horario</span>
+            </li>
+            <li class="step-indicator" data-step="3">
+                <span class="step-number">3</span>
+                <span class="step-label">Tus Datos</span>
+            </li>
+            <li class="step-indicator" data-step="4">
+                <span class="step-number">4</span>
+                <span class="step-label">Pago</span>
+            </li>
+        </ol>
+
+        <div class="wizard-body">
+            <div class="wizard-main">
+
+                <!-- PASO 1: DEPORTE Y CANCHA -->
+                <section class="wizard-step active" id="step-1" aria-labelledby="step-1-title">
+                    <h2 id="step-1-title">Elige tu deporte</h2>
+                    <div class="sport-selector">
+                        <button type="button" class="sport-card" data-sport="futbolito">
+                            <span class="sport-icon">⚽</span>
+                            <span class="sport-name">Futbolito</span>
+                            <span class="sport-desc">6 canchas disponibles</span>
+                        </button>
+                        <button type="button" class="sport-card" data-sport="padel">
+                            <span class="sport-icon">🎾</span>
+                            <span class="sport-name">Pádel</span>
+                            <span class="sport-desc">2 canchas disponibles</span>
+                        </button>
+                    </div>
+
+                    <div class="cancha-selector" id="canchaSelector" hidden>
+                        <h3>Elige tu cancha</h3>
+                        <div class="cancha-grid" id="canchaGrid"></div>
+                    </div>
+                </section>
+
+                <!-- PASO 2: FECHA Y HORARIO -->
+                <section class="wizard-step" id="step-2" aria-labelledby="step-2-title">
+                    <h2 id="step-2-title">Elige fecha y horario</h2>
+
+                    <div class="calendar-wrapper">
+                        <div class="calendar-header">
+                            <button type="button" id="prevMonth" class="calendar-nav" aria-label="Mes anterior">‹</button>
+                            <span id="calendarMonthLabel" class="calendar-month-label"></span>
+                            <button type="button" id="nextMonth" class="calendar-nav" aria-label="Mes siguiente">›</button>
+                        </div>
+                        <div class="calendar-weekdays">
+                            <span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sa</span><span>Do</span>
+                        </div>
+                        <div class="calendar-grid" id="calendarGrid"></div>
+                    </div>
+
+                    <div class="horario-selector" id="horarioSelector" hidden>
+                        <h3>Elige tu horario</h3>
+                        <div class="horario-legend">
+                            <span><i class="legend-dot legend-disponible"></i> Disponible</span>
+                            <span><i class="legend-dot legend-seleccionado"></i> Seleccionado</span>
+                            <span><i class="legend-dot legend-ocupado"></i> Ocupado</span>
+                        </div>
+                        <div class="horario-grid" id="horarioGrid"></div>
+                    </div>
+                </section>
+
+                <!-- PASO 3: DATOS -->
+                <section class="wizard-step" id="step-3" aria-labelledby="step-3-title">
+                    <h2 id="step-3-title">Ingresa tus datos</h2>
+                    <form id="reservaForm" novalidate>
+                        <div class="form-group">
+                            <label for="nombre">Nombre completo</label>
+                            <input type="text" id="nombre" name="nombre" autocomplete="name" required>
+                            <span class="form-error" id="error-nombre"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="rut">RUT</label>
+                            <input type="text" id="rut" name="rut" placeholder="12.345.678-9" autocomplete="off" required>
+                            <span class="form-error" id="error-rut"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="telefono">Teléfono</label>
+                            <input type="tel" id="telefono" name="telefono" placeholder="+56 9 1234 5678" autocomplete="tel" required>
+                            <span class="form-error" id="error-telefono"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" name="email" autocomplete="email" required>
+                            <span class="form-error" id="error-email"></span>
+                        </div>
+                    </form>
+                </section>
+
+                <!-- PASO 4: PAGO -->
+                <section class="wizard-step" id="step-4" aria-labelledby="step-4-title">
+                    <h2 id="step-4-title">Selecciona tu método de pago</h2>
+                    <p class="payment-intro">Confirma tu reserva pagando de forma segura con el medio que prefieras.</p>
+
+                    <div class="payment-methods">
+                        <button type="button" class="payment-card" data-method="Mercado Pago">
+                            <span class="payment-logo payment-logo--mp">Mercado<br>Pago</span>
+                        </button>
+                        <button type="button" class="payment-card" data-method="Webpay (Transbank)">
+                            <span class="payment-logo payment-logo--webpay">WebPay</span>
+                        </button>
+                        <button type="button" class="payment-card" data-method="GetNet">
+                            <span class="payment-logo payment-logo--getnet">GetNet</span>
+                        </button>
+                        <button type="button" class="payment-card" data-method="Tarjeta de Crédito/Débito">
+                            <span class="payment-logo payment-logo--card">💳 Tarjeta</span>
+                        </button>
+                    </div>
+
+                    <div class="payment-status" id="paymentStatus" hidden></div>
+                    <div class="payment-confirmation" id="paymentConfirmation" hidden></div>
+                </section>
+
+            </div>
+
+            <!-- RESUMEN -->
+            <aside class="wizard-summary">
+                <h3>Resumen de tu Reserva</h3>
+                <dl class="summary-list">
+                    <div class="summary-row">
+                        <dt>Deporte</dt>
+                        <dd id="summarySport">—</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt>Cancha</dt>
+                        <dd id="summaryCancha">—</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt>Fecha</dt>
+                        <dd id="summaryFecha">—</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt>Horario</dt>
+                        <dd id="summaryHora">—</dd>
+                    </div>
+                    <div class="summary-row total">
+                        <dt>Total</dt>
+                        <dd id="summaryTotal">$0</dd>
+                    </div>
+                </dl>
+            </aside>
+        </div>
+
+        <div class="wizard-actions">
+            <button type="button" id="btnBack" class="btn btn-outline" hidden>Atrás</button>
+            <button type="button" id="btnNext" class="btn btn-primary" disabled>Siguiente</button>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer" id="contacto">
+        <div class="footer-container">
+            <div class="footer-col">
+                <h3>Futbolito Chile</h3>
+                <p>📍 Fresia #1240, La Pintana, Santiago</p>
+                <p>📞 +56 9 4408 7803</p>
+                <p>✉️ contacto@futbolitochile.cl</p>
+            </div>
+            <div class="footer-col">
+                <h3>Enlaces Rápidos</h3>
+                <div class="social-links">
+                    <a href="index.html#instalaciones">Instalaciones</a>
+                    <a href="index.html#tarifas">Tarifas y Planes</a>
+                    <a href="index.html#eventos">Eventos</a>
+                    <a href="index.html#escuelas">Escuelas y Ligas</a>
+                    <a href="index.html#publicidad">Publicidad</a>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h3>Síguenos</h3>
+                <div class="social-links">
+                    <a href="#" aria-label="Facebook">Facebook</a>
+                    <a href="#" aria-label="Instagram">Instagram</a>
+                    <a href="https://wa.me/56944087803" target="_blank" rel="noopener" aria-label="WhatsApp">WhatsApp</a>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h3>Horario de Atención</h3>
+                <p>Lunes a Domingo</p>
+                <p>09:00 - 23:00 hrs</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Futbolito Chile. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <script src="reservas.js"></script>
+</body>
+</html>
