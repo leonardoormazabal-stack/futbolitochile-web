@@ -25,12 +25,12 @@
     function getPrecioPorHora(sport, horaInicio) {
         var tablas = {
             futbolito: [
-                { desde: 8, hasta: 18, precio: 27000 },
+                { desde: 12, hasta: 18, precio: 27000 },
                 { desde: 18, hasta: 20, precio: 32000 },
                 { desde: 20, hasta: 23, precio: 37000 }
             ],
             padel: [
-                { desde: 8, hasta: 18, precio: 35000 },
+                { desde: 12, hasta: 18, precio: 35000 },
                 { desde: 18, hasta: 20, precio: 40000 },
                 { desde: 20, hasta: 23, precio: 45000 }
             ]
@@ -337,7 +337,7 @@
         el.horarioGrid.innerHTML = '';
         if (!state.selectedDate || !state.canchaId) return;
 
-        for (var hora = 8; hora < 23; hora++) {
+        for (var hora = 12; hora < 23; hora++) {
             var ocupado = slotOcupado(state.canchaId, state.selectedDate, hora);
             var btn = document.createElement('button');
             btn.type = 'button';

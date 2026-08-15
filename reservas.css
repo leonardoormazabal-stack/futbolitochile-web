@@ -93,11 +93,14 @@
 .wizard-body {
     display: grid;
     grid-template-columns: 1fr 320px;
+    grid-template-rows: auto auto;
     gap: 30px;
     align-items: start;
 }
 
 .wizard-main {
+    grid-column: 1;
+    grid-row: 1 / span 2;
     background-color: var(--blanco);
     border-radius: 16px;
     box-shadow: var(--sombra);
@@ -497,6 +500,8 @@
 
 /* RESUMEN LATERAL */
 .wizard-summary {
+    grid-column: 2;
+    grid-row: 1;
     position: sticky;
     top: 90px;
     background-color: var(--azul-oscuro);
@@ -549,9 +554,13 @@
 
 /* ACCIONES DEL WIZARD */
 .wizard-actions {
+    grid-column: 2;
+    grid-row: 2;
     display: flex;
     justify-content: space-between;
-    margin-top: 30px;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-self: start;
 }
 
 .btn-outline {
@@ -577,6 +586,13 @@
 @media (max-width: 900px) {
     .wizard-body {
         grid-template-columns: 1fr;
+    }
+
+    .wizard-main,
+    .wizard-summary,
+    .wizard-actions {
+        grid-column: auto;
+        grid-row: auto;
     }
 
     .wizard-summary {
