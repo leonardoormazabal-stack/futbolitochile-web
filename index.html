@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Futbolito Chile</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="icon" type="image/webp" href="assets/logo-1024x852.webp">
+    <link rel="icon" type="image/webp" href="pictures/logo-1024x852.webp">
 </head>
 <body>
 
@@ -13,7 +13,7 @@
     <header class="navbar">
         <nav class="nav-container">
             <a href="#inicio" class="logo">
-                <img src="assets/logo-1024x852.webp" alt="Futbolito Chile" class="logo-icon">
+                <img src="pictures/logo-1024x852.webp" alt="Futbolito Chile" class="logo-icon">
                 <span>Futbolito Chile</span>
             </a>
 
@@ -26,9 +26,12 @@
 
             <ul class="nav-links">
                 <li><a href="#inicio">Inicio</a></li>
-                <li><a href="#reserva">Reserva</a></li>
-                <li><a href="#tarifas">Tarifas</a></li>
+                <li><a href="#reserva">Reservas</a></li>
                 <li><a href="#instalaciones">Instalaciones</a></li>
+                <li><a href="#tarifas">Tarifas y Planes</a></li>
+                <li><a href="#eventos">Eventos</a></li>
+                <li><a href="#escuelas">Escuelas y Ligas</a></li>
+                <li><a href="#publicidad">Publicidad</a></li>
                 <li><a href="#nosotros">Quiénes Somos</a></li>
                 <li><a href="#contacto">Contacto</a></li>
             </ul>
@@ -39,7 +42,7 @@
     <section class="hero" id="inicio">
         <div class="hero-content">
             <h1>FUTBOLITO CHILE</h1>
-            <p class="hero-subtitle">Tu mejor opción en recreación</p>
+            <p class="hero-subtitle">Fútbol, pádel, piscina y eventos: tu centro deportivo y familiar</p>
             <div class="hero-buttons">
                 <a href="#reserva" class="btn btn-primary">Reservar Ahora</a>
                 <a href="#tarifas" class="btn btn-secondary">Ver Tarifas</a>
@@ -51,60 +54,169 @@
     <section class="instalaciones" id="instalaciones">
         <div class="section-header">
             <h2>Nuestras Instalaciones</h2>
-            <p>Todo lo que necesitas para disfrutar del mejor fútbol recreativo</p>
+            <p>Todo lo que necesitas para disfrutar del deporte y la recreación en familia</p>
         </div>
         <div class="cards-container">
-            <div class="card">
-                <div class="card-icon">🏟️</div>
-                <h3>Canchas de Pasto Sintético</h3>
+            <div class="card card--canchas">
+                <h3>6 Canchas de Futbolito</h3>
                 <p>Canchas de última generación con césped sintético de alta calidad, iluminación LED y medidas oficiales para fútbol 5 y 7.</p>
             </div>
-            <div class="card">
-                <div class="card-icon">🚿</div>
-                <h3>Camarines y Duchas</h3>
+            <div class="card card--padel">
+                <h3>2 Canchas de Pádel</h3>
+                <p>Canchas de pádel con césped sintético de competición, ideales para jugar de día o de noche.</p>
+            </div>
+            <div class="card card--piscina">
+                <h3>Piscina</h3>
+                <p>Espacio de recreación y descanso para toda la familia, disponible también como parte de nuestros paquetes de eventos.</p>
+            </div>
+            <div class="card card--quinchos">
+                <h3>Zona de Quinchos</h3>
+                <p>Áreas equipadas para asados y celebraciones, perfectas para después del partido o para tu próximo evento.</p>
+            </div>
+            <div class="card card--camarines">
+                <h3>Camarines y Baños</h3>
                 <p>Amplios camarines equipados con duchas de agua caliente, casilleros seguros y todas las comodidades para tu equipo.</p>
             </div>
-            <div class="card">
-                <div class="card-icon">🅿️</div>
-                <h3>Estacionamiento y Quincho</h3>
-                <p>Estacionamiento gratuito para todos nuestros clientes y zona de quincho para celebrar después del partido.</p>
+            <div class="card card--kiosco">
+                <h3>Kiosco y Snack Bar</h3>
+                <p>Bebidas, snacks y comida rápida disponibles durante toda tu estadía en el recinto.</p>
             </div>
         </div>
     </section>
 
-    <!-- TARIFAS Y HORARIOS -->
+    <!-- TARIFAS Y PLANES -->
     <section class="tarifas" id="tarifas">
         <div class="section-header">
-            <h2>Tarifas y Horarios</h2>
-            <p>Precios por hora de cancha</p>
+            <h2>Tarifas y Planes</h2>
+            <p>Arriendo por hora, planes mensuales y equipamiento deportivo</p>
         </div>
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Horario</th>
-                        <th>Lunes a Viernes</th>
-                        <th>Fines de Semana y Feriados</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>09:00 - 14:00 hrs</td>
-                        <td>$18.000</td>
-                        <td>$22.000</td>
-                    </tr>
-                    <tr>
-                        <td>14:00 - 19:00 hrs</td>
-                        <td>$22.000</td>
-                        <td>$26.000</td>
-                    </tr>
-                    <tr>
-                        <td>19:00 - 23:00 hrs</td>
-                        <td>$28.000</td>
-                        <td>$30.000</td>
-                    </tr>
-                </tbody>
-            </table>
+
+        <div class="tarifa-grupo">
+            <h3>Arriendo por Hora — Canchas de Futbolito y Pádel</h3>
+            <p class="tarifa-nota">Lunes a Domingo</p>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Horario</th>
+                            <th>Precio por Hora</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>12:00 - 18:00 hrs</td>
+                            <td>$27.000</td>
+                        </tr>
+                        <tr>
+                            <td>19:00 - 20:00 hrs</td>
+                            <td>$32.000</td>
+                        </tr>
+                        <tr>
+                            <td>20:00 - 23:00 hrs</td>
+                            <td>$37.000</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="tarifa-grupo">
+            <h3>Planes Mensuales</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Plan</th>
+                            <th>Horas Incluidas</th>
+                            <th>Precio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Plan 4 Horas al Mes</td>
+                            <td>4 horas (franja horaria asegurada)</td>
+                            <td>$60.000</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="tarifa-grupo">
+            <h3>Arriendo de Equipamiento</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Artículo</th>
+                            <th>Precio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Balón de fútbol</td>
+                            <td>$2.000</td>
+                        </tr>
+                        <tr>
+                            <td>Guantes de arquero</td>
+                            <td>$3.000</td>
+                        </tr>
+                        <tr>
+                            <td>Set de ropa deportiva</td>
+                            <td>$4.000</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- EVENTOS Y CUMPLEAÑOS -->
+    <section class="info-section eventos" id="eventos">
+        <div class="section-header">
+            <h2>Eventos y Cumpleaños</h2>
+            <p>Celebra en grande junto a tu familia, amigos o equipo de trabajo</p>
+        </div>
+        <div class="info-content">
+            <p>
+                Arrienda nuestros espacios integrados —piscina, quinchos y canchas— para
+                cumpleaños, celebraciones familiares o eventos corporativos. Cotiza tu
+                evento y te ayudamos a organizar todo para que solo te preocupes de disfrutar.
+            </p>
+            <a href="https://wa.me/56912345678?text=Hola%2C%20quiero%20cotizar%20un%20evento%20o%20cumplea%C3%B1os" class="btn btn-primary" target="_blank" rel="noopener">Cotiza tu Evento</a>
+        </div>
+    </section>
+
+    <!-- ESCUELAS Y LIGAS -->
+    <section class="info-section escuelas" id="escuelas">
+        <div class="section-header">
+            <h2>Escuelas y Ligas</h2>
+            <p>Un espacio para academias, clubes y ligas deportivas</p>
+        </div>
+        <div class="info-content">
+            <p>
+                Ofrecemos arriendo recurrente de canchas para escuelas de fútbol, academias
+                y ligas que buscan un recinto de calidad para sus entrenamientos y
+                campeonatos. Si representas una escuela o club y quieres sumarte, contáctanos
+                para conocer nuestros convenios.
+            </p>
+            <a href="https://wa.me/56912345678?text=Hola%2C%20represento%20una%20escuela%2Fclub%20y%20quiero%20informaci%C3%B3n%20de%20convenios" class="btn btn-primary" target="_blank" rel="noopener">Inscribe tu Escuela</a>
+        </div>
+    </section>
+
+    <!-- PUBLICIDAD Y CONVENIOS -->
+    <section class="info-section publicidad" id="publicidad">
+        <div class="section-header">
+            <h2>Publicidad y Convenios</h2>
+            <p>Muestra tu marca a cientos de deportistas y familias cada semana</p>
+        </div>
+        <div class="info-content">
+            <p>
+                Contamos con espacios publicitarios físicos dentro del recinto y banners
+                digitales en este sitio web, ideales para marcas, escuelas y auspiciadores
+                que quieran llegar a nuestra comunidad de deportistas.
+            </p>
+            <a href="https://wa.me/56912345678?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20espacios%20publicitarios" class="btn btn-primary" target="_blank" rel="noopener">Conoce Nuestros Espacios</a>
         </div>
     </section>
 
@@ -112,8 +224,8 @@
     <section class="reserva" id="reserva">
         <div class="reserva-content">
             <h2>¿Listo para jugar?</h2>
-            <p>Reserva tu cancha ahora mismo y asegura tu horario favorito.</p>
-            <a href="#contacto" class="btn btn-primary">Reservar Ahora</a>
+            <p>Reserva tu cancha por hora o súmate a un plan mensual y asegura tu horario favorito.</p>
+            <a href="https://wa.me/56912345678?text=Hola%2C%20quiero%20reservar%20una%20cancha" class="btn btn-primary" target="_blank" rel="noopener">Reservar Ahora</a>
         </div>
     </section>
 
@@ -126,10 +238,10 @@
             <div class="nosotros-texto">
                 <h2>Quiénes Somos</h2>
                 <p>
-                    Futbolito Chile nace con la pasión de entregar a la comunidad espacios de calidad
-                    para practicar el deporte que más nos une: el fútbol. Contamos con canchas de
-                    primer nivel, atención personalizada y un ambiente familiar pensado para que
-                    disfrutes cada partido junto a tus amigos, compañeros de trabajo o familia.
+                    Futbolito Chile nace con la pasión de entregar a la comunidad un espacio integral
+                    de deporte y recreación: canchas de futbolito y pádel, piscina, quinchos y zonas
+                    de descanso pensadas para que disfrutes cada partido, evento o celebración junto
+                    a tus amigos, compañeros de trabajo o familia.
                 </p>
                 <p>
                     Nuestro compromiso es ofrecer siempre las mejores instalaciones, horarios
@@ -144,16 +256,26 @@
         <div class="footer-container">
             <div class="footer-col">
                 <h3>Futbolito Chile</h3>
-                <p>📍 Av. Los Deportistas 1234, Santiago, Chile</p>
+                <p>📍 Fresia #1240, La Pintana, Santiago</p>
                 <p>📞 +56 9 1234 5678</p>
                 <p>✉️ contacto@futbolitochile.cl</p>
+            </div>
+            <div class="footer-col">
+                <h3>Enlaces Rápidos</h3>
+                <div class="social-links">
+                    <a href="#instalaciones">Instalaciones</a>
+                    <a href="#tarifas">Tarifas y Planes</a>
+                    <a href="#eventos">Eventos</a>
+                    <a href="#escuelas">Escuelas y Ligas</a>
+                    <a href="#publicidad">Publicidad</a>
+                </div>
             </div>
             <div class="footer-col">
                 <h3>Síguenos</h3>
                 <div class="social-links">
                     <a href="#" aria-label="Facebook">Facebook</a>
                     <a href="#" aria-label="Instagram">Instagram</a>
-                    <a href="#" aria-label="WhatsApp">WhatsApp</a>
+                    <a href="https://wa.me/56912345678" target="_blank" rel="noopener" aria-label="WhatsApp">WhatsApp</a>
                 </div>
             </div>
             <div class="footer-col">

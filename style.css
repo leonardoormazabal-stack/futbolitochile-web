@@ -148,15 +148,18 @@ ul {
 
 .nav-links {
     display: flex;
-    gap: 30px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px 20px;
 }
 
 .nav-links a {
     color: var(--blanco);
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 500;
     padding: 6px 2px;
     border-bottom: 2px solid transparent;
+    white-space: nowrap;
     transition: color 0.2s ease, border-color 0.2s ease;
 }
 
@@ -235,12 +238,19 @@ ul {
 }
 
 .card {
-    background-color: var(--blanco);
+    position: relative;
+    background-size: cover;
+    background-position: center;
     border-radius: 14px;
-    padding: 40px 28px;
+    padding: 40px 24px 32px;
     text-align: center;
     box-shadow: var(--sombra);
     border-top: 4px solid var(--rojo);
+    color: var(--blanco);
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
     transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
@@ -249,20 +259,41 @@ ul {
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
 }
 
-.card-icon {
-    font-size: 44px;
-    margin-bottom: 18px;
+.card--canchas {
+    background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.25) 40%, rgba(0, 0, 0, 0.75) 100%), url("pictures/cancha-sintetica.jpg");
+}
+
+.card--padel {
+    background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.25) 40%, rgba(0, 0, 0, 0.75) 100%), url("pictures/padel.jpg");
+}
+
+.card--camarines {
+    background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.25) 40%, rgba(0, 0, 0, 0.75) 100%), url("pictures/camarines.jpg");
+}
+
+.card--quinchos {
+    background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.25) 40%, rgba(0, 0, 0, 0.75) 100%), url("pictures/estacionamiento.jpg");
+}
+
+.card--piscina {
+    background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.25) 40%, rgba(0, 0, 0, 0.75) 100%), url("https://placehold.co/600x400/4a9fe0/4a9fe0?text=+");
+}
+
+.card--kiosco {
+    background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.25) 40%, rgba(0, 0, 0, 0.75) 100%), url("https://placehold.co/600x400/c0392b/c0392b?text=+");
 }
 
 .card h3 {
-    color: var(--azul-oscuro);
-    font-size: 21px;
-    margin-bottom: 14px;
+    color: var(--blanco);
+    font-size: 20px;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
 }
 
 .card p {
-    font-size: 15px;
-    color: var(--gris-texto);
+    font-size: 14px;
+    color: #eef2f6;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
 }
 
 /* ==========================================================================
@@ -271,6 +302,30 @@ ul {
 .tarifas {
     padding: 90px 20px;
     background-color: var(--blanco);
+}
+
+.tarifa-grupo {
+    max-width: 850px;
+    margin: 0 auto 50px;
+}
+
+.tarifa-grupo:last-child {
+    margin-bottom: 0;
+}
+
+.tarifa-grupo h3 {
+    color: var(--azul-oscuro);
+    font-size: 20px;
+    text-align: center;
+    margin-bottom: 4px;
+}
+
+.tarifa-nota {
+    text-align: center;
+    color: var(--rojo);
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 18px;
 }
 
 .table-wrapper {
@@ -318,6 +373,33 @@ tbody td {
 tbody td:not(:first-child) {
     font-weight: 700;
     color: var(--azul-primario);
+}
+
+/* ==========================================================================
+   SECCIONES INFORMATIVAS (Eventos, Escuelas, Publicidad)
+   ========================================================================== */
+.info-section {
+    padding: 90px 20px;
+    text-align: center;
+}
+
+.info-section.eventos,
+.info-section.publicidad {
+    background-color: var(--gris-claro);
+}
+
+.info-section.escuelas {
+    background-color: var(--blanco);
+}
+
+.info-content {
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.info-content p {
+    font-size: 16px;
+    margin-bottom: 30px;
 }
 
 /* ==========================================================================
@@ -394,10 +476,10 @@ tbody td:not(:first-child) {
 }
 
 .footer-container {
-    max-width: 1100px;
+    max-width: 1200px;
     margin: 0 auto;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 40px;
     padding-bottom: 40px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.15);
@@ -443,11 +525,19 @@ tbody td:not(:first-child) {
 /* ==========================================================================
    RESPONSIVE
    ========================================================================== */
-@media (max-width: 900px) {
+@media (max-width: 1000px) {
+    .cards-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
     .cards-container {
         grid-template-columns: 1fr;
     }
+}
 
+@media (max-width: 900px) {
     .nosotros-container {
         grid-template-columns: 1fr;
     }
@@ -497,7 +587,8 @@ tbody td:not(:first-child) {
     }
 
     .menu-toggle:checked ~ .nav-links {
-        max-height: 400px;
+        max-height: 600px;
+        overflow-y: auto;
     }
 
     .hero-content h1 {
