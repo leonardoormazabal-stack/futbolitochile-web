@@ -1,0 +1,530 @@
+/* ==========================================================================
+   RESET Y VARIABLES
+   ========================================================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --azul-oscuro: #0d3b66;
+    --azul-primario: #1a6bb5;
+    --azul-claro: #4a9fe0;
+    --rojo: #c0392b;
+    --rojo-oscuro: #922b21;
+    --blanco: #ffffff;
+    --gris-claro: #f4f6f5;
+    --gris-texto: #4a4a4a;
+    --sombra: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    background-color: var(--blanco);
+    color: var(--gris-texto);
+    line-height: 1.6;
+}
+
+img {
+    max-width: 100%;
+    display: block;
+}
+
+a {
+    text-decoration: none;
+}
+
+ul {
+    list-style: none;
+}
+
+.section-header {
+    text-align: center;
+    max-width: 700px;
+    margin: 0 auto 50px;
+    padding: 0 20px;
+}
+
+.section-header h2 {
+    font-size: 36px;
+    color: var(--azul-oscuro);
+    margin-bottom: 12px;
+    position: relative;
+}
+
+.section-header h2::after {
+    content: "";
+    display: block;
+    width: 70px;
+    height: 4px;
+    background-color: var(--rojo);
+    margin: 14px auto 0;
+    border-radius: 4px;
+}
+
+.section-header p {
+    color: var(--gris-texto);
+    font-size: 17px;
+}
+
+.btn {
+    display: inline-block;
+    padding: 15px 36px;
+    border-radius: 30px;
+    font-size: 17px;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+
+.btn:hover {
+    transform: translateY(-3px);
+}
+
+.btn-primary {
+    background-color: var(--rojo);
+    color: var(--blanco);
+}
+
+.btn-primary:hover {
+    background-color: var(--rojo-oscuro);
+    color: var(--blanco);
+}
+
+.btn-secondary {
+    background-color: transparent;
+    color: var(--blanco);
+    border-color: var(--blanco);
+}
+
+.btn-secondary:hover {
+    background-color: var(--blanco);
+    color: var(--azul-oscuro);
+}
+
+/* ==========================================================================
+   NAVEGACIÓN
+   ========================================================================== */
+.navbar {
+    position: sticky;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: var(--azul-oscuro);
+    box-shadow: var(--sombra);
+    z-index: 1000;
+}
+
+.nav-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 30px;
+    flex-wrap: wrap;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 22px;
+    font-weight: bold;
+    color: var(--blanco);
+}
+
+.logo-icon {
+    width: 40px;
+    height: auto;
+}
+
+.nav-links {
+    display: flex;
+    gap: 30px;
+}
+
+.nav-links a {
+    color: var(--blanco);
+    font-size: 16px;
+    font-weight: 500;
+    padding: 6px 2px;
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.nav-links a:hover {
+    color: var(--rojo);
+    border-bottom-color: var(--rojo);
+}
+
+.menu-toggle {
+    display: none;
+}
+
+.hamburger {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    cursor: pointer;
+}
+
+.hamburger span {
+    width: 26px;
+    height: 3px;
+    background-color: var(--blanco);
+    border-radius: 2px;
+}
+
+/* ==========================================================================
+   HERO
+   ========================================================================== */
+.hero {
+    background:
+        linear-gradient(135deg, rgba(13, 59, 102, 0.88) 0%, rgba(26, 107, 181, 0.82) 55%, rgba(74, 159, 224, 0.75) 100%),
+        url("https://futbolitochile.cl/wp-content/uploads/2016/03/5.jpg") center/cover no-repeat;
+    text-align: center;
+    padding: 140px 20px;
+    color: var(--blanco);
+}
+
+.hero-content h1 {
+    font-size: 58px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: var(--blanco);
+    margin-bottom: 16px;
+    text-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.hero-subtitle {
+    font-size: 22px;
+    color: var(--rojo);
+    font-weight: 500;
+    margin-bottom: 40px;
+}
+
+.hero-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+/* ==========================================================================
+   INSTALACIONES
+   ========================================================================== */
+.instalaciones {
+    padding: 90px 20px;
+    background-color: var(--gris-claro);
+}
+
+.cards-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+}
+
+.card {
+    background-color: var(--blanco);
+    border-radius: 14px;
+    padding: 40px 28px;
+    text-align: center;
+    box-shadow: var(--sombra);
+    border-top: 4px solid var(--rojo);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+}
+
+.card-icon {
+    font-size: 44px;
+    margin-bottom: 18px;
+}
+
+.card h3 {
+    color: var(--azul-oscuro);
+    font-size: 21px;
+    margin-bottom: 14px;
+}
+
+.card p {
+    font-size: 15px;
+    color: var(--gris-texto);
+}
+
+/* ==========================================================================
+   TARIFAS
+   ========================================================================== */
+.tarifas {
+    padding: 90px 20px;
+    background-color: var(--blanco);
+}
+
+.table-wrapper {
+    max-width: 850px;
+    margin: 0 auto;
+    overflow-x: auto;
+    border-radius: 12px;
+    box-shadow: var(--sombra);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 500px;
+}
+
+thead {
+    background-color: var(--azul-oscuro);
+}
+
+thead th {
+    color: var(--blanco);
+    padding: 18px 20px;
+    text-align: left;
+    font-size: 16px;
+}
+
+tbody tr {
+    border-bottom: 1px solid #e5e5e5;
+}
+
+tbody tr:nth-child(even) {
+    background-color: var(--gris-claro);
+}
+
+tbody tr:hover {
+    background-color: #fdeceb;
+}
+
+tbody td {
+    padding: 16px 20px;
+    font-size: 15px;
+}
+
+tbody td:not(:first-child) {
+    font-weight: 700;
+    color: var(--azul-primario);
+}
+
+/* ==========================================================================
+   RESERVA (CTA)
+   ========================================================================== */
+.reserva {
+    background-color: var(--azul-primario);
+    text-align: center;
+    padding: 70px 20px;
+    color: var(--blanco);
+}
+
+.reserva h2 {
+    font-size: 32px;
+    margin-bottom: 14px;
+}
+
+.reserva p {
+    font-size: 17px;
+    margin-bottom: 30px;
+    color: #dceafb;
+}
+
+/* ==========================================================================
+   QUIÉNES SOMOS
+   ========================================================================== */
+.nosotros {
+    padding: 90px 20px;
+    background-color: var(--gris-claro);
+}
+
+.nosotros-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 50px;
+    align-items: center;
+}
+
+.nosotros-imagen img {
+    border-radius: 14px;
+    box-shadow: var(--sombra);
+}
+
+.nosotros-texto h2 {
+    font-size: 34px;
+    color: var(--azul-oscuro);
+    margin-bottom: 20px;
+}
+
+.nosotros-texto h2::after {
+    content: "";
+    display: block;
+    width: 70px;
+    height: 4px;
+    background-color: var(--rojo);
+    margin-top: 12px;
+    border-radius: 4px;
+}
+
+.nosotros-texto p {
+    margin-bottom: 16px;
+    font-size: 16px;
+}
+
+/* ==========================================================================
+   FOOTER
+   ========================================================================== */
+.footer {
+    background-color: var(--azul-oscuro);
+    color: var(--blanco);
+    padding: 60px 20px 0;
+}
+
+.footer-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 40px;
+    padding-bottom: 40px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.footer-col h3 {
+    color: var(--rojo);
+    font-size: 19px;
+    margin-bottom: 18px;
+}
+
+.footer-col p {
+    font-size: 15px;
+    color: #d3e2f0;
+    margin-bottom: 8px;
+}
+
+.social-links {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.social-links a {
+    color: var(--blanco);
+    font-size: 15px;
+    transition: color 0.2s ease;
+}
+
+.social-links a:hover {
+    color: var(--rojo);
+}
+
+.footer-bottom {
+    max-width: 1100px;
+    margin: 0 auto;
+    text-align: center;
+    padding: 20px 0;
+    font-size: 14px;
+    color: #a9c1d8;
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+@media (max-width: 900px) {
+    .cards-container {
+        grid-template-columns: 1fr;
+    }
+
+    .nosotros-container {
+        grid-template-columns: 1fr;
+    }
+
+    .nosotros-imagen {
+        order: -1;
+    }
+
+    .footer-container {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+
+    .social-links {
+        align-items: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .hamburger {
+        display: flex;
+    }
+
+    .nav-links {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background-color: var(--azul-oscuro);
+        flex-direction: column;
+        align-items: center;
+        gap: 0;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+    }
+
+    .nav-links li {
+        width: 100%;
+        text-align: center;
+    }
+
+    .nav-links a {
+        display: block;
+        padding: 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .menu-toggle:checked ~ .nav-links {
+        max-height: 400px;
+    }
+
+    .hero-content h1 {
+        font-size: 38px;
+    }
+
+    .hero-subtitle {
+        font-size: 18px;
+    }
+
+    .hero {
+        padding: 100px 20px;
+    }
+
+    .section-header h2 {
+        font-size: 28px;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .btn {
+        width: 100%;
+        max-width: 280px;
+    }
+}

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Futbolito Chile</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/webp" href="assets/logo-1024x852.webp">
+</head>
+<body>
+
+    <!-- BARRA DE NAVEGACIÓN -->
+    <header class="navbar">
+        <nav class="nav-container">
+            <a href="#inicio" class="logo">
+                <img src="assets/logo-1024x852.webp" alt="Futbolito Chile" class="logo-icon">
+                <span>Futbolito Chile</span>
+            </a>
+
+            <input type="checkbox" id="menu-toggle" class="menu-toggle">
+            <label for="menu-toggle" class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </label>
+
+            <ul class="nav-links">
+                <li><a href="#inicio">Inicio</a></li>
+                <li><a href="#reserva">Reserva</a></li>
+                <li><a href="#tarifas">Tarifas</a></li>
+                <li><a href="#instalaciones">Instalaciones</a></li>
+                <li><a href="#nosotros">Quiénes Somos</a></li>
+                <li><a href="#contacto">Contacto</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- HERO -->
+    <section class="hero" id="inicio">
+        <div class="hero-content">
+            <h1>FUTBOLITO CHILE</h1>
+            <p class="hero-subtitle">Tu mejor opción en recreación</p>
+            <div class="hero-buttons">
+                <a href="#reserva" class="btn btn-primary">Reservar Ahora</a>
+                <a href="#tarifas" class="btn btn-secondary">Ver Tarifas</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- INSTALACIONES -->
+    <section class="instalaciones" id="instalaciones">
+        <div class="section-header">
+            <h2>Nuestras Instalaciones</h2>
+            <p>Todo lo que necesitas para disfrutar del mejor fútbol recreativo</p>
+        </div>
+        <div class="cards-container">
+            <div class="card">
+                <div class="card-icon">🏟️</div>
+                <h3>Canchas de Pasto Sintético</h3>
+                <p>Canchas de última generación con césped sintético de alta calidad, iluminación LED y medidas oficiales para fútbol 5 y 7.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon">🚿</div>
+                <h3>Camarines y Duchas</h3>
+                <p>Amplios camarines equipados con duchas de agua caliente, casilleros seguros y todas las comodidades para tu equipo.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon">🅿️</div>
+                <h3>Estacionamiento y Quincho</h3>
+                <p>Estacionamiento gratuito para todos nuestros clientes y zona de quincho para celebrar después del partido.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- TARIFAS Y HORARIOS -->
+    <section class="tarifas" id="tarifas">
+        <div class="section-header">
+            <h2>Tarifas y Horarios</h2>
+            <p>Precios por hora de cancha</p>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Horario</th>
+                        <th>Lunes a Viernes</th>
+                        <th>Fines de Semana y Feriados</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>09:00 - 14:00 hrs</td>
+                        <td>$18.000</td>
+                        <td>$22.000</td>
+                    </tr>
+                    <tr>
+                        <td>14:00 - 19:00 hrs</td>
+                        <td>$22.000</td>
+                        <td>$26.000</td>
+                    </tr>
+                    <tr>
+                        <td>19:00 - 23:00 hrs</td>
+                        <td>$28.000</td>
+                        <td>$30.000</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- RESERVA -->
+    <section class="reserva" id="reserva">
+        <div class="reserva-content">
+            <h2>¿Listo para jugar?</h2>
+            <p>Reserva tu cancha ahora mismo y asegura tu horario favorito.</p>
+            <a href="#contacto" class="btn btn-primary">Reservar Ahora</a>
+        </div>
+    </section>
+
+    <!-- QUIÉNES SOMOS -->
+    <section class="nosotros" id="nosotros">
+        <div class="nosotros-container">
+            <div class="nosotros-imagen">
+                <img src="https://placehold.co/500x400/0d3b66/ffffff?text=Futbolito+Chile" alt="Instalaciones de Futbolito Chile">
+            </div>
+            <div class="nosotros-texto">
+                <h2>Quiénes Somos</h2>
+                <p>
+                    Futbolito Chile nace con la pasión de entregar a la comunidad espacios de calidad
+                    para practicar el deporte que más nos une: el fútbol. Contamos con canchas de
+                    primer nivel, atención personalizada y un ambiente familiar pensado para que
+                    disfrutes cada partido junto a tus amigos, compañeros de trabajo o familia.
+                </p>
+                <p>
+                    Nuestro compromiso es ofrecer siempre las mejores instalaciones, horarios
+                    flexibles y precios accesibles para todos.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer" id="contacto">
+        <div class="footer-container">
+            <div class="footer-col">
+                <h3>Futbolito Chile</h3>
+                <p>📍 Av. Los Deportistas 1234, Santiago, Chile</p>
+                <p>📞 +56 9 1234 5678</p>
+                <p>✉️ contacto@futbolitochile.cl</p>
+            </div>
+            <div class="footer-col">
+                <h3>Síguenos</h3>
+                <div class="social-links">
+                    <a href="#" aria-label="Facebook">Facebook</a>
+                    <a href="#" aria-label="Instagram">Instagram</a>
+                    <a href="#" aria-label="WhatsApp">WhatsApp</a>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h3>Horario de Atención</h3>
+                <p>Lunes a Domingo</p>
+                <p>09:00 - 23:00 hrs</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Futbolito Chile. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+</body>
+</html>
