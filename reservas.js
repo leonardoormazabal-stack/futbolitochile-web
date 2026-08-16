@@ -4,7 +4,7 @@
     var sb = window.sbClient;
 
     var SPORT_LABELS = { futbolito: 'Futbolito', padel: 'Pádel' };
-    var PANEL_ORDER = ['deporte', 'fecha', 'horario', 'datos', 'pago'];
+    var PANEL_ORDER = ['deporte', 'fecha', 'horario', 'cancha', 'datos', 'pago'];
 
     function formatCLP(n) {
         return '$' + n.toLocaleString('es-CL');
@@ -15,7 +15,7 @@
        ====================================================================== */
     var state = {
         sport: null,
-        canchaId: null,      // se define recién al pagar (asignación automática)
+        canchaId: null,      // cancha elegida por el jugador en el paso "Elige tu cancha"
         canchaNombre: null,
         viewMonth: startOfMonth(new Date()),
         selectedDate: null, // 'YYYY-MM-DD'
@@ -147,6 +147,7 @@
         prevMonth: document.getElementById('prevMonth'),
         nextMonth: document.getElementById('nextMonth'),
         horarioGrid: document.getElementById('horarioGrid'),
+        canchaGrid: document.getElementById('canchaGrid'),
         reservaForm: document.getElementById('reservaForm'),
         paymentStatus: document.getElementById('paymentStatus'),
         paymentConfirmation: document.getElementById('paymentConfirmation'),
@@ -156,10 +157,12 @@
         summarySport: document.getElementById('summarySport'),
         summaryFecha: document.getElementById('summaryFecha'),
         summaryHora: document.getElementById('summaryHora'),
+        summaryCancha: document.getElementById('summaryCancha'),
         summaryTotal: document.getElementById('summaryTotal'),
         resumenDeporte: document.getElementById('resumenDeporte'),
         resumenFecha: document.getElementById('resumenFecha'),
         resumenHorario: document.getElementById('resumenHorario'),
+        resumenCancha: document.getElementById('resumenCancha'),
         resumenDatos: document.getElementById('resumenDatos'),
         resumenPago: document.getElementById('resumenPago')
     };
@@ -204,6 +207,7 @@
         }
         if (idx < PANEL_ORDER.indexOf('fecha')) { el.resumenFecha.textContent = ''; state.selectedDate = null; }
         if (idx < PANEL_ORDER.indexOf('horario')) { el.resumenHorario.textContent = ''; state.selectedHour = null; state.precio = 0; state.abono = 0; }
+        if (idx < PANEL_ORDER.indexOf('cancha')) { el.resumenCancha.textContent = ''; state.canchaId = null; state.canchaNombre = null; }
         if (idx < PANEL_ORDER.indexOf('datos')) { el.resumenDatos.textContent = ''; }
         if (idx < PANEL_ORDER.indexOf('pago')) {
             el.resumenPago.textContent = '';
@@ -431,8 +435,9 @@
                         el.resumenHorario.textContent = String(evtHora).padStart(2, '0') + ':00';
 
                         resetDownstreamFrom('horario');
-                        unlockPanel('datos');
-                        openPanel('datos');
+                        unlockPanel('cancha');
+                        openPanel('cancha');
+                        cargarCanchasDisponiblesYRenderizar();
 
                         updateSummary();
                     };
@@ -444,6 +449,69 @@
     }
 
     /* ======================================================================
+       PANEL 4: CANCHA (disponibilidad real desde Supabase)
+       ====================================================================== */
+    function cargarCanchasDisponiblesYRenderizar() {
+        el.canchaGrid.innerHTML = '<p class="wizard-loading">Cargando canchas...</p>';
+
+        var canchasDelSport = state.canchas.filter(function (c) { return c.deporte === state.sport; });
+        var idsCanchas = canchasDelSport.map(function (c) { return c.id; });
+
+        sb.from('disponibilidad')
+            .select('cancha_id')
+            .eq('fecha', state.selectedDate)
+            .eq('hora', state.selectedHour)
+            .in('cancha_id', idsCanchas)
+            .then(function (result) {
+                if (result.error) {
+                    el.canchaGrid.innerHTML = '<p class="wizard-error">No pudimos cargar las canchas. Intenta de nuevo.</p>';
+                    return;
+                }
+                var ocupadas = (result.data || []).map(function (r) { return r.cancha_id; });
+                renderCanchas(canchasDelSport, ocupadas);
+            });
+    }
+
+    function renderCanchas(canchasDelSport, ocupadas) {
+        el.canchaGrid.innerHTML = '';
+
+        if (!canchasDelSport.length) {
+            el.canchaGrid.innerHTML = '<p class="wizard-error">No hay canchas configuradas para este deporte.</p>';
+            return;
+        }
+
+        canchasDelSport.forEach(function (c) {
+            var ocupada = ocupadas.indexOf(c.id) !== -1;
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'cancha-card';
+            btn.innerHTML = '<span class="cancha-nombre">' + c.nombre + '</span>' +
+                (c.descripcion ? '<span class="cancha-desc">' + c.descripcion + '</span>' : '');
+
+            if (ocupada) {
+                btn.disabled = true;
+            } else {
+                if (c.id === state.canchaId) btn.classList.add('seleccionada');
+                btn.addEventListener('click', function () {
+                    state.canchaId = c.id;
+                    state.canchaNombre = c.nombre;
+
+                    completePanel('cancha');
+                    el.resumenCancha.textContent = c.nombre;
+
+                    resetDownstreamFrom('cancha');
+                    unlockPanel('datos');
+                    openPanel('datos');
+
+                    updateSummary();
+                });
+            }
+
+            el.canchaGrid.appendChild(btn);
+        });
+    }
+
+    /* ======================================================================
        RESUMEN
        ====================================================================== */
     function updateSummary() {
@@ -452,11 +520,12 @@
         el.summaryHora.textContent = (state.selectedHour !== null && state.selectedHour !== undefined)
             ? String(state.selectedHour).padStart(2, '0') + ':00 - ' + String(state.selectedHour + 1).padStart(2, '0') + ':00'
             : '—';
+        el.summaryCancha.textContent = state.canchaNombre || '—';
         el.summaryTotal.textContent = formatCLP(state.precio || 0);
     }
 
     /* ======================================================================
-       PANEL 4: FORMULARIO
+       PANEL 5: FORMULARIO
        ====================================================================== */
     var campos = {
         nombre: document.getElementById('nombre'),
@@ -552,7 +621,7 @@
     });
 
     /* ======================================================================
-       PANEL 5: TIPO DE PAGO + MÉTODO DE PAGO
+       PANEL 6: TIPO DE PAGO + MÉTODO DE PAGO
        ====================================================================== */
     document.querySelectorAll('.tipo-pago-card').forEach(function (card) {
         card.addEventListener('click', function () {
@@ -592,104 +661,63 @@
         });
     });
 
-    // Busca, entre las canchas del deporte elegido, una que esté libre en la
-    // fecha/hora seleccionadas. Devuelve el objeto {id, nombre} o null si
-    // ya no queda ninguna disponible.
-    function obtenerCanchaLibre() {
-        var idsCanchas = canchasDelDeporte(state.sport);
-
-        return sb.from('disponibilidad')
-            .select('cancha_id')
-            .eq('fecha', state.selectedDate)
-            .eq('hora', state.selectedHour)
-            .in('cancha_id', idsCanchas)
-            .then(function (result) {
-                if (result.error) return null;
-
-                var ocupadas = (result.data || []).map(function (r) { return r.cancha_id; });
-                var libres = idsCanchas.filter(function (id) { return ocupadas.indexOf(id) === -1; });
-                if (!libres.length) return null;
-
-                var canchaId = libres[0];
-                var cancha = state.canchas.find(function (c) { return c.id === canchaId; });
-                return cancha || { id: canchaId, nombre: canchaId };
-            });
-    }
-
-    function mostrarHorarioOcupado() {
+    function mostrarCanchaOcupada() {
         el.paymentStatus.hidden = false;
         el.paymentStatus.className = 'payment-status error';
-        el.paymentStatus.textContent = 'Justo se ocuparon todas las canchas de ese horario. Vuelve a elegir uno disponible.';
+        el.paymentStatus.textContent = 'Justo se ocupó esa cancha. Elige otra disponible.';
         paymentCards.forEach(function (c) { c.disabled = false; c.classList.remove('selected'); });
 
-        resetDownstreamFrom('fecha');
-        unlockPanel('horario');
-        openPanel('horario');
+        resetDownstreamFrom('horario');
+        unlockPanel('cancha');
+        openPanel('cancha');
         updateSummary();
-        cargarDisponibilidadYRenderizar();
+        cargarCanchasDisponiblesYRenderizar();
     }
 
-    function crearReserva(metodo, intentosRestantes) {
-        if (intentosRestantes === undefined) intentosRestantes = state.totalCanchasDeporte;
+    function crearReserva(metodo) {
+        var reserva = {
+            user_id: state.userId,
+            cancha_id: state.canchaId,
+            fecha: state.selectedDate,
+            hora: state.selectedHour,
+            precio: state.precio,
+            monto_pagado: state.montoAPagar,
+            tipo_pago: state.tipoPago,
+            nombre_contacto: campos.nombre.value.trim(),
+            documento_contacto: campos.rut.value.trim(),
+            telefono_contacto: campos.telefono.value.trim(),
+            email_contacto: campos.email.value.trim(),
+            metodo_pago: metodo
+        };
 
-        obtenerCanchaLibre().then(function (cancha) {
-            if (!cancha) {
-                mostrarHorarioOcupado();
-                return;
-            }
-
-            var reserva = {
-                user_id: state.userId,
-                cancha_id: cancha.id,
-                fecha: state.selectedDate,
-                hora: state.selectedHour,
-                precio: state.precio,
-                monto_pagado: state.montoAPagar,
-                tipo_pago: state.tipoPago,
-                nombre_contacto: campos.nombre.value.trim(),
-                documento_contacto: campos.rut.value.trim(),
-                telefono_contacto: campos.telefono.value.trim(),
-                email_contacto: campos.email.value.trim(),
-                metodo_pago: metodo
-            };
-
-            sb.from('reservas').insert([reserva]).then(function (result) {
-                if (result.error) {
-                    if (result.error.code === '23505' && intentosRestantes > 1) {
-                        // Alguien tomó esa cancha justo antes que nosotros: probamos con otra.
-                        crearReserva(metodo, intentosRestantes - 1);
-                        return;
-                    }
-                    if (result.error.code === '23505') {
-                        mostrarHorarioOcupado();
-                        return;
-                    }
-
-                    el.paymentStatus.hidden = false;
-                    el.paymentStatus.className = 'payment-status error';
-                    el.paymentStatus.textContent = 'No pudimos confirmar tu reserva. Intenta de nuevo.';
-                    paymentCards.forEach(function (c) { c.disabled = false; });
+        sb.from('reservas').insert([reserva]).then(function (result) {
+            if (result.error) {
+                if (result.error.code === '23505') {
+                    mostrarCanchaOcupada();
                     return;
                 }
 
-                state.canchaId = cancha.id;
-                state.canchaNombre = cancha.nombre;
+                el.paymentStatus.hidden = false;
+                el.paymentStatus.className = 'payment-status error';
+                el.paymentStatus.textContent = 'No pudimos confirmar tu reserva. Intenta de nuevo.';
+                paymentCards.forEach(function (c) { c.disabled = false; });
+                return;
+            }
 
-                completePanel('pago');
+            completePanel('pago');
 
-                var saldoPendiente = state.precio - state.montoAPagar;
+            var saldoPendiente = state.precio - state.montoAPagar;
 
-                el.paymentStatus.hidden = true;
-                el.paymentConfirmation.hidden = false;
-                el.paymentConfirmation.innerHTML =
-                    '<h3>¡Reserva confirmada!</h3>' +
-                    '<p>' + SPORT_LABELS[state.sport] + ' — ' + cancha.nombre + '</p>' +
-                    '<p>' + formatFechaLarga(state.selectedDate) + ', ' + String(state.selectedHour).padStart(2, '0') + ':00 hrs</p>' +
-                    '<p>' + (state.tipoPago === 'abono'
-                        ? 'Abono pagado: ' + formatCLP(state.montoAPagar) + ' vía ' + metodo + '. Saldo a pagar en el recinto: ' + formatCLP(saldoPendiente) + '.'
-                        : 'Total pagado: ' + formatCLP(state.montoAPagar) + ' vía ' + metodo + '.') + '</p>' +
-                    '<p>Te enviamos la confirmación a ' + campos.email.value.trim() + '.</p>';
-            });
+            el.paymentStatus.hidden = true;
+            el.paymentConfirmation.hidden = false;
+            el.paymentConfirmation.innerHTML =
+                '<h3>¡Reserva confirmada!</h3>' +
+                '<p>' + SPORT_LABELS[state.sport] + ' — ' + state.canchaNombre + '</p>' +
+                '<p>' + formatFechaLarga(state.selectedDate) + ', ' + String(state.selectedHour).padStart(2, '0') + ':00 hrs</p>' +
+                '<p>' + (state.tipoPago === 'abono'
+                    ? 'Abono pagado: ' + formatCLP(state.montoAPagar) + ' vía ' + metodo + '. Saldo a pagar en el recinto: ' + formatCLP(saldoPendiente) + '.'
+                    : 'Total pagado: ' + formatCLP(state.montoAPagar) + ' vía ' + metodo + '.') + '</p>' +
+                '<p>Te enviamos la confirmación a ' + campos.email.value.trim() + '.</p>';
         });
     }
 

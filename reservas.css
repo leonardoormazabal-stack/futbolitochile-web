@@ -364,6 +364,55 @@
     cursor: not-allowed;
 }
 
+/* PASO — SELECCIÓN DE CANCHA */
+.cancha-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 14px;
+}
+
+.cancha-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 18px 16px;
+    border: 2px solid var(--gris-claro);
+    border-radius: 12px;
+    background-color: var(--gris-claro);
+    cursor: pointer;
+    font-family: inherit;
+    text-align: left;
+    transition: border-color 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+}
+
+.cancha-card:hover:not(:disabled) {
+    transform: translateY(-3px);
+    border-color: var(--azul-primario);
+}
+
+.cancha-card.seleccionada {
+    border-color: var(--rojo);
+    background-color: #fdeceb;
+}
+
+.cancha-card:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.cancha-nombre {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--azul-oscuro);
+}
+
+.cancha-desc {
+    font-size: 12px;
+    color: var(--gris-texto);
+}
+
 /* PASO 3 — FORMULARIO */
 #reservaForm {
     display: grid;

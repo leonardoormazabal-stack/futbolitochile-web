@@ -72,7 +72,7 @@
                                     <span class="sport-desc">2 canchas disponibles</span>
                                 </button>
                             </div>
-                            <p class="wizard-hint">Asignamos automáticamente cualquier cancha disponible del deporte que elijas a la hora que reserves.</p>
+                            <p class="wizard-hint">Luego de elegir la fecha y el horario, podrás escoger la cancha disponible que prefieras.</p>
                             <p class="wizard-error" id="catalogoError" hidden></p>
                         </div>
                     </section>
@@ -120,11 +120,25 @@
                         </div>
                     </section>
 
-                    <!-- PANEL 4: DATOS -->
+                    <!-- PANEL 4: CANCHA -->
+                    <section class="accordion-panel locked" id="panel-cancha" data-panel="cancha">
+                        <button type="button" class="accordion-header" data-toggle="cancha" disabled>
+                            <span class="accordion-header-left">
+                                <span class="accordion-number">4</span>
+                                <span class="accordion-title">Elige tu cancha</span>
+                            </span>
+                            <span class="accordion-summary" id="resumenCancha"></span>
+                        </button>
+                        <div class="accordion-body">
+                            <div class="cancha-grid" id="canchaGrid"></div>
+                        </div>
+                    </section>
+
+                    <!-- PANEL 5: DATOS -->
                     <section class="accordion-panel locked" id="panel-datos" data-panel="datos">
                         <button type="button" class="accordion-header" data-toggle="datos" disabled>
                             <span class="accordion-header-left">
-                                <span class="accordion-number">4</span>
+                                <span class="accordion-number">5</span>
                                 <span class="accordion-title">Tus datos</span>
                             </span>
                             <span class="accordion-summary" id="resumenDatos"></span>
@@ -156,11 +170,11 @@
                         </div>
                     </section>
 
-                    <!-- PANEL 5: PAGO -->
+                    <!-- PANEL 6: PAGO -->
                     <section class="accordion-panel locked" id="panel-pago" data-panel="pago">
                         <button type="button" class="accordion-header" data-toggle="pago" disabled>
                             <span class="accordion-header-left">
-                                <span class="accordion-number">5</span>
+                                <span class="accordion-number">6</span>
                                 <span class="accordion-title">Pago</span>
                             </span>
                             <span class="accordion-summary" id="resumenPago"></span>
@@ -223,6 +237,10 @@
                     <div class="summary-row">
                         <dt>Horario</dt>
                         <dd id="summaryHora">—</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt>Cancha</dt>
+                        <dd id="summaryCancha">—</dd>
                     </div>
                     <div class="summary-row total">
                         <dt>Total</dt>
