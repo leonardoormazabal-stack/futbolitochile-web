@@ -1,52 +1,9 @@
 (function () {
     'use strict';
 
-    /* ======================================================================
-       DATOS: CANCHAS Y PRECIOS
-       ====================================================================== */
-    var CANCHAS = {
-        futbolito: [
-            { id: 'F1', nombre: 'Cancha F1', desc: 'Techada, pasto sintético de última generación.' },
-            { id: 'F2', nombre: 'Cancha F2', desc: 'Al aire libre, con iluminación LED nocturna.' },
-            { id: 'F3', nombre: 'Cancha F3', desc: 'Techada, ideal para partidos nocturnos.' },
-            { id: 'F4', nombre: 'Cancha F4', desc: 'Al aire libre, la más amplia del recinto.' },
-            { id: 'F5', nombre: 'Cancha F5', desc: 'Techada, con graderías para público.' },
-            { id: 'F6', nombre: 'Cancha F6', desc: 'Al aire libre, cercana al kiosco y camarines.' }
-        ],
-        padel: [
-            { id: 'P1', nombre: 'Cancha P1', desc: 'Panorámica, con paredes de vidrio templado.' },
-            { id: 'P2', nombre: 'Cancha P2', desc: 'Techada, disponible de día y de noche.' }
-        ]
-    };
+    var sb = window.sbClient;
 
     var SPORT_LABELS = { futbolito: 'Futbolito', padel: 'Pádel' };
-
-    // Precio por hora según deporte y bloque horario (pádel más caro que futbolito)
-    function getPrecioPorHora(sport, horaInicio) {
-        var tablas = {
-            futbolito: [
-                { desde: 12, hasta: 18, precio: 27000 },
-                { desde: 18, hasta: 20, precio: 32000 },
-                { desde: 20, hasta: 23, precio: 37000 }
-            ],
-            padel: [
-                { desde: 12, hasta: 18, precio: 35000 },
-                { desde: 18, hasta: 20, precio: 40000 },
-                { desde: 20, hasta: 23, precio: 45000 }
-            ]
-        };
-        var tabla = tablas[sport] || tablas.futbolito;
-        for (var i = 0; i < tabla.length; i++) {
-            if (horaInicio >= tabla[i].desde && horaInicio < tabla[i].hasta) {
-                return tabla[i].precio;
-            }
-        }
-        return tabla[0].precio;
-    }
-
-    function precioMinimo(sport) {
-        return sport === 'padel' ? 35000 : 27000;
-    }
 
     function formatCLP(n) {
         return '$' + n.toLocaleString('es-CL');
@@ -62,11 +19,14 @@
         canchaNombre: null,
         viewMonth: startOfMonth(new Date()),
         selectedDate: null, // 'YYYY-MM-DD'
-        selectedHour: null, // number 8-22
-        precio: 0
+        selectedHour: null, // number 12-22
+        precio: 0,
+        canchas: [],        // desde Supabase: {id, nombre, deporte, descripcion}
+        tarifas: [],         // desde Supabase: {deporte, hora_desde, hora_hasta, precio}
+        ocupados: [],        // horas ocupadas para la cancha/fecha seleccionadas
+        catalogoListo: false,
+        userId: null
     };
-
-    var STORAGE_KEY = 'futbolitochile_reservas';
 
     /* ======================================================================
        UTILIDADES DE FECHA
@@ -99,44 +59,23 @@
     }
 
     /* ======================================================================
-       LOCALSTORAGE
+       PRECIOS (a partir de las tarifas cargadas desde Supabase)
        ====================================================================== */
-    function getReservas() {
-        try {
-            var raw = localStorage.getItem(STORAGE_KEY);
-            return raw ? JSON.parse(raw) : [];
-        } catch (e) {
-            return [];
+    function getPrecioPorHora(sport, horaInicio) {
+        var tabla = state.tarifas.filter(function (t) { return t.deporte === sport; });
+        for (var i = 0; i < tabla.length; i++) {
+            if (horaInicio >= tabla[i].hora_desde && horaInicio < tabla[i].hora_hasta) {
+                return tabla[i].precio;
+            }
         }
+        return tabla.length ? tabla[0].precio : 0;
     }
 
-    function guardarReserva(reserva) {
-        var reservas = getReservas();
-        reservas.push(reserva);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(reservas));
-    }
-
-    /* ======================================================================
-       DISPONIBILIDAD (determinística + reservas guardadas)
-       ====================================================================== */
-    function simpleHash(str) {
-        var hash = 5381;
-        for (var i = 0; i < str.length; i++) {
-            hash = ((hash << 5) + hash) + str.charCodeAt(i);
-            hash |= 0;
-        }
-        return Math.abs(hash);
-    }
-
-    function slotOcupado(canchaId, fechaISO, hora) {
-        var reservas = getReservas();
-        var yaReservado = reservas.some(function (r) {
-            return r.canchaId === canchaId && r.fecha === fechaISO && r.hora === hora;
-        });
-        if (yaReservado) return true;
-
-        var hash = simpleHash(canchaId + '-' + fechaISO + '-' + hora);
-        return (hash % 100) < 25;
+    function precioMinimo(sport) {
+        var precios = state.tarifas
+            .filter(function (t) { return t.deporte === sport; })
+            .map(function (t) { return t.precio; });
+        return precios.length ? Math.min.apply(null, precios) : 0;
     }
 
     /* ======================================================================
@@ -189,7 +128,6 @@
        REFERENCIAS AL DOM
        ====================================================================== */
     var el = {
-        stepsIndicator: document.getElementById('stepsIndicator'),
         canchaSelector: document.getElementById('canchaSelector'),
         canchaGrid: document.getElementById('canchaGrid'),
         calendarMonthLabel: document.getElementById('calendarMonthLabel'),
@@ -211,11 +149,49 @@
     };
 
     /* ======================================================================
+       CARGA DE CATÁLOGO (canchas + tarifas) DESDE SUPABASE
+       ====================================================================== */
+    function cargarCatalogo() {
+        return Promise.all([
+            sb.from('canchas').select('id,nombre,deporte,descripcion'),
+            sb.from('tarifas').select('deporte,hora_desde,hora_hasta,precio')
+        ]).then(function (resultados) {
+            var canchasRes = resultados[0];
+            var tarifasRes = resultados[1];
+
+            if (canchasRes.error || tarifasRes.error) {
+                el.canchaSelector.hidden = false;
+                el.canchaGrid.innerHTML = '<p class="wizard-error">No pudimos cargar las canchas. Intenta recargar la página.</p>';
+                return;
+            }
+
+            state.canchas = canchasRes.data || [];
+            state.tarifas = tarifasRes.data || [];
+            state.catalogoListo = true;
+
+            document.querySelectorAll('.sport-card').forEach(function (card) {
+                card.disabled = false;
+            });
+        });
+    }
+
+    function obtenerSesionActual() {
+        return sb.auth.getSession().then(function (result) {
+            var session = result.data.session;
+            state.userId = session ? session.user.id : null;
+        });
+    }
+
+    /* ======================================================================
        PASO 1: DEPORTE Y CANCHA
        ====================================================================== */
     var sportCards = document.querySelectorAll('.sport-card');
     sportCards.forEach(function (card) {
+        card.disabled = true; // se habilitan cuando termina de cargar el catálogo
+
         card.addEventListener('click', function () {
+            if (!state.catalogoListo) return;
+
             sportCards.forEach(function (c) { c.classList.remove('selected'); });
             card.classList.add('selected');
 
@@ -232,7 +208,7 @@
 
     function renderCanchas() {
         el.canchaGrid.innerHTML = '';
-        var lista = CANCHAS[state.sport] || [];
+        var lista = state.canchas.filter(function (c) { return c.deporte === state.sport; });
         lista.forEach(function (cancha) {
             var btn = document.createElement('button');
             btn.type = 'button';
@@ -240,7 +216,7 @@
             btn.setAttribute('data-cancha', cancha.id);
             btn.innerHTML =
                 '<span class="cancha-nombre">' + cancha.nombre + '</span>' +
-                '<span class="cancha-desc">' + cancha.desc + '</span>' +
+                '<span class="cancha-desc">' + cancha.descripcion + '</span>' +
                 '<span class="cancha-precio">Desde ' + formatCLP(precioMinimo(state.sport)) + '/hora</span>';
 
             btn.addEventListener('click', function () {
@@ -298,17 +274,17 @@
             if (isBeforeToday(date)) {
                 btn.disabled = true;
             } else {
-                btn.addEventListener('click', function (evtDate, evtIso) {
+                btn.addEventListener('click', function (evtIso) {
                     return function () {
                         state.selectedDate = evtIso;
                         state.selectedHour = null;
                         renderCalendario();
-                        renderHorarios();
                         el.horarioSelector.hidden = false;
+                        cargarDisponibilidadYRenderizar();
                         updateSummary();
                         evaluateNextButton();
                     };
-                }(date, iso));
+                }(iso));
             }
 
             el.calendarGrid.appendChild(btn);
@@ -331,14 +307,30 @@
     });
 
     /* ======================================================================
-       PASO 2: HORARIOS
+       PASO 2: HORARIOS (disponibilidad real desde Supabase)
        ====================================================================== */
+    function cargarDisponibilidadYRenderizar() {
+        el.horarioGrid.innerHTML = '<p class="wizard-loading">Cargando horarios...</p>';
+
+        sb.from('disponibilidad')
+            .select('hora')
+            .eq('cancha_id', state.canchaId)
+            .eq('fecha', state.selectedDate)
+            .then(function (result) {
+                if (result.error) {
+                    el.horarioGrid.innerHTML = '<p class="wizard-error">No pudimos cargar los horarios. Intenta de nuevo.</p>';
+                    return;
+                }
+                state.ocupados = (result.data || []).map(function (r) { return r.hora; });
+                renderHorarios();
+            });
+    }
+
     function renderHorarios() {
         el.horarioGrid.innerHTML = '';
-        if (!state.selectedDate || !state.canchaId) return;
 
         for (var hora = 12; hora < 23; hora++) {
-            var ocupado = slotOcupado(state.canchaId, state.selectedDate, hora);
+            var ocupado = state.ocupados.indexOf(hora) !== -1;
             var btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'horario-slot';
@@ -444,55 +436,77 @@
     }
 
     /* ======================================================================
-       PASO 4: PAGO
+       PASO 4: PAGO Y GUARDADO DE LA RESERVA EN SUPABASE
        ====================================================================== */
     var paymentCards = document.querySelectorAll('.payment-card');
     paymentCards.forEach(function (card) {
         card.addEventListener('click', function () {
-            if (card.classList.contains('procesado')) return;
+            var metodo = card.getAttribute('data-method');
 
             paymentCards.forEach(function (c) { c.classList.remove('selected'); });
             card.classList.add('selected');
-
-            var metodo = card.getAttribute('data-method');
-
-            el.paymentStatus.hidden = false;
-            el.paymentStatus.textContent = 'Redirigiendo al medio de pago... (' + metodo + ')';
-
             paymentCards.forEach(function (c) { c.disabled = true; });
 
+            el.paymentStatus.hidden = false;
+            el.paymentStatus.className = 'payment-status';
+            el.paymentStatus.textContent = 'Redirigiendo al medio de pago... (' + metodo + ')';
+
             setTimeout(function () {
-                var reserva = {
-                    id: 'R-' + Date.now(),
-                    sport: state.sport,
-                    canchaId: state.canchaId,
-                    canchaNombre: state.canchaNombre,
-                    fecha: state.selectedDate,
-                    hora: state.selectedHour,
-                    precio: state.precio,
-                    nombre: campos.nombre.value.trim(),
-                    rut: campos.rut.value.trim(),
-                    telefono: campos.telefono.value.trim(),
-                    email: campos.email.value.trim(),
-                    metodoPago: metodo,
-                    creadaEn: new Date().toISOString()
-                };
-                guardarReserva(reserva);
-
-                el.paymentStatus.hidden = true;
-                el.paymentConfirmation.hidden = false;
-                el.paymentConfirmation.innerHTML =
-                    '<h3>¡Reserva confirmada!</h3>' +
-                    '<p>' + SPORT_LABELS[state.sport] + ' — ' + state.canchaNombre + '</p>' +
-                    '<p>' + formatFechaLarga(state.selectedDate) + ', ' + String(state.selectedHour).padStart(2, '0') + ':00 hrs</p>' +
-                    '<p>Total pagado: ' + formatCLP(state.precio) + ' vía ' + metodo + '</p>' +
-                    '<p>Te enviamos la confirmación a ' + campos.email.value.trim() + '.</p>';
-
-                el.btnBack.hidden = true;
-                el.btnNext.hidden = true;
+                crearReserva(metodo);
             }, 1600);
-        }, { once: false });
+        });
     });
+
+    function crearReserva(metodo) {
+        var reserva = {
+            user_id: state.userId,
+            cancha_id: state.canchaId,
+            fecha: state.selectedDate,
+            hora: state.selectedHour,
+            precio: state.precio,
+            nombre_contacto: campos.nombre.value.trim(),
+            documento_contacto: campos.rut.value.trim(),
+            telefono_contacto: campos.telefono.value.trim(),
+            email_contacto: campos.email.value.trim(),
+            metodo_pago: metodo
+        };
+
+        sb.from('reservas').insert([reserva]).then(function (result) {
+            if (result.error) {
+                if (result.error.code === '23505') {
+                    // Alguien más reservó ese horario mientras completabas el formulario.
+                    el.paymentStatus.hidden = false;
+                    el.paymentStatus.className = 'payment-status error';
+                    el.paymentStatus.textContent = 'Justo se ocupó ese horario. Vuelve a elegir uno disponible.';
+                    paymentCards.forEach(function (c) { c.disabled = false; c.classList.remove('selected'); });
+
+                    state.selectedHour = null;
+                    state.precio = 0;
+                    updateSummary();
+                    goToStep(2);
+                    cargarDisponibilidadYRenderizar();
+                    return;
+                }
+
+                el.paymentStatus.className = 'payment-status error';
+                el.paymentStatus.textContent = 'No pudimos confirmar tu reserva. Intenta de nuevo.';
+                paymentCards.forEach(function (c) { c.disabled = false; });
+                return;
+            }
+
+            el.paymentStatus.hidden = true;
+            el.paymentConfirmation.hidden = false;
+            el.paymentConfirmation.innerHTML =
+                '<h3>¡Reserva confirmada!</h3>' +
+                '<p>' + SPORT_LABELS[state.sport] + ' — ' + state.canchaNombre + '</p>' +
+                '<p>' + formatFechaLarga(state.selectedDate) + ', ' + String(state.selectedHour).padStart(2, '0') + ':00 hrs</p>' +
+                '<p>Total pagado: ' + formatCLP(state.precio) + ' vía ' + metodo + '</p>' +
+                '<p>Te enviamos la confirmación a ' + campos.email.value.trim() + '.</p>';
+
+            el.btnBack.hidden = true;
+            el.btnNext.hidden = true;
+        });
+    }
 
     /* ======================================================================
        NAVEGACIÓN DEL WIZARD
@@ -563,4 +577,6 @@
     renderCalendario();
     updateSummary();
     evaluateNextButton();
+    cargarCatalogo();
+    obtenerSesionActual();
 })();

@@ -159,6 +159,12 @@
     transform: translateY(-4px);
 }
 
+.sport-card:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
 .sport-card.selected {
     border-color: var(--rojo);
     background-color: #fdeceb;
@@ -476,6 +482,28 @@
     color: var(--azul-oscuro);
     font-weight: 600;
     text-align: center;
+}
+
+.payment-status.error {
+    background-color: #fdeceb;
+    color: var(--rojo-oscuro);
+}
+
+.wizard-loading,
+.wizard-error {
+    grid-column: 1 / -1;
+    padding: 20px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.wizard-loading {
+    color: var(--gris-texto);
+}
+
+.wizard-error {
+    color: var(--rojo-oscuro);
+    font-weight: 600;
 }
 
 .payment-confirmation {
