@@ -567,6 +567,26 @@ ul {
     margin-bottom: 8px;
 }
 
+.footer-map-link {
+    display: block;
+    margin-top: 12px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    transition: border-color 0.2s ease, opacity 0.2s ease;
+}
+
+.footer-map-link:hover {
+    border-color: var(--rojo);
+    opacity: 0.9;
+}
+
+.footer-map-link img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
 .social-links {
     display: flex;
     flex-direction: column;

@@ -53,6 +53,7 @@
                 '<td>' + (DEPORTE_LABELS[t.deporte] || t.deporte) + '</td>' +
                 '<td>' + String(t.hora_desde).padStart(2, '0') + ':00 - ' + String(t.hora_hasta).padStart(2, '0') + ':00 hrs</td>' +
                 '<td>' + formatCLP(t.precio) + '</td>' +
+                '<td>' + formatCLP(t.abono) + '</td>' +
                 '</tr>';
         }).join('');
     }
@@ -78,7 +79,7 @@
     Promise.all([
         sb.from('site_content').select('key,value'),
         sb.from('instalaciones_cards').select('id,titulo,descripcion,imagen_url').order('orden', { ascending: true }),
-        sb.from('tarifas').select('deporte,hora_desde,hora_hasta,precio').order('deporte', { ascending: true }).order('hora_desde', { ascending: true }),
+        sb.from('tarifas').select('deporte,hora_desde,hora_hasta,precio,abono').order('deporte', { ascending: true }).order('hora_desde', { ascending: true }),
         sb.from('planes_mensuales').select('nombre,horas_incluidas,precio').order('orden', { ascending: true }),
         sb.from('equipamiento').select('nombre,precio').order('orden', { ascending: true })
     ]).then(function (resultados) {

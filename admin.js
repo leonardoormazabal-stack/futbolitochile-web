@@ -701,7 +701,7 @@
         return Promise.all([
             sb.from('site_content').select('key,value'),
             sb.from('instalaciones_cards').select('id,titulo,descripcion,imagen_url').order('orden', { ascending: true }),
-            sb.from('tarifas').select('id,deporte,hora_desde,hora_hasta,precio').order('deporte', { ascending: true }).order('hora_desde', { ascending: true }),
+            sb.from('tarifas').select('id,deporte,hora_desde,hora_hasta,precio,abono').order('deporte', { ascending: true }).order('hora_desde', { ascending: true }),
             sb.from('planes_mensuales').select('id,nombre,horas_incluidas,precio').order('orden', { ascending: true }),
             sb.from('equipamiento').select('id,nombre,precio').order('orden', { ascending: true })
         ]).then(function (resultados) {
@@ -755,7 +755,8 @@
                 '<span class="tarifa-editor-deporte">' + (SPORT_LABELS[t.deporte] || t.deporte) + '</span>' +
                 '<label>Desde <input type="number" class="tarifa-desde" min="0" max="23" value="' + t.hora_desde + '"></label>' +
                 '<label>Hasta <input type="number" class="tarifa-hasta" min="0" max="23" value="' + t.hora_hasta + '"></label>' +
-                '<label>Precio <input type="number" class="tarifa-precio" min="0" step="1" value="' + t.precio + '"></label>';
+                '<label>Precio <input type="number" class="tarifa-precio" min="0" step="1" value="' + t.precio + '"></label>' +
+                '<label>Abono <input type="number" class="tarifa-abono" min="0" step="1" value="' + (t.abono != null ? t.abono : 10000) + '"></label>';
             el.tarifasGrid.appendChild(row);
         });
     }
@@ -780,15 +781,16 @@
                 id: parseInt(row.getAttribute('data-id'), 10),
                 hora_desde: parseInt(row.querySelector('.tarifa-desde').value, 10),
                 hora_hasta: parseInt(row.querySelector('.tarifa-hasta').value, 10),
-                precio: parseInt(row.querySelector('.tarifa-precio').value, 10)
+                precio: parseInt(row.querySelector('.tarifa-precio').value, 10),
+                abono: parseInt(row.querySelector('.tarifa-abono').value, 10)
             };
         });
 
         var invalida = filas.some(function (f) {
-            return isNaN(f.hora_desde) || isNaN(f.hora_hasta) || isNaN(f.precio);
+            return isNaN(f.hora_desde) || isNaN(f.hora_hasta) || isNaN(f.precio) || isNaN(f.abono);
         });
         if (invalida) {
-            window.alert('Revisa que todos los horarios y precios sean números válidos.');
+            window.alert('Revisa que todos los horarios, precios y abonos sean números válidos.');
             return;
         }
 
@@ -796,7 +798,8 @@
             return sb.from('tarifas').update({
                 hora_desde: fila.hora_desde,
                 hora_hasta: fila.hora_hasta,
-                precio: fila.precio
+                precio: fila.precio,
+                abono: fila.abono
             }).eq('id', fila.id);
         })).then(function (resultados) {
             var conError = resultados.find(function (r) { return r.error; });

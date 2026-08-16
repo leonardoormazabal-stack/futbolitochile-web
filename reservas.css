@@ -33,105 +33,126 @@
     padding: 50px 20px 90px;
 }
 
-/* INDICADOR DE PASOS */
-.steps-indicator {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    list-style: none;
-    margin-bottom: 45px;
-    flex-wrap: wrap;
-}
-
-.step-indicator {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 16px;
-    border-radius: 30px;
-    background-color: var(--gris-claro);
-    color: var(--gris-texto);
-    font-size: 14px;
-    font-weight: 600;
-    transition: background-color 0.25s ease, color 0.25s ease;
-}
-
-.step-number {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    background-color: var(--blanco);
-    color: var(--gris-texto);
-    font-size: 13px;
-    flex-shrink: 0;
-}
-
-.step-indicator.active {
-    background-color: var(--azul-primario);
-    color: var(--blanco);
-}
-
-.step-indicator.active .step-number {
-    background-color: var(--rojo);
-    color: var(--blanco);
-}
-
-.step-indicator.completed {
-    background-color: var(--azul-oscuro);
-    color: var(--blanco);
-}
-
-.step-indicator.completed .step-number {
-    background-color: var(--rojo);
-    color: var(--blanco);
-}
-
 /* CUERPO DEL WIZARD */
 .wizard-body {
     display: grid;
     grid-template-columns: 1fr 320px;
-    grid-template-rows: auto auto;
     gap: 30px;
     align-items: start;
 }
 
 .wizard-main {
     grid-column: 1;
-    grid-row: 1 / span 2;
     background-color: var(--blanco);
     border-radius: 16px;
     box-shadow: var(--sombra);
-    padding: 40px;
-    min-height: 380px;
+    overflow: hidden;
 }
 
-.wizard-step {
-    display: none;
+/* ACORDEÓN */
+.accordion-panel {
+    border-bottom: 1px solid var(--gris-claro);
 }
 
-.wizard-step.active {
-    display: block;
-    animation: fadeIn 0.3s ease;
+.accordion-panel:last-child {
+    border-bottom: none;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
+.accordion-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 22px 30px;
+    background: none;
+    border: none;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
 }
 
-.wizard-step h2 {
+.accordion-header:hover:not(:disabled) {
+    background-color: var(--gris-claro);
+}
+
+.accordion-header:disabled {
+    cursor: not-allowed;
+}
+
+.accordion-header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.accordion-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: var(--gris-claro);
+    color: var(--gris-texto);
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.accordion-title {
+    font-size: 18px;
+    font-weight: 700;
     color: var(--azul-oscuro);
-    font-size: 24px;
-    margin-bottom: 24px;
 }
 
-.wizard-step h3 {
+.accordion-summary {
+    font-size: 14px;
+    color: var(--gris-texto);
+    font-weight: 600;
+    text-align: right;
+}
+
+.accordion-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    padding: 0 30px;
+}
+
+.accordion-panel.open .accordion-body {
+    max-height: 2000px;
+    padding: 0 30px 30px;
+}
+
+.accordion-panel.open .accordion-number {
+    background-color: var(--rojo);
+    color: var(--blanco);
+}
+
+.accordion-panel.completed .accordion-header {
+    background-color: #f6fbf7;
+}
+
+.accordion-panel.completed .accordion-number {
+    background-color: #2e9e50;
+    color: var(--blanco);
+}
+
+.accordion-panel.locked .accordion-title {
+    color: var(--gris-texto);
+}
+
+.accordion-panel.locked .accordion-header {
+    cursor: not-allowed;
+}
+
+.accordion-body h3 {
     color: var(--azul-oscuro);
     font-size: 18px;
-    margin: 30px 0 16px;
+    margin: 0 0 16px;
 }
 
 /* PASO 1 — SELECTOR DE DEPORTE */
@@ -386,10 +407,69 @@
     min-height: 16px;
 }
 
-/* PASO 4 — PAGO */
+#reservaForm #btnContinuarDatos {
+    grid-column: 1 / -1;
+    justify-self: start;
+    margin-top: 6px;
+}
+
+/* PASO 5 — PAGO */
 .payment-intro {
     margin-bottom: 24px;
     color: var(--gris-texto);
+}
+
+.tipo-pago-selector {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 8px;
+}
+
+.tipo-pago-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 24px 18px;
+    border: 2px solid var(--gris-claro);
+    border-radius: 14px;
+    background-color: var(--gris-claro);
+    cursor: pointer;
+    font-family: inherit;
+    transition: border-color 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+}
+
+.tipo-pago-card:hover {
+    transform: translateY(-3px);
+}
+
+.tipo-pago-card.selected {
+    border-color: var(--rojo);
+    background-color: #fdeceb;
+}
+
+.tipo-pago-titulo {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--azul-oscuro);
+}
+
+.tipo-pago-monto {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--rojo);
+}
+
+.tipo-pago-nota {
+    font-size: 12px;
+    color: var(--gris-texto);
+}
+
+.payment-methods-wrap {
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid var(--gris-claro);
 }
 
 .payment-methods {
@@ -487,7 +567,6 @@
 /* RESUMEN LATERAL */
 .wizard-summary {
     grid-column: 2;
-    grid-row: 1;
     position: sticky;
     top: 90px;
     background-color: var(--azul-oscuro);
@@ -538,28 +617,6 @@
     font-size: 22px;
 }
 
-/* ACCIONES DEL WIZARD */
-.wizard-actions {
-    grid-column: 2;
-    grid-row: 2;
-    display: flex;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
-    align-self: start;
-}
-
-.btn-outline {
-    background-color: transparent;
-    color: var(--azul-oscuro);
-    border: 2px solid var(--azul-oscuro);
-}
-
-.btn-outline:hover {
-    background-color: var(--azul-oscuro);
-    color: var(--blanco);
-}
-
 .btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
@@ -575,10 +632,8 @@
     }
 
     .wizard-main,
-    .wizard-summary,
-    .wizard-actions {
+    .wizard-summary {
         grid-column: auto;
-        grid-row: auto;
     }
 
     .wizard-summary {
@@ -592,11 +647,20 @@
 }
 
 @media (max-width: 600px) {
-    .wizard-main {
-        padding: 24px 18px;
+    .accordion-header {
+        padding: 18px 18px;
     }
 
-    .sport-selector {
+    .accordion-panel.open .accordion-body {
+        padding: 0 18px 24px;
+    }
+
+    .accordion-summary {
+        display: none;
+    }
+
+    .sport-selector,
+    .tipo-pago-selector {
         grid-template-columns: 1fr;
     }
 
@@ -606,14 +670,6 @@
 
     .payment-methods {
         grid-template-columns: 1fr 1fr;
-    }
-
-    .steps-indicator {
-        gap: 6px;
-    }
-
-    .step-label {
-        display: none;
     }
 
     .wizard-hero h1 {

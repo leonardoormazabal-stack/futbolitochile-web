@@ -4,6 +4,7 @@
     var sb = window.sbClient;
 
     var SPORT_LABELS = { futbolito: 'Futbolito', padel: 'Pádel' };
+    var PANEL_ORDER = ['deporte', 'fecha', 'horario', 'datos', 'pago'];
 
     function formatCLP(n) {
         return '$' + n.toLocaleString('es-CL');
@@ -13,7 +14,6 @@
        ESTADO
        ====================================================================== */
     var state = {
-        step: 1,
         sport: null,
         canchaId: null,      // se define recién al pagar (asignación automática)
         canchaNombre: null,
@@ -21,6 +21,9 @@
         selectedDate: null, // 'YYYY-MM-DD'
         selectedHour: null, // number 12-22
         precio: 0,
+        abono: 0,
+        tipoPago: null,       // 'completo' | 'abono'
+        montoAPagar: 0,
         canchas: [],           // desde Supabase: {id, nombre, deporte, descripcion}
         tarifas: [],            // desde Supabase: {deporte, hora_desde, hora_hasta, precio}
         ocupadosPorHora: {},    // { hora: cantidadDeCanchasOcupadas } para el deporte/fecha elegidos
@@ -59,6 +62,12 @@
         return dias[d.getDay()] + ' ' + d.getDate() + ' de ' + MESES[d.getMonth()] + ' de ' + d.getFullYear();
     }
 
+    function formatFechaCorta(iso) {
+        var parts = iso.split('-').map(Number);
+        var d = new Date(parts[0], parts[1] - 1, parts[2]);
+        return d.getDate() + ' ' + MESES[d.getMonth()].slice(0, 3) + '.';
+    }
+
     /* ======================================================================
        PRECIOS (a partir de las tarifas cargadas desde Supabase)
        ====================================================================== */
@@ -70,6 +79,16 @@
             }
         }
         return tabla.length ? tabla[0].precio : 0;
+    }
+
+    function getAbonoPorHora(sport, horaInicio) {
+        var tabla = state.tarifas.filter(function (t) { return t.deporte === sport; });
+        for (var i = 0; i < tabla.length; i++) {
+            if (horaInicio >= tabla[i].hora_desde && horaInicio < tabla[i].hora_hasta) {
+                return tabla[i].abono != null ? tabla[i].abono : 10000;
+            }
+        }
+        return tabla.length && tabla[0].abono != null ? tabla[0].abono : 10000;
     }
 
     /* ======================================================================
@@ -127,18 +146,76 @@
         calendarGrid: document.getElementById('calendarGrid'),
         prevMonth: document.getElementById('prevMonth'),
         nextMonth: document.getElementById('nextMonth'),
-        horarioSelector: document.getElementById('horarioSelector'),
         horarioGrid: document.getElementById('horarioGrid'),
         reservaForm: document.getElementById('reservaForm'),
-        btnBack: document.getElementById('btnBack'),
-        btnNext: document.getElementById('btnNext'),
         paymentStatus: document.getElementById('paymentStatus'),
         paymentConfirmation: document.getElementById('paymentConfirmation'),
+        paymentMethodsWrap: document.getElementById('paymentMethodsWrap'),
+        montoOpcionCompleto: document.getElementById('montoOpcionCompleto'),
+        montoOpcionAbono: document.getElementById('montoOpcionAbono'),
         summarySport: document.getElementById('summarySport'),
         summaryFecha: document.getElementById('summaryFecha'),
         summaryHora: document.getElementById('summaryHora'),
-        summaryTotal: document.getElementById('summaryTotal')
+        summaryTotal: document.getElementById('summaryTotal'),
+        resumenDeporte: document.getElementById('resumenDeporte'),
+        resumenFecha: document.getElementById('resumenFecha'),
+        resumenHorario: document.getElementById('resumenHorario'),
+        resumenDatos: document.getElementById('resumenDatos'),
+        resumenPago: document.getElementById('resumenPago')
     };
+
+    /* ======================================================================
+       ACORDEÓN: abrir / bloquear / completar paneles
+       ====================================================================== */
+    function panelEl(name) {
+        return document.getElementById('panel-' + name);
+    }
+
+    function openPanel(name) {
+        PANEL_ORDER.forEach(function (n) {
+            var panel = panelEl(n);
+            if (!panel || panel.classList.contains('locked')) return;
+            panel.classList.toggle('open', n === name);
+        });
+    }
+
+    function unlockPanel(name) {
+        var panel = panelEl(name);
+        panel.classList.remove('locked');
+        panel.querySelector('.accordion-header').disabled = false;
+    }
+
+    function lockPanel(name) {
+        var panel = panelEl(name);
+        panel.classList.add('locked');
+        panel.classList.remove('completed', 'open');
+        panel.querySelector('.accordion-header').disabled = true;
+    }
+
+    function completePanel(name) {
+        panelEl(name).classList.add('completed');
+    }
+
+    // Bloquea de nuevo todos los paneles posteriores a `name` y limpia sus resúmenes.
+    function resetDownstreamFrom(name) {
+        var idx = PANEL_ORDER.indexOf(name);
+        for (var i = idx + 1; i < PANEL_ORDER.length; i++) {
+            lockPanel(PANEL_ORDER[i]);
+        }
+        if (idx < PANEL_ORDER.indexOf('fecha')) { el.resumenFecha.textContent = ''; state.selectedDate = null; }
+        if (idx < PANEL_ORDER.indexOf('horario')) { el.resumenHorario.textContent = ''; state.selectedHour = null; state.precio = 0; state.abono = 0; }
+        if (idx < PANEL_ORDER.indexOf('datos')) { el.resumenDatos.textContent = ''; }
+        if (idx < PANEL_ORDER.indexOf('pago')) {
+            el.resumenPago.textContent = '';
+            state.tipoPago = null;
+            state.montoAPagar = 0;
+            el.paymentMethodsWrap.hidden = true;
+            el.paymentStatus.hidden = true;
+            el.paymentConfirmation.hidden = true;
+            document.querySelectorAll('.tipo-pago-card').forEach(function (c) { c.classList.remove('selected'); });
+            document.querySelectorAll('.payment-card').forEach(function (c) { c.classList.remove('selected'); c.disabled = false; });
+        }
+    }
 
     /* ======================================================================
        CARGA DE CATÁLOGO (canchas + tarifas) DESDE SUPABASE
@@ -146,24 +223,37 @@
     function cargarCatalogo() {
         return Promise.all([
             sb.from('canchas').select('id,nombre,deporte,descripcion'),
-            sb.from('tarifas').select('deporte,hora_desde,hora_hasta,precio')
+            sb.from('tarifas').select('deporte,hora_desde,hora_hasta,precio,abono')
         ]).then(function (resultados) {
             var canchasRes = resultados[0];
             var tarifasRes = resultados[1];
 
-            if (canchasRes.error || tarifasRes.error) {
-                el.catalogoError.hidden = false;
-                el.catalogoError.textContent = 'No pudimos cargar los deportes disponibles. Intenta recargar la página.';
-                return;
+            // Si la columna "abono" todavía no existe (falta correr el parche SQL),
+            // reintentamos sin ella en vez de bloquear toda la reserva: el abono
+            // simplemente usa el valor por defecto de $10.000 (ver getAbonoPorHora).
+            if (tarifasRes.error && tarifasRes.error.code === '42703') {
+                return sb.from('tarifas').select('deporte,hora_desde,hora_hasta,precio').then(function (fallbackRes) {
+                    return finalizarCatalogo(canchasRes, fallbackRes);
+                });
             }
 
-            state.canchas = canchasRes.data || [];
-            state.tarifas = tarifasRes.data || [];
-            state.catalogoListo = true;
+            return finalizarCatalogo(canchasRes, tarifasRes);
+        });
+    }
 
-            document.querySelectorAll('.sport-card').forEach(function (card) {
-                card.disabled = false;
-            });
+    function finalizarCatalogo(canchasRes, tarifasRes) {
+        if (canchasRes.error || tarifasRes.error) {
+            el.catalogoError.hidden = false;
+            el.catalogoError.textContent = 'No pudimos cargar los deportes disponibles. Intenta recargar la página.';
+            return;
+        }
+
+        state.canchas = canchasRes.data || [];
+        state.tarifas = tarifasRes.data || [];
+        state.catalogoListo = true;
+
+        document.querySelectorAll('.sport-card').forEach(function (card) {
+            card.disabled = false;
         });
     }
 
@@ -179,7 +269,7 @@
     }
 
     /* ======================================================================
-       PASO 1: DEPORTE
+       PANEL 1: DEPORTE
        ====================================================================== */
     var sportCards = document.querySelectorAll('.sport-card');
     sportCards.forEach(function (card) {
@@ -194,21 +284,20 @@
             state.sport = card.getAttribute('data-sport');
             state.totalCanchasDeporte = canchasDelDeporte(state.sport).length;
 
-            // Si ya había una fecha elegida, la disponibilidad depende del
-            // deporte, así que hay que recalcularla.
-            if (state.selectedDate) {
-                state.selectedHour = null;
-                state.precio = 0;
-                cargarDisponibilidadYRenderizar();
-            }
+            completePanel('deporte');
+            el.resumenDeporte.textContent = SPORT_LABELS[state.sport];
+
+            resetDownstreamFrom('deporte');
+            renderCalendario();
+            unlockPanel('fecha');
+            openPanel('fecha');
 
             updateSummary();
-            evaluateNextButton();
         });
     });
 
     /* ======================================================================
-       PASO 2: CALENDARIO
+       PANEL 2: CALENDARIO
        ====================================================================== */
     function renderCalendario() {
         var year = state.viewMonth.getFullYear();
@@ -252,12 +341,17 @@
                 btn.addEventListener('click', function (evtIso) {
                     return function () {
                         state.selectedDate = evtIso;
-                        state.selectedHour = null;
                         renderCalendario();
-                        el.horarioSelector.hidden = false;
+
+                        completePanel('fecha');
+                        el.resumenFecha.textContent = formatFechaCorta(evtIso);
+
+                        resetDownstreamFrom('fecha');
+                        unlockPanel('horario');
+                        openPanel('horario');
                         cargarDisponibilidadYRenderizar();
+
                         updateSummary();
-                        evaluateNextButton();
                     };
                 }(iso));
             }
@@ -282,7 +376,7 @@
     });
 
     /* ======================================================================
-       PASO 2: HORARIOS (disponibilidad real desde Supabase)
+       PANEL 3: HORARIOS (disponibilidad real desde Supabase)
        ====================================================================== */
     function cargarDisponibilidadYRenderizar() {
         el.horarioGrid.innerHTML = '<p class="wizard-loading">Cargando horarios...</p>';
@@ -329,9 +423,17 @@
                     return function () {
                         state.selectedHour = evtHora;
                         state.precio = getPrecioPorHora(state.sport, evtHora);
+                        state.abono = getAbonoPorHora(state.sport, evtHora);
                         renderHorarios();
+
+                        completePanel('horario');
+                        el.resumenHorario.textContent = String(evtHora).padStart(2, '0') + ':00';
+
+                        resetDownstreamFrom('horario');
+                        unlockPanel('datos');
+                        openPanel('datos');
+
                         updateSummary();
-                        evaluateNextButton();
                     };
                 }(hora));
             }
@@ -353,7 +455,7 @@
     }
 
     /* ======================================================================
-       PASO 3: FORMULARIO
+       PANEL 4: FORMULARIO
        ====================================================================== */
     var campos = {
         nombre: document.getElementById('nombre'),
@@ -417,9 +519,43 @@
         return nombreOk && rutOk && telefonoOk && emailOk;
     }
 
+    el.reservaForm.addEventListener('submit', function (evt) {
+        evt.preventDefault();
+        if (!validarFormularioCompleto()) return;
+
+        completePanel('datos');
+        el.resumenDatos.textContent = campos.nombre.value.trim();
+
+        resetDownstreamFrom('datos');
+        el.montoOpcionCompleto.textContent = formatCLP(state.precio);
+        el.montoOpcionAbono.textContent = formatCLP(state.abono);
+
+        unlockPanel('pago');
+        openPanel('pago');
+    });
+
     /* ======================================================================
-       PASO 4: PAGO Y GUARDADO DE LA RESERVA EN SUPABASE
+       PANEL 5: TIPO DE PAGO + MÉTODO DE PAGO
        ====================================================================== */
+    document.querySelectorAll('.tipo-pago-card').forEach(function (card) {
+        card.addEventListener('click', function () {
+            var tipo = card.getAttribute('data-tipo');
+
+            document.querySelectorAll('.tipo-pago-card').forEach(function (c) { c.classList.remove('selected'); });
+            card.classList.add('selected');
+
+            state.tipoPago = tipo;
+            state.montoAPagar = tipo === 'abono' ? state.abono : state.precio;
+
+            el.resumenPago.textContent = tipo === 'abono' ? 'Abono ' + formatCLP(state.abono) : 'Pago total';
+
+            el.paymentStatus.hidden = true;
+            el.paymentConfirmation.hidden = true;
+            el.paymentMethodsWrap.hidden = false;
+            document.querySelectorAll('.payment-card').forEach(function (c) { c.classList.remove('selected'); c.disabled = false; });
+        });
+    });
+
     var paymentCards = document.querySelectorAll('.payment-card');
     paymentCards.forEach(function (card) {
         card.addEventListener('click', function () {
@@ -469,10 +605,10 @@
         el.paymentStatus.textContent = 'Justo se ocuparon todas las canchas de ese horario. Vuelve a elegir uno disponible.';
         paymentCards.forEach(function (c) { c.disabled = false; c.classList.remove('selected'); });
 
-        state.selectedHour = null;
-        state.precio = 0;
+        resetDownstreamFrom('fecha');
+        unlockPanel('horario');
+        openPanel('horario');
         updateSummary();
-        goToStep(2);
         cargarDisponibilidadYRenderizar();
     }
 
@@ -491,6 +627,8 @@
                 fecha: state.selectedDate,
                 hora: state.selectedHour,
                 precio: state.precio,
+                monto_pagado: state.montoAPagar,
+                tipo_pago: state.tipoPago,
                 nombre_contacto: campos.nombre.value.trim(),
                 documento_contacto: campos.rut.value.trim(),
                 telefono_contacto: campos.telefono.value.trim(),
@@ -520,82 +658,34 @@
                 state.canchaId = cancha.id;
                 state.canchaNombre = cancha.nombre;
 
+                completePanel('pago');
+
+                var saldoPendiente = state.precio - state.montoAPagar;
+
                 el.paymentStatus.hidden = true;
                 el.paymentConfirmation.hidden = false;
                 el.paymentConfirmation.innerHTML =
                     '<h3>¡Reserva confirmada!</h3>' +
                     '<p>' + SPORT_LABELS[state.sport] + ' — ' + cancha.nombre + '</p>' +
                     '<p>' + formatFechaLarga(state.selectedDate) + ', ' + String(state.selectedHour).padStart(2, '0') + ':00 hrs</p>' +
-                    '<p>Total pagado: ' + formatCLP(state.precio) + ' vía ' + metodo + '</p>' +
+                    '<p>' + (state.tipoPago === 'abono'
+                        ? 'Abono pagado: ' + formatCLP(state.montoAPagar) + ' vía ' + metodo + '. Saldo a pagar en el recinto: ' + formatCLP(saldoPendiente) + '.'
+                        : 'Total pagado: ' + formatCLP(state.montoAPagar) + ' vía ' + metodo + '.') + '</p>' +
                     '<p>Te enviamos la confirmación a ' + campos.email.value.trim() + '.</p>';
-
-                el.btnBack.hidden = true;
-                el.btnNext.hidden = true;
             });
         });
     }
 
     /* ======================================================================
-       NAVEGACIÓN DEL WIZARD
+       ENCABEZADOS DEL ACORDEÓN (permiten reabrir un panel ya completado)
        ====================================================================== */
-    function goToStep(n) {
-        state.step = n;
-
-        document.querySelectorAll('.wizard-step').forEach(function (s) {
-            s.classList.toggle('active', s.id === 'step-' + n);
+    document.querySelectorAll('.accordion-header').forEach(function (header) {
+        header.addEventListener('click', function () {
+            var name = header.getAttribute('data-toggle');
+            var panel = panelEl(name);
+            if (panel.classList.contains('locked')) return;
+            openPanel(panel.classList.contains('open') ? null : name);
         });
-
-        document.querySelectorAll('.step-indicator').forEach(function (s) {
-            var stepNum = parseInt(s.getAttribute('data-step'), 10);
-            s.classList.toggle('active', stepNum === n);
-            s.classList.toggle('completed', stepNum < n);
-        });
-
-        el.btnBack.hidden = n === 1;
-        el.btnNext.hidden = n === 4;
-
-        evaluateNextButton();
-
-        window.scrollTo({ top: document.querySelector('.wizard-page').offsetTop - 20, behavior: 'smooth' });
-    }
-
-    function evaluateNextButton() {
-        var ok = false;
-        if (state.step === 1) {
-            ok = !!state.sport;
-        } else if (state.step === 2) {
-            ok = !!(state.selectedDate && (state.selectedHour !== null && state.selectedHour !== undefined));
-        } else if (state.step === 3) {
-            ok = campos.nombre.value.trim() !== '' &&
-                campos.rut.value.trim() !== '' &&
-                campos.telefono.value.trim() !== '' &&
-                campos.email.value.trim() !== '';
-        }
-        el.btnNext.disabled = !ok;
-    }
-
-    ['input', 'change'].forEach(function (evt) {
-        Object.keys(campos).forEach(function (key) {
-            campos[key].addEventListener(evt, evaluateNextButton);
-        });
-    });
-
-    el.btnNext.addEventListener('click', function () {
-        if (state.step === 3) {
-            if (!validarFormularioCompleto()) {
-                evaluateNextButton();
-                return;
-            }
-        }
-        if (state.step < 4) {
-            goToStep(state.step + 1);
-        }
-    });
-
-    el.btnBack.addEventListener('click', function () {
-        if (state.step > 1) {
-            goToStep(state.step - 1);
-        }
     });
 
     /* ======================================================================
@@ -603,7 +693,6 @@
        ====================================================================== */
     renderCalendario();
     updateSummary();
-    evaluateNextButton();
     cargarCatalogo();
     obtenerSesionActual();
 })();
