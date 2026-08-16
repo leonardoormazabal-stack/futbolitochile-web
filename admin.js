@@ -111,7 +111,32 @@
         passwordForm: document.getElementById('passwordForm'),
         passwordFormUsuario: document.getElementById('passwordFormUsuario'),
         nuevaPassword: document.getElementById('nuevaPassword'),
-        passwordError: document.getElementById('passwordError')
+        passwordError: document.getElementById('passwordError'),
+
+        tabContenido: document.getElementById('tabContenido'),
+        formHero: document.getElementById('formHero'),
+        cHeroTitulo: document.getElementById('cHeroTitulo'),
+        cHeroSubtitulo: document.getElementById('cHeroSubtitulo'),
+        guardadoHero: document.getElementById('guardadoHero'),
+
+        cNosotrosImgPreview: document.getElementById('cNosotrosImgPreview'),
+        cNosotrosImgInput: document.getElementById('cNosotrosImgInput'),
+        guardadoNosotrosImg: document.getElementById('guardadoNosotrosImg'),
+        formNosotros: document.getElementById('formNosotros'),
+        cNosotrosTagline: document.getElementById('cNosotrosTagline'),
+        cNosotrosParrafo1: document.getElementById('cNosotrosParrafo1'),
+        cNosotrosParrafo2: document.getElementById('cNosotrosParrafo2'),
+        cFeature1Titulo: document.getElementById('cFeature1Titulo'),
+        cFeature1Texto: document.getElementById('cFeature1Texto'),
+        cFeature2Titulo: document.getElementById('cFeature2Titulo'),
+        cFeature2Texto: document.getElementById('cFeature2Texto'),
+        cFeature3Titulo: document.getElementById('cFeature3Titulo'),
+        cFeature3Texto: document.getElementById('cFeature3Texto'),
+        cCtaTitulo: document.getElementById('cCtaTitulo'),
+        cCtaTexto: document.getElementById('cCtaTexto'),
+        guardadoNosotros: document.getElementById('guardadoNosotros'),
+
+        contenidoCardsGrid: document.getElementById('contenidoCardsGrid')
     };
 
     /* ======================================================================
@@ -155,7 +180,7 @@
         el.views.forEach(function (v) {
             v.classList.toggle('active', v.id === 'view-' + nombre);
         });
-        el.btnNuevaReserva.hidden = nombre === 'usuarios';
+        el.btnNuevaReserva.hidden = nombre !== 'calendario' && nombre !== 'listado';
         el.btnNuevoUsuario.hidden = !(nombre === 'usuarios' && state.esSuperadmin);
     }
 
@@ -620,6 +645,186 @@
     });
 
     /* ======================================================================
+       SECCIÓN CONTENIDO (solo superadministrador)
+       ====================================================================== */
+    var CARDS_INFO = [
+        { id: 'canchas', nombre: 'Canchas de Futbolito' },
+        { id: 'padel', nombre: 'Canchas de Pádel' },
+        { id: 'piscina', nombre: 'Piscina' },
+        { id: 'quinchos', nombre: 'Zona de Quinchos' },
+        { id: 'camarines', nombre: 'Camarines y Baños' },
+        { id: 'kiosco', nombre: 'Kiosco y Snack Bar' }
+    ];
+
+    function mostrarGuardado(el) {
+        el.hidden = false;
+        setTimeout(function () { el.hidden = true; }, 2500);
+    }
+
+    function guardarSiteContent(pares) {
+        var filas = Object.keys(pares).map(function (key) {
+            return { key: key, value: pares[key] };
+        });
+        return sb.from('site_content').upsert(filas, { onConflict: 'key' });
+    }
+
+    function subirImagen(file, prefijo) {
+        var ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+        var path = prefijo + '-' + Date.now() + '.' + ext;
+
+        return sb.storage.from('site-images').upload(path, file, {
+            upsert: true,
+            contentType: file.type
+        }).then(function (result) {
+            if (result.error) throw result.error;
+            var publicUrlResult = sb.storage.from('site-images').getPublicUrl(path);
+            return publicUrlResult.data.publicUrl;
+        });
+    }
+
+    function cargarContenido() {
+        return Promise.all([
+            sb.from('site_content').select('key,value'),
+            sb.from('instalaciones_cards').select('id,titulo,descripcion,imagen_url').order('orden', { ascending: true })
+        ]).then(function (resultados) {
+            var contenidoRes = resultados[0];
+            var cardsRes = resultados[1];
+
+            var c = {};
+            (contenidoRes.data || []).forEach(function (fila) { c[fila.key] = fila.value; });
+
+            el.cHeroTitulo.value = c.hero_title || '';
+            el.cHeroSubtitulo.value = c.hero_subtitle || '';
+
+            el.cNosotrosImgPreview.src = c.nosotros_imagen_url || '';
+            el.cNosotrosTagline.value = c.nosotros_tagline || '';
+            el.cNosotrosParrafo1.value = c.nosotros_parrafo1 || '';
+            el.cNosotrosParrafo2.value = c.nosotros_parrafo2 || '';
+            el.cFeature1Titulo.value = c.nosotros_feature1_titulo || '';
+            el.cFeature1Texto.value = c.nosotros_feature1_texto || '';
+            el.cFeature2Titulo.value = c.nosotros_feature2_titulo || '';
+            el.cFeature2Texto.value = c.nosotros_feature2_texto || '';
+            el.cFeature3Titulo.value = c.nosotros_feature3_titulo || '';
+            el.cFeature3Texto.value = c.nosotros_feature3_texto || '';
+            el.cCtaTitulo.value = c.nosotros_cta_titulo || '';
+            el.cCtaTexto.value = c.nosotros_cta_texto || '';
+
+            renderCardsEditor(cardsRes.data || []);
+        });
+    }
+
+    function renderCardsEditor(cards) {
+        el.contenidoCardsGrid.innerHTML = '';
+
+        CARDS_INFO.forEach(function (info) {
+            var card = cards.find(function (c) { return c.id === info.id; }) || {};
+
+            var bloque = document.createElement('div');
+            bloque.className = 'contenido-card-editor';
+            bloque.innerHTML =
+                '<img class="contenido-preview-img" src="' + (card.imagen_url || '') + '" alt="Vista previa">' +
+                '<label class="btn btn-outline contenido-upload-btn">Cambiar Imagen' +
+                '<input type="file" accept="image/*" hidden class="card-img-input"></label>' +
+                '<div class="form-group"><label>Título</label><input type="text" class="card-titulo-input" value="' + (card.titulo || '').replace(/"/g, '&quot;') + '"></div>' +
+                '<div class="form-group"><label>Descripción</label><textarea rows="3" class="card-desc-input">' + (card.descripcion || '') + '</textarea></div>' +
+                '<div class="contenido-form-actions">' +
+                '<button type="button" class="btn btn-primary btn-guardar-card">Guardar</button>' +
+                '<span class="contenido-guardado card-guardado" hidden>Guardado ✓</span>' +
+                '</div>';
+
+            var imgPreview = bloque.querySelector('.contenido-preview-img');
+            var imgInput = bloque.querySelector('.card-img-input');
+            var tituloInput = bloque.querySelector('.card-titulo-input');
+            var descInput = bloque.querySelector('.card-desc-input');
+            var btnGuardar = bloque.querySelector('.btn-guardar-card');
+            var guardadoSpan = bloque.querySelector('.card-guardado');
+
+            var imagenActualUrl = card.imagen_url || null;
+
+            imgInput.addEventListener('change', function () {
+                var file = imgInput.files[0];
+                if (!file) return;
+
+                subirImagen(file, 'card-' + info.id).then(function (url) {
+                    imagenActualUrl = url;
+                    imgPreview.src = url;
+                    return sb.from('instalaciones_cards').update({ imagen_url: url }).eq('id', info.id);
+                }).then(function () {
+                    mostrarGuardado(guardadoSpan);
+                }).catch(function (err) {
+                    window.alert('No pudimos subir la imagen: ' + err.message);
+                });
+            });
+
+            btnGuardar.addEventListener('click', function () {
+                sb.from('instalaciones_cards').update({
+                    titulo: tituloInput.value.trim(),
+                    descripcion: descInput.value.trim()
+                }).eq('id', info.id).then(function (result) {
+                    if (result.error) {
+                        window.alert('No pudimos guardar: ' + result.error.message);
+                        return;
+                    }
+                    mostrarGuardado(guardadoSpan);
+                });
+            });
+
+            el.contenidoCardsGrid.appendChild(bloque);
+        });
+    }
+
+    el.formHero.addEventListener('submit', function (e) {
+        e.preventDefault();
+        guardarSiteContent({
+            hero_title: el.cHeroTitulo.value.trim(),
+            hero_subtitle: el.cHeroSubtitulo.value.trim()
+        }).then(function (result) {
+            if (result.error) {
+                window.alert('No pudimos guardar: ' + result.error.message);
+                return;
+            }
+            mostrarGuardado(el.guardadoHero);
+        });
+    });
+
+    el.formNosotros.addEventListener('submit', function (e) {
+        e.preventDefault();
+        guardarSiteContent({
+            nosotros_tagline: el.cNosotrosTagline.value.trim(),
+            nosotros_parrafo1: el.cNosotrosParrafo1.value.trim(),
+            nosotros_parrafo2: el.cNosotrosParrafo2.value.trim(),
+            nosotros_feature1_titulo: el.cFeature1Titulo.value.trim(),
+            nosotros_feature1_texto: el.cFeature1Texto.value.trim(),
+            nosotros_feature2_titulo: el.cFeature2Titulo.value.trim(),
+            nosotros_feature2_texto: el.cFeature2Texto.value.trim(),
+            nosotros_feature3_titulo: el.cFeature3Titulo.value.trim(),
+            nosotros_feature3_texto: el.cFeature3Texto.value.trim(),
+            nosotros_cta_titulo: el.cCtaTitulo.value.trim(),
+            nosotros_cta_texto: el.cCtaTexto.value.trim()
+        }).then(function (result) {
+            if (result.error) {
+                window.alert('No pudimos guardar: ' + result.error.message);
+                return;
+            }
+            mostrarGuardado(el.guardadoNosotros);
+        });
+    });
+
+    el.cNosotrosImgInput.addEventListener('change', function () {
+        var file = el.cNosotrosImgInput.files[0];
+        if (!file) return;
+
+        subirImagen(file, 'nosotros').then(function (url) {
+            el.cNosotrosImgPreview.src = url;
+            return guardarSiteContent({ nosotros_imagen_url: url });
+        }).then(function () {
+            mostrarGuardado(el.guardadoNosotrosImg);
+        }).catch(function (err) {
+            window.alert('No pudimos subir la imagen: ' + err.message);
+        });
+    });
+
+    /* ======================================================================
        INICIALIZACIÓN (con control de acceso)
        ====================================================================== */
     window.FutbolitoAuth.requireAdmin().then(function (info) {
@@ -636,7 +841,9 @@
 
         if (state.esSuperadmin) {
             el.tabUsuarios.hidden = false;
+            el.tabContenido.hidden = false;
             tareas.push(cargarUsuarios());
+            tareas.push(cargarContenido());
         }
 
         Promise.all(tareas);

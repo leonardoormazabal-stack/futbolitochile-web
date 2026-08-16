@@ -6,6 +6,8 @@
 -- 2. Ve a "SQL Editor" → "New query"
 -- 3. Pega todo este archivo y ejecútalo (Run)
 -- 4. Debería crear todo sin errores en una base de datos nueva
+-- 5. Para una instalación nueva completa, después corre también (en este
+--    orden): add_users_management.sql y add_site_content.sql.
 --
 -- Este esquema reemplaza el localStorage que usan hoy auth.js y reservas.js:
 --   - Autenticación real vía Supabase Auth (auth.users) en vez de contraseñas

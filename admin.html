@@ -59,6 +59,7 @@
                 <button type="button" class="admin-tab active" data-tab="calendario">Calendario</button>
                 <button type="button" class="admin-tab" data-tab="listado">Listado</button>
                 <button type="button" class="admin-tab" data-tab="usuarios" id="tabUsuarios" hidden>Usuarios</button>
+                <button type="button" class="admin-tab" data-tab="contenido" id="tabContenido" hidden>Contenido</button>
             </div>
             <button type="button" class="btn btn-primary" id="btnNuevaReserva">+ Nueva Reserva</button>
             <button type="button" class="btn btn-primary" id="btnNuevoUsuario" hidden>+ Nuevo Usuario</button>
@@ -132,6 +133,101 @@
                     <tbody id="usuariosTableBody"></tbody>
                 </table>
                 <p class="admin-empty" id="usuariosEmptyMsg" hidden>No hay usuarios para mostrar.</p>
+            </div>
+        </section>
+
+        <!-- VISTA CONTENIDO (solo superadministrador) -->
+        <section class="admin-view" id="view-contenido">
+            <div class="contenido-bloque">
+                <h3>Hero (Portada)</h3>
+                <form id="formHero" class="contenido-form">
+                    <div class="form-group">
+                        <label for="cHeroTitulo">Título</label>
+                        <input type="text" id="cHeroTitulo">
+                    </div>
+                    <div class="form-group">
+                        <label for="cHeroSubtitulo">Subtítulo</label>
+                        <input type="text" id="cHeroSubtitulo">
+                    </div>
+                    <div class="contenido-form-actions">
+                        <button type="submit" class="btn btn-primary">Guardar Hero</button>
+                        <span class="contenido-guardado" id="guardadoHero" hidden>Guardado ✓</span>
+                    </div>
+                </form>
+            </div>
+
+            <div class="contenido-bloque">
+                <h3>Quiénes Somos</h3>
+
+                <div class="contenido-imagen-editor">
+                    <img id="cNosotrosImgPreview" src="" alt="Vista previa" class="contenido-preview-img">
+                    <label class="btn btn-outline contenido-upload-btn">
+                        Cambiar Imagen
+                        <input type="file" id="cNosotrosImgInput" accept="image/*" hidden>
+                    </label>
+                    <span class="contenido-guardado" id="guardadoNosotrosImg" hidden>Imagen actualizada ✓</span>
+                </div>
+
+                <form id="formNosotros" class="contenido-form">
+                    <div class="form-group">
+                        <label for="cNosotrosTagline">Tagline</label>
+                        <input type="text" id="cNosotrosTagline">
+                    </div>
+                    <div class="form-group">
+                        <label for="cNosotrosParrafo1">Párrafo 1</label>
+                        <textarea id="cNosotrosParrafo1" rows="4"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="cNosotrosParrafo2">Párrafo 2</label>
+                        <textarea id="cNosotrosParrafo2" rows="3"></textarea>
+                    </div>
+
+                    <div class="contenido-feature-grid">
+                        <div class="form-group">
+                            <label for="cFeature1Titulo">Razón 1 — Título</label>
+                            <input type="text" id="cFeature1Titulo">
+                        </div>
+                        <div class="form-group">
+                            <label for="cFeature1Texto">Razón 1 — Texto</label>
+                            <textarea id="cFeature1Texto" rows="3"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="cFeature2Titulo">Razón 2 — Título</label>
+                            <input type="text" id="cFeature2Titulo">
+                        </div>
+                        <div class="form-group">
+                            <label for="cFeature2Texto">Razón 2 — Texto</label>
+                            <textarea id="cFeature2Texto" rows="3"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="cFeature3Titulo">Razón 3 — Título</label>
+                            <input type="text" id="cFeature3Titulo">
+                        </div>
+                        <div class="form-group">
+                            <label for="cFeature3Texto">Razón 3 — Texto</label>
+                            <textarea id="cFeature3Texto" rows="3"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cCtaTitulo">Cierre — Título</label>
+                        <input type="text" id="cCtaTitulo">
+                    </div>
+                    <div class="form-group">
+                        <label for="cCtaTexto">Cierre — Texto</label>
+                        <input type="text" id="cCtaTexto">
+                    </div>
+
+                    <div class="contenido-form-actions">
+                        <button type="submit" class="btn btn-primary">Guardar Quiénes Somos</button>
+                        <span class="contenido-guardado" id="guardadoNosotros" hidden>Guardado ✓</span>
+                    </div>
+                </form>
+            </div>
+
+            <div class="contenido-bloque">
+                <h3>Instalaciones</h3>
+                <div class="contenido-cards-grid" id="contenidoCardsGrid"></div>
             </div>
         </section>
     </main>

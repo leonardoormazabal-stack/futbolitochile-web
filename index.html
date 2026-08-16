@@ -44,8 +44,8 @@
     <!-- HERO -->
     <section class="hero" id="inicio">
         <div class="hero-content">
-            <h1>Ven a disfrutar nuestras canchas</h1>
-            <p class="hero-subtitle">FutbolitoChile es tu centro deportivo familiar</p>
+            <h1 data-content-text="hero_title">Ven a disfrutar nuestras canchas</h1>
+            <p class="hero-subtitle" data-content-text="hero_subtitle">FutbolitoChile es tu centro deportivo familiar</p>
             <div class="hero-buttons">
                 <a href="reservas.html" class="btn btn-primary">Reservar Ahora</a>
                 <a href="#tarifas" class="btn btn-secondary">Ver Tarifas</a>
@@ -60,27 +60,27 @@
             <p>Todo lo que necesitas para disfrutar del deporte y la recreación en familia</p>
         </div>
         <div class="cards-container">
-            <div class="card card--canchas">
+            <div class="card card--canchas" data-card-id="canchas">
                 <h3>6 Canchas de Futbolito</h3>
                 <p>Canchas renovadas y bien mantenidas con césped sintético de alta calidad, iluminación LED y medidas oficiales para fútbol 5 y 7.</p>
             </div>
-            <div class="card card--padel">
+            <div class="card card--padel" data-card-id="padel">
                 <h3>2 Canchas de Pádel</h3>
                 <p>Canchas de pádel de primera, ideales para jugar de día o de noche.</p>
             </div>
-            <div class="card card--piscina">
+            <div class="card card--piscina" data-card-id="piscina">
                 <h3>Piscina al aire libre</h3>
                 <p>Espacio de recreación y descanso para toda la familia, disponible también como parte de nuestros paquetes de eventos.</p>
             </div>
-            <div class="card card--quinchos">
+            <div class="card card--quinchos" data-card-id="quinchos">
                 <h3>Zona de Quinchos</h3>
                 <p>Áreas equipadas para asados y celebraciones, perfectas para después del partido o para tu próximo evento.</p>
             </div>
-            <div class="card card--camarines">
+            <div class="card card--camarines" data-card-id="camarines">
                 <h3>Camarines y Baños</h3>
                 <p>Amplios camarines equipados con duchas de agua caliente, casilleros seguros y todas las comodidades para tu equipo.</p>
             </div>
-            <div class="card card--kiosco">
+            <div class="card card--kiosco" data-card-id="kiosco">
                 <h3>Kiosco y Snack Bar</h3>
                 <p>Bebidas, snacks y comida rápida disponibles durante toda tu estadía en el recinto.</p>
             </div>
@@ -236,19 +236,19 @@
     <section class="nosotros" id="nosotros">
         <div class="nosotros-container">
             <div class="nosotros-imagen">
-                <img src="pictures/quienes-somos.png" alt="Vista aérea nocturna de las canchas de Futbolito Chile">
+                <img src="pictures/quienes-somos.png" alt="Vista aérea nocturna de las canchas de Futbolito Chile" data-content-img="nosotros_imagen_url">
             </div>
             <div class="nosotros-texto">
                 <h2>¿Quiénes Somos?</h2>
-                <p class="nosotros-tagline">Pasión, Deporte y Comunidad en La Pintana</p>
-                <p>
+                <p class="nosotros-tagline" data-content-text="nosotros_tagline">Pasión, Deporte y Comunidad en La Pintana</p>
+                <p data-content-text="nosotros_parrafo1">
                     En Futbolito Chile, nos destacamos por entregar un excelente espacio para
                     disfrutar del deporte más lindo del mundo. Con una amplia y consolidada
                     trayectoria en la comuna de La Pintana, nos hemos posicionado como el recinto
                     deportivo de referencia para familias, amigos y deportistas que buscan
                     infraestructura de primer nivel y un ambiente seguro.
                 </p>
-                <p>
+                <p data-content-text="nosotros_parrafo2">
                     Nuestra misión es brindar una experiencia integral alrededor del fútbol,
                     combinando tecnología de vanguardia, instalaciones de alto rendimiento y
                     espacios diseñados para el encuentro y la camaradería.
@@ -261,8 +261,8 @@
             <div class="nosotros-features-grid">
                 <div class="nosotros-feature">
                     <span class="nosotros-feature-icon">🔒</span>
-                    <h4>Juega Seguro</h4>
-                    <p>
+                    <h4 data-content-text="nosotros_feature1_titulo">Juega Seguro</h4>
+                    <p data-content-text="nosotros_feature1_texto">
                         Tu tranquilidad y la de tu familia es nuestra prioridad. Contamos con
                         cámaras de seguridad HD en todo el perímetro del sector de canchas y más
                         de 60 estacionamientos interiores monitoreados por CCTV, además de
@@ -271,8 +271,8 @@
                 </div>
                 <div class="nosotros-feature">
                     <span class="nosotros-feature-icon">⚽</span>
-                    <h4>Partidos de Alto Nivel</h4>
-                    <p>
+                    <h4 data-content-text="nosotros_feature2_titulo">Partidos de Alto Nivel</h4>
+                    <p data-content-text="nosotros_feature2_texto">
                         Disponemos de 6 canchas de futbolito (20×40 mts), cada una equipada con
                         pasto sintético certificado de excelente calidad, ideal para la práctica
                         deportiva de alto rendimiento. Además, contamos con iluminación LED de
@@ -282,8 +282,8 @@
                 </div>
                 <div class="nosotros-feature">
                     <span class="nosotros-feature-icon">🌳</span>
-                    <h4>Cómodas Instalaciones</h4>
-                    <p>
+                    <h4 data-content-text="nosotros_feature3_titulo">Cómodas Instalaciones</h4>
+                    <p data-content-text="nosotros_feature3_texto">
                         El partido no termina en la cancha. Previo o posterior a tus encuentros,
                         puedes disfrutar de nuestro recinto equipado con amplias áreas verdes,
                         quinchos pensados para el esparcimiento familiar y la convivencia del
@@ -294,8 +294,8 @@
         </div>
 
         <div class="nosotros-cta">
-            <p class="nosotros-cta-title">¡Súmate a nuestra comunidad deportiva!</p>
-            <p>Ven a vivir el fútbol con la calidad, seguridad y trayectoria que nos caracteriza.</p>
+            <p class="nosotros-cta-title" data-content-text="nosotros_cta_titulo">¡Súmate a nuestra comunidad deportiva!</p>
+            <p data-content-text="nosotros_cta_texto">Ven a vivir el fútbol con la calidad, seguridad y trayectoria que nos caracteriza.</p>
         </div>
     </section>
 
@@ -347,5 +347,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-client.js"></script>
     <script src="auth.js"></script>
+    <script src="content.js"></script>
 </body>
 </html>

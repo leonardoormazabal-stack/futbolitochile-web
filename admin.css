@@ -264,6 +264,113 @@
     font-size: 14px;
 }
 
+/* SECCIÓN CONTENIDO */
+.contenido-bloque {
+    background-color: var(--blanco);
+    border-radius: 14px;
+    box-shadow: var(--sombra);
+    padding: 30px;
+    margin-bottom: 30px;
+}
+
+.contenido-bloque h3 {
+    color: var(--azul-oscuro);
+    font-size: 20px;
+    margin-bottom: 20px;
+}
+
+.contenido-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.contenido-form textarea {
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 2px solid var(--gris-claro);
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+}
+
+.contenido-form input[type="text"] {
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 2px solid var(--gris-claro);
+    font-family: inherit;
+    font-size: 14px;
+}
+
+.contenido-feature-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 20px;
+    padding: 16px;
+    background-color: var(--gris-claro);
+    border-radius: 10px;
+}
+
+.contenido-form-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.contenido-guardado {
+    color: #1f7a3d;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.contenido-imagen-editor {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.contenido-preview-img {
+    width: 140px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 10px;
+    box-shadow: var(--sombra);
+    background-color: var(--gris-claro);
+}
+
+.contenido-upload-btn {
+    cursor: pointer;
+}
+
+.contenido-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.contenido-card-editor {
+    border: 2px solid var(--gris-claro);
+    border-radius: 12px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.contenido-card-editor .contenido-preview-img {
+    width: 100%;
+    height: 120px;
+}
+
+@media (max-width: 700px) {
+    .contenido-feature-grid,
+    .contenido-cards-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* MODAL NUEVA RESERVA */
 .admin-modal-overlay {
     position: fixed;
