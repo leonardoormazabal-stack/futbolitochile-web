@@ -697,11 +697,23 @@
         });
     }
 
+    // Si la columna "abono" todavía no existe (falta correr el parche SQL),
+    // reintenta sin ella en vez de dejar la grilla de tarifas vacía.
+    function cargarTarifasConFallback() {
+        return sb.from('tarifas').select('id,deporte,hora_desde,hora_hasta,precio,abono').order('deporte', { ascending: true }).order('hora_desde', { ascending: true })
+            .then(function (res) {
+                if (res.error && res.error.code === '42703') {
+                    return sb.from('tarifas').select('id,deporte,hora_desde,hora_hasta,precio').order('deporte', { ascending: true }).order('hora_desde', { ascending: true });
+                }
+                return res;
+            });
+    }
+
     function cargarContenido() {
         return Promise.all([
             sb.from('site_content').select('key,value'),
             sb.from('instalaciones_cards').select('id,titulo,descripcion,imagen_url').order('orden', { ascending: true }),
-            sb.from('tarifas').select('id,deporte,hora_desde,hora_hasta,precio,abono').order('deporte', { ascending: true }).order('hora_desde', { ascending: true }),
+            cargarTarifasConFallback(),
             sb.from('planes_mensuales').select('id,nombre,horas_incluidas,precio').order('orden', { ascending: true }),
             sb.from('equipamiento').select('id,nombre,precio').order('orden', { ascending: true })
         ]).then(function (resultados) {
@@ -794,13 +806,27 @@
             return;
         }
 
+        var faltoColumnaAbono = false;
+
         Promise.all(filas.map(function (fila) {
             return sb.from('tarifas').update({
                 hora_desde: fila.hora_desde,
                 hora_hasta: fila.hora_hasta,
                 precio: fila.precio,
                 abono: fila.abono
-            }).eq('id', fila.id);
+            }).eq('id', fila.id).then(function (res) {
+                // Si la columna "abono" todavía no existe (falta correr el parche SQL),
+                // reintenta guardando solo horario y precio para no bloquear la edición.
+                if (res.error && res.error.code === '42703') {
+                    faltoColumnaAbono = true;
+                    return sb.from('tarifas').update({
+                        hora_desde: fila.hora_desde,
+                        hora_hasta: fila.hora_hasta,
+                        precio: fila.precio
+                    }).eq('id', fila.id);
+                }
+                return res;
+            });
         })).then(function (resultados) {
             var conError = resultados.find(function (r) { return r.error; });
             if (conError) {
@@ -808,6 +834,9 @@
                 return;
             }
             mostrarGuardado(el.guardadoTarifas);
+            if (faltoColumnaAbono) {
+                window.alert('Se guardaron los horarios y precios, pero el abono no se pudo guardar todavía: falta correr el parche supabase/add_abono_tarifas.sql en Supabase.');
+            }
             cargarCatalogo(); // refresca los precios que usa "+ Nueva Reserva"
         });
     });
