@@ -649,6 +649,16 @@ ul {
     .cards-container {
         grid-template-columns: 1fr;
     }
+
+    .table-wrapper table {
+        min-width: 0;
+    }
+
+    .table-wrapper thead th,
+    .table-wrapper tbody td {
+        padding: 10px 8px;
+        font-size: 12.5px;
+    }
 }
 
 @media (max-width: 900px) {
