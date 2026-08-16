@@ -146,14 +146,30 @@ ul {
     height: auto;
 }
 
-.nav-links {
+.nav-menu {
     display: flex;
-    flex-wrap: wrap;
+    flex: 1;
+    align-items: center;
     justify-content: flex-end;
-    gap: 8px 20px;
+    gap: 18px;
+    margin-left: 20px;
 }
 
-.nav-links a {
+.nav-links {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 6px 16px;
+    padding: 10px 18px;
+    border-radius: 30px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.05) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.nav-links a,
+.nav-actions #navAdminItem a {
     color: var(--blanco);
     font-size: 15px;
     font-weight: 500;
@@ -163,9 +179,17 @@ ul {
     transition: color 0.2s ease, border-color 0.2s ease;
 }
 
-.nav-links a:hover {
+.nav-links a:hover,
+.nav-actions #navAdminItem a:hover {
     color: var(--rojo);
     border-bottom-color: var(--rojo);
+}
+
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
 }
 
 .menu-toggle {
@@ -710,46 +734,63 @@ ul {
         display: flex;
     }
 
-    .nav-links {
+    .nav-menu {
         position: absolute;
         top: 100%;
         left: 0;
         width: 100%;
+        margin-left: 0;
         background-color: var(--azul-oscuro);
         flex-direction: column;
-        align-items: center;
+        align-items: stretch;
         gap: 0;
         max-height: 0;
         overflow: hidden;
         transition: max-height 0.3s ease;
     }
 
-    .nav-links li {
+    .nav-links {
+        flex-direction: column;
+        justify-content: flex-start;
+        gap: 0;
+        padding: 0;
+        border-radius: 0;
+        background: none;
+        border: none;
+    }
+
+    .nav-links li,
+    .nav-actions li {
         width: 100%;
         text-align: center;
     }
 
-    .nav-links a {
+    .nav-links a,
+    .nav-actions #navAdminItem a {
         display: block;
         padding: 16px;
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
 
-    .nav-links .nav-auth-item {
+    .nav-actions {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .nav-actions .nav-auth-item {
         justify-content: center;
-        margin-left: 0;
         padding: 14px 16px;
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         flex-wrap: wrap;
     }
 
-    .nav-links .nav-auth-item a {
+    .nav-actions .nav-auth-item a {
         display: inline-block;
         padding: 10px 30px;
         border-bottom: none;
     }
 
-    .menu-toggle:checked ~ .nav-links {
+    .menu-toggle:checked ~ .nav-menu {
         max-height: 600px;
         overflow-y: auto;
     }

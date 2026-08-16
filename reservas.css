@@ -3,7 +3,8 @@
    Usa las variables de color definidas en style.css (:root)
    ========================================================================== */
 
-.nav-links a.active {
+.nav-links a.active,
+.nav-actions #navAdminItem a.active {
     color: var(--rojo);
     border-bottom-color: var(--rojo);
 }

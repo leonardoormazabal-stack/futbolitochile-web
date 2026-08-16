@@ -336,7 +336,7 @@
        ====================================================================== */
     function initCierreMenuMovil() {
         var toggle = document.getElementById('menu-toggle');
-        var navLinks = document.querySelector('.nav-links');
+        var navLinks = document.querySelector('.nav-menu');
         if (!toggle || !navLinks) return;
 
         navLinks.addEventListener('click', function (e) {
