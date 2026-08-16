@@ -116,11 +116,20 @@
 
         <!-- VISTA USUARIOS (solo superadministrador) -->
         <section class="admin-view" id="view-usuarios">
+            <div class="admin-filters">
+                <div class="form-group">
+                    <label for="buscarUsuario">Buscar por nombre o RUT</label>
+                    <input type="text" id="buscarUsuario" placeholder="Ej: Juan Pérez o 12.345.678-9">
+                </div>
+                <button type="button" class="btn btn-outline" id="btnLimpiarBusquedaUsuario">Quitar filtro</button>
+            </div>
+
             <div class="admin-table-wrapper">
                 <table class="admin-table">
                     <thead>
                         <tr>
                             <th>Nombre</th>
+                            <th>RUT / Documento</th>
                             <th>Email</th>
                             <th>Rol</th>
                             <th>Creado</th>
@@ -370,6 +379,41 @@
                 <div class="auth-alert" id="usrError" hidden></div>
 
                 <button type="submit" class="btn btn-primary btn-block">Crear Usuario</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: EDITAR USUARIO -->
+    <div class="admin-modal-overlay" id="editUsuarioModalOverlay" hidden>
+        <div class="admin-modal">
+            <div class="admin-modal-header">
+                <h2>Editar Usuario</h2>
+                <button type="button" class="admin-modal-close" id="btnCerrarEditUsuarioModal" aria-label="Cerrar">&times;</button>
+            </div>
+            <form id="editUsuarioForm" novalidate>
+                <div class="form-group">
+                    <label for="editUsrNombre">Nombre completo</label>
+                    <input type="text" id="editUsrNombre" required>
+                </div>
+                <div class="form-group">
+                    <label>Tipo de documento</label>
+                    <div class="doc-tipo-selector">
+                        <label><input type="radio" name="editTipoDocumento" value="rut" checked> RUT chileno</label>
+                        <label><input type="radio" name="editTipoDocumento" value="pasaporte"> Pasaporte</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="editUsrDocumento" id="editLabelDocumento">RUT</label>
+                    <input type="text" id="editUsrDocumento" placeholder="12.345.678-9" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="editUsrTelefono">Teléfono</label>
+                    <input type="tel" id="editUsrTelefono">
+                </div>
+
+                <div class="auth-alert" id="editUsrError" hidden></div>
+
+                <button type="submit" class="btn btn-primary btn-block">Guardar Cambios</button>
             </form>
         </div>
     </div>

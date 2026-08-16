@@ -96,6 +96,8 @@
         btnNuevoUsuario: document.getElementById('btnNuevoUsuario'),
         usuariosTbody: document.getElementById('usuariosTableBody'),
         usuariosEmptyMsg: document.getElementById('usuariosEmptyMsg'),
+        buscarUsuario: document.getElementById('buscarUsuario'),
+        btnLimpiarBusquedaUsuario: document.getElementById('btnLimpiarBusquedaUsuario'),
 
         userModalOverlay: document.getElementById('userModalOverlay'),
         btnCerrarUserModal: document.getElementById('btnCerrarUserModal'),
@@ -106,6 +108,15 @@
         usrTelefono: document.getElementById('usrTelefono'),
         usrRol: document.getElementById('usrRol'),
         usrError: document.getElementById('usrError'),
+
+        editUsuarioModalOverlay: document.getElementById('editUsuarioModalOverlay'),
+        btnCerrarEditUsuarioModal: document.getElementById('btnCerrarEditUsuarioModal'),
+        editUsuarioForm: document.getElementById('editUsuarioForm'),
+        editUsrNombre: document.getElementById('editUsrNombre'),
+        editLabelDocumento: document.getElementById('editLabelDocumento'),
+        editUsrDocumento: document.getElementById('editUsrDocumento'),
+        editUsrTelefono: document.getElementById('editUsrTelefono'),
+        editUsrError: document.getElementById('editUsrError'),
 
         passwordModalOverlay: document.getElementById('passwordModalOverlay'),
         btnCerrarPasswordModal: document.getElementById('btnCerrarPasswordModal'),
@@ -493,7 +504,7 @@
 
     function cargarUsuarios() {
         return sb.from('profiles')
-            .select('id,nombre,email,rol,created_at')
+            .select('id,nombre,email,tipo_documento,documento,telefono,rol,created_at')
             .order('created_at', { ascending: false })
             .then(function (result) {
                 state.usuarios = result.data || [];
@@ -501,11 +512,33 @@
             });
     }
 
-    function renderUsuarios() {
-        el.usuariosTbody.innerHTML = '';
-        el.usuariosEmptyMsg.hidden = state.usuarios.length > 0;
+    // Normaliza texto y RUTs (sin puntos/guión) para poder buscar sin
+    // preocuparse del formato exacto que haya escrito el admin.
+    function normalizarBusqueda(texto) {
+        return (texto || '').toString().toLowerCase().replace(/[.\-\s]/g, '');
+    }
 
-        state.usuarios.forEach(function (u) {
+    function usuariosFiltrados() {
+        var termino = normalizarBusqueda(el.buscarUsuario.value);
+        if (!termino) return state.usuarios;
+
+        return state.usuarios.filter(function (u) {
+            var nombre = normalizarBusqueda(u.nombre);
+            var documento = normalizarBusqueda(u.documento);
+            return nombre.indexOf(termino) !== -1 || documento.indexOf(termino) !== -1;
+        });
+    }
+
+    function renderUsuarios() {
+        var usuarios = usuariosFiltrados();
+
+        el.usuariosTbody.innerHTML = '';
+        el.usuariosEmptyMsg.hidden = usuarios.length > 0;
+        el.usuariosEmptyMsg.textContent = state.usuarios.length === 0
+            ? 'No hay usuarios para mostrar.'
+            : 'No encontramos usuarios que coincidan con la búsqueda.';
+
+        usuarios.forEach(function (u) {
             var tr = document.createElement('tr');
             var esUnoMismo = u.id === state.currentUserId;
 
@@ -516,12 +549,14 @@
                 '</select>';
 
             var acciones = '<div class="admin-table-actions">' +
+                '<button type="button" class="btn-secundario btn-editar-usuario" data-id="' + u.id + '">Editar</button>' +
                 '<button type="button" class="btn-secundario btn-reset-password" data-id="' + u.id + '" data-nombre="' + (u.nombre || '') + '">Contraseña</button>' +
                 (esUnoMismo ? '' : '<button type="button" class="btn-cancelar btn-eliminar-usuario" data-id="' + u.id + '" data-nombre="' + (u.nombre || '') + '">Eliminar</button>') +
                 '</div>';
 
             tr.innerHTML =
                 '<td>' + (u.nombre || '—') + (esUnoMismo ? ' <small>(tú)</small>' : '') + '</td>' +
+                '<td>' + (u.documento || '—') + '</td>' +
                 '<td>' + (u.email || '—') + '</td>' +
                 '<td>' + rolSelectHtml + '</td>' +
                 '<td>' + new Date(u.created_at).toLocaleDateString('es-CL') + '</td>' +
@@ -545,7 +580,18 @@
                 abrirModalPassword(btn.getAttribute('data-id'), btn.getAttribute('data-nombre'));
             });
         });
+        el.usuariosTbody.querySelectorAll('.btn-editar-usuario').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                abrirModalEditarUsuario(btn.getAttribute('data-id'));
+            });
+        });
     }
+
+    el.buscarUsuario.addEventListener('input', renderUsuarios);
+    el.btnLimpiarBusquedaUsuario.addEventListener('click', function () {
+        el.buscarUsuario.value = '';
+        renderUsuarios();
+    });
 
     function cambiarRol(userId, nuevoRol) {
         if (!window.confirm('¿Cambiar el rol de este usuario a "' + ROL_LABELS[nuevoRol] + '"?')) {
@@ -657,6 +703,102 @@
                 el.usrError.className = 'auth-alert';
                 el.usrError.hidden = false;
             });
+    });
+
+    /* ======================================================================
+       MODAL: EDITAR USUARIO (solo superadministrador)
+       ====================================================================== */
+    function tipoDocumentoEditActual() {
+        var seleccionado = el.editUsuarioForm.querySelector('input[name="editTipoDocumento"]:checked');
+        return seleccionado ? seleccionado.value : 'rut';
+    }
+
+    function actualizarLabelDocumentoEdit() {
+        if (tipoDocumentoEditActual() === 'rut') {
+            el.editLabelDocumento.textContent = 'RUT';
+            el.editUsrDocumento.placeholder = '12.345.678-9';
+        } else {
+            el.editLabelDocumento.textContent = 'Pasaporte';
+            el.editUsrDocumento.placeholder = 'AB123456';
+        }
+    }
+
+    el.editUsuarioForm.querySelectorAll('input[name="editTipoDocumento"]').forEach(function (radio) {
+        radio.addEventListener('change', actualizarLabelDocumentoEdit);
+    });
+
+    function abrirModalEditarUsuario(userId) {
+        var usuario = state.usuarios.find(function (u) { return u.id === userId; });
+        if (!usuario) return;
+
+        el.editUsuarioForm.reset();
+        el.editUsrError.hidden = true;
+        el.editUsuarioForm.setAttribute('data-user-id', usuario.id);
+
+        el.editUsrNombre.value = usuario.nombre || '';
+        el.editUsrTelefono.value = usuario.telefono || '';
+        el.editUsuarioForm.querySelector('input[name="editTipoDocumento"][value="' + (usuario.tipo_documento || 'rut') + '"]').checked = true;
+        el.editUsrDocumento.value = usuario.documento || '';
+        actualizarLabelDocumentoEdit();
+
+        el.editUsuarioModalOverlay.hidden = false;
+    }
+
+    function cerrarModalEditarUsuario() {
+        el.editUsuarioModalOverlay.hidden = true;
+    }
+
+    el.btnCerrarEditUsuarioModal.addEventListener('click', cerrarModalEditarUsuario);
+    el.editUsuarioModalOverlay.addEventListener('click', function (e) {
+        if (e.target === el.editUsuarioModalOverlay) cerrarModalEditarUsuario();
+    });
+
+    el.editUsuarioForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        var userId = el.editUsuarioForm.getAttribute('data-user-id');
+        var nombre = el.editUsrNombre.value.trim();
+        var documento = el.editUsrDocumento.value.trim();
+        var tipoDocumento = tipoDocumentoEditActual();
+
+        if (!nombre) {
+            el.editUsrError.textContent = 'El nombre no puede estar vacío.';
+            el.editUsrError.className = 'auth-alert';
+            el.editUsrError.hidden = false;
+            return;
+        }
+
+        if (documento && tipoDocumento === 'rut' && !window.FutbolitoAuth.validarRut(documento)) {
+            el.editUsrError.textContent = 'RUT inválido. Verifica el dígito verificador.';
+            el.editUsrError.className = 'auth-alert';
+            el.editUsrError.hidden = false;
+            return;
+        }
+        if (documento && tipoDocumento === 'pasaporte' && !window.FutbolitoAuth.validarPasaporte(documento)) {
+            el.editUsrError.textContent = 'Pasaporte inválido (5 a 15 caracteres alfanuméricos).';
+            el.editUsrError.className = 'auth-alert';
+            el.editUsrError.hidden = false;
+            return;
+        }
+        if (documento && tipoDocumento === 'rut') {
+            documento = window.FutbolitoAuth.formatearRut(documento);
+        }
+
+        sb.from('profiles').update({
+            nombre: nombre,
+            tipo_documento: documento ? tipoDocumento : null,
+            documento: documento || null,
+            telefono: el.editUsrTelefono.value.trim() || null
+        }).eq('id', userId).then(function (result) {
+            if (result.error) {
+                el.editUsrError.textContent = 'No pudimos guardar los cambios: ' + result.error.message;
+                el.editUsrError.className = 'auth-alert';
+                el.editUsrError.hidden = false;
+                return;
+            }
+            cerrarModalEditarUsuario();
+            cargarUsuarios();
+        });
     });
 
     /* ======================================================================

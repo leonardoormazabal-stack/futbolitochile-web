@@ -357,6 +357,7 @@
     window.FutbolitoAuth = {
         validarRut: validarRut,
         validarPasaporte: validarPasaporte,
+        formatearRut: formatearRut,
         requireAdmin: requireAdmin
     };
 })();
