@@ -38,7 +38,8 @@
         viewMonth: startOfMonth(new Date()),
         esSuperadmin: false,
         accessToken: null,
-        currentUserId: null
+        currentUserId: null,
+        planId: null
     };
 
     var ROL_LABELS = {
@@ -136,7 +137,21 @@
         cCtaTexto: document.getElementById('cCtaTexto'),
         guardadoNosotros: document.getElementById('guardadoNosotros'),
 
-        contenidoCardsGrid: document.getElementById('contenidoCardsGrid')
+        contenidoCardsGrid: document.getElementById('contenidoCardsGrid'),
+
+        tarifasGrid: document.getElementById('tarifasGrid'),
+        btnGuardarTarifas: document.getElementById('btnGuardarTarifas'),
+        guardadoTarifas: document.getElementById('guardadoTarifas'),
+
+        formPlanMensual: document.getElementById('formPlanMensual'),
+        cPlanNombre: document.getElementById('cPlanNombre'),
+        cPlanHoras: document.getElementById('cPlanHoras'),
+        cPlanPrecio: document.getElementById('cPlanPrecio'),
+        guardadoPlan: document.getElementById('guardadoPlan'),
+
+        equipamientoGrid: document.getElementById('equipamientoGrid'),
+        btnGuardarEquipamiento: document.getElementById('btnGuardarEquipamiento'),
+        guardadoEquipamiento: document.getElementById('guardadoEquipamiento')
     };
 
     /* ======================================================================
@@ -685,10 +700,16 @@
     function cargarContenido() {
         return Promise.all([
             sb.from('site_content').select('key,value'),
-            sb.from('instalaciones_cards').select('id,titulo,descripcion,imagen_url').order('orden', { ascending: true })
+            sb.from('instalaciones_cards').select('id,titulo,descripcion,imagen_url').order('orden', { ascending: true }),
+            sb.from('tarifas').select('id,deporte,hora_desde,hora_hasta,precio').order('deporte', { ascending: true }).order('hora_desde', { ascending: true }),
+            sb.from('planes_mensuales').select('id,nombre,horas_incluidas,precio').order('orden', { ascending: true }),
+            sb.from('equipamiento').select('id,nombre,precio').order('orden', { ascending: true })
         ]).then(function (resultados) {
             var contenidoRes = resultados[0];
             var cardsRes = resultados[1];
+            var tarifasRes = resultados[2];
+            var planesRes = resultados[3];
+            var equipamientoRes = resultados[4];
 
             var c = {};
             (contenidoRes.data || []).forEach(function (fila) { c[fila.key] = fila.value; });
@@ -710,8 +731,136 @@
             el.cCtaTexto.value = c.nosotros_cta_texto || '';
 
             renderCardsEditor(cardsRes.data || []);
+            renderTarifasEditor(tarifasRes.data || []);
+            renderEquipamientoEditor(equipamientoRes.data || []);
+
+            var plan = (planesRes.data || [])[0];
+            if (plan) {
+                state.planId = plan.id;
+                el.cPlanNombre.value = plan.nombre || '';
+                el.cPlanHoras.value = plan.horas_incluidas || '';
+                el.cPlanPrecio.value = plan.precio || 0;
+            }
         });
     }
+
+    function renderTarifasEditor(tarifas) {
+        el.tarifasGrid.innerHTML = '';
+
+        tarifas.forEach(function (t) {
+            var row = document.createElement('div');
+            row.className = 'tarifa-editor-row';
+            row.setAttribute('data-id', t.id);
+            row.innerHTML =
+                '<span class="tarifa-editor-deporte">' + (SPORT_LABELS[t.deporte] || t.deporte) + '</span>' +
+                '<label>Desde <input type="number" class="tarifa-desde" min="0" max="23" value="' + t.hora_desde + '"></label>' +
+                '<label>Hasta <input type="number" class="tarifa-hasta" min="0" max="23" value="' + t.hora_hasta + '"></label>' +
+                '<label>Precio <input type="number" class="tarifa-precio" min="0" step="1" value="' + t.precio + '"></label>';
+            el.tarifasGrid.appendChild(row);
+        });
+    }
+
+    function renderEquipamientoEditor(items) {
+        el.equipamientoGrid.innerHTML = '';
+
+        items.forEach(function (item) {
+            var row = document.createElement('div');
+            row.className = 'equipamiento-editor-row';
+            row.setAttribute('data-id', item.id);
+            row.innerHTML =
+                '<label>Artículo <input type="text" class="equip-nombre" value="' + (item.nombre || '').replace(/"/g, '&quot;') + '"></label>' +
+                '<label>Precio <input type="number" class="equip-precio" min="0" step="1" value="' + item.precio + '"></label>';
+            el.equipamientoGrid.appendChild(row);
+        });
+    }
+
+    el.btnGuardarTarifas.addEventListener('click', function () {
+        var filas = Array.from(el.tarifasGrid.querySelectorAll('.tarifa-editor-row')).map(function (row) {
+            return {
+                id: parseInt(row.getAttribute('data-id'), 10),
+                hora_desde: parseInt(row.querySelector('.tarifa-desde').value, 10),
+                hora_hasta: parseInt(row.querySelector('.tarifa-hasta').value, 10),
+                precio: parseInt(row.querySelector('.tarifa-precio').value, 10)
+            };
+        });
+
+        var invalida = filas.some(function (f) {
+            return isNaN(f.hora_desde) || isNaN(f.hora_hasta) || isNaN(f.precio);
+        });
+        if (invalida) {
+            window.alert('Revisa que todos los horarios y precios sean números válidos.');
+            return;
+        }
+
+        Promise.all(filas.map(function (fila) {
+            return sb.from('tarifas').update({
+                hora_desde: fila.hora_desde,
+                hora_hasta: fila.hora_hasta,
+                precio: fila.precio
+            }).eq('id', fila.id);
+        })).then(function (resultados) {
+            var conError = resultados.find(function (r) { return r.error; });
+            if (conError) {
+                window.alert('No pudimos guardar algunas tarifas: ' + conError.error.message);
+                return;
+            }
+            mostrarGuardado(el.guardadoTarifas);
+            cargarCatalogo(); // refresca los precios que usa "+ Nueva Reserva"
+        });
+    });
+
+    el.btnGuardarEquipamiento.addEventListener('click', function () {
+        var filas = Array.from(el.equipamientoGrid.querySelectorAll('.equipamiento-editor-row')).map(function (row) {
+            return {
+                id: row.getAttribute('data-id'),
+                nombre: row.querySelector('.equip-nombre').value.trim(),
+                precio: parseInt(row.querySelector('.equip-precio').value, 10)
+            };
+        });
+
+        var invalida = filas.some(function (f) { return !f.nombre || isNaN(f.precio); });
+        if (invalida) {
+            window.alert('Revisa que cada artículo tenga nombre y un precio válido.');
+            return;
+        }
+
+        Promise.all(filas.map(function (fila) {
+            return sb.from('equipamiento').update({ nombre: fila.nombre, precio: fila.precio }).eq('id', fila.id);
+        })).then(function (resultados) {
+            var conError = resultados.find(function (r) { return r.error; });
+            if (conError) {
+                window.alert('No pudimos guardar algunos artículos: ' + conError.error.message);
+                return;
+            }
+            mostrarGuardado(el.guardadoEquipamiento);
+        });
+    });
+
+    el.formPlanMensual.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        var precio = parseInt(el.cPlanPrecio.value, 10);
+        if (!el.cPlanNombre.value.trim() || !el.cPlanHoras.value.trim() || isNaN(precio)) {
+            window.alert('Completa nombre, horas incluidas y un precio válido.');
+            return;
+        }
+        if (!state.planId) {
+            window.alert('No pudimos identificar el plan a actualizar. Recarga la página.');
+            return;
+        }
+
+        sb.from('planes_mensuales').update({
+            nombre: el.cPlanNombre.value.trim(),
+            horas_incluidas: el.cPlanHoras.value.trim(),
+            precio: precio
+        }).eq('id', state.planId).then(function (result) {
+            if (result.error) {
+                window.alert('No pudimos guardar el plan: ' + result.error.message);
+                return;
+            }
+            mostrarGuardado(el.guardadoPlan);
+        });
+    });
 
     function renderCardsEditor(cards) {
         el.contenidoCardsGrid.innerHTML = '';

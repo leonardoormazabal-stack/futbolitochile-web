@@ -364,10 +364,83 @@
     height: 120px;
 }
 
+/* TARIFAS Y HORARIOS */
+.contenido-subtitulo {
+    color: var(--azul-oscuro);
+    font-size: 16px;
+    margin: 26px 0 14px;
+}
+
+.admin-note {
+    color: var(--gris-texto);
+    font-size: 13px;
+    margin-bottom: 16px;
+}
+
+.tarifa-editor-grid,
+.equipamiento-editor-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tarifa-editor-row,
+.equipamiento-editor-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 12px 16px;
+    background-color: var(--gris-claro);
+    border-radius: 10px;
+}
+
+.tarifa-editor-deporte {
+    font-weight: 700;
+    color: var(--azul-oscuro);
+    min-width: 80px;
+}
+
+.tarifa-editor-row label,
+.equipamiento-editor-row label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--gris-texto);
+}
+
+.tarifa-editor-row input,
+.equipamiento-editor-row input {
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 2px solid var(--blanco);
+    font-family: inherit;
+    font-size: 14px;
+}
+
+.tarifa-editor-row input[type="number"] {
+    width: 90px;
+}
+
+.equipamiento-editor-row input[type="text"] {
+    width: 220px;
+}
+
+.equipamiento-editor-row input[type="number"] {
+    width: 110px;
+}
+
 @media (max-width: 700px) {
     .contenido-feature-grid,
     .contenido-cards-grid {
         grid-template-columns: 1fr;
+    }
+
+    .tarifa-editor-row,
+    .equipamiento-editor-row {
+        flex-direction: column;
+        align-items: flex-start;
     }
 }
 

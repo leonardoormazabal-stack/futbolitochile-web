@@ -226,6 +226,45 @@
                 <h3>Instalaciones</h3>
                 <div class="contenido-cards-grid" id="contenidoCardsGrid"></div>
             </div>
+
+            <div class="contenido-bloque">
+                <h3>Tarifas y Horarios</h3>
+                <p class="admin-note">Los horarios son en formato 24 horas (ej: 12, 18, 20). Estos precios son los mismos que usa el sistema de reservas.</p>
+
+                <h4 class="contenido-subtitulo">Arriendo por Hora</h4>
+                <div class="tarifa-editor-grid" id="tarifasGrid"></div>
+                <div class="contenido-form-actions">
+                    <button type="button" class="btn btn-primary" id="btnGuardarTarifas">Guardar Tarifas por Hora</button>
+                    <span class="contenido-guardado" id="guardadoTarifas" hidden>Guardado ✓</span>
+                </div>
+
+                <h4 class="contenido-subtitulo">Plan Mensual</h4>
+                <form id="formPlanMensual" class="contenido-form">
+                    <div class="form-group">
+                        <label for="cPlanNombre">Nombre del plan</label>
+                        <input type="text" id="cPlanNombre">
+                    </div>
+                    <div class="form-group">
+                        <label for="cPlanHoras">Horas incluidas (texto)</label>
+                        <input type="text" id="cPlanHoras">
+                    </div>
+                    <div class="form-group">
+                        <label for="cPlanPrecio">Precio</label>
+                        <input type="number" id="cPlanPrecio" min="0" step="1">
+                    </div>
+                    <div class="contenido-form-actions">
+                        <button type="submit" class="btn btn-primary">Guardar Plan</button>
+                        <span class="contenido-guardado" id="guardadoPlan" hidden>Guardado ✓</span>
+                    </div>
+                </form>
+
+                <h4 class="contenido-subtitulo">Arriendo de Equipamiento</h4>
+                <div class="equipamiento-editor-grid" id="equipamientoGrid"></div>
+                <div class="contenido-form-actions">
+                    <button type="button" class="btn btn-primary" id="btnGuardarEquipamiento">Guardar Equipamiento</button>
+                    <span class="contenido-guardado" id="guardadoEquipamiento" hidden>Guardado ✓</span>
+                </div>
+            </div>
         </section>
     </main>
 
