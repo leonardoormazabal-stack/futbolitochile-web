@@ -224,6 +224,46 @@
     background-color: var(--rojo-oscuro);
 }
 
+/* SECCIÓN USUARIOS */
+.rol-select {
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 2px solid var(--gris-claro);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--azul-oscuro);
+    background-color: var(--blanco);
+}
+
+.admin-table-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-secundario {
+    border: none;
+    background-color: var(--azul-primario);
+    color: var(--blanco);
+    padding: 6px 14px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.btn-secundario:hover {
+    background-color: var(--azul-oscuro);
+}
+
+.admin-modal-subtitle {
+    margin-top: -8px;
+    color: var(--gris-texto);
+    font-size: 14px;
+}
+
 /* MODAL NUEVA RESERVA */
 .admin-modal-overlay {
     position: fixed;

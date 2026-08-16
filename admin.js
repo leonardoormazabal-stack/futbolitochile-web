@@ -32,9 +32,19 @@
         reservas: [],
         canchas: [],
         tarifas: [],
+        usuarios: [],
         filtroFecha: '',
         mostrarCanceladas: false,
-        viewMonth: startOfMonth(new Date())
+        viewMonth: startOfMonth(new Date()),
+        esSuperadmin: false,
+        accessToken: null,
+        currentUserId: null
+    };
+
+    var ROL_LABELS = {
+        jugador: 'Jugador',
+        administrador: 'Administrador',
+        superadministrador: 'Super Administrador'
     };
 
     var MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -79,7 +89,29 @@
         admTelefono: document.getElementById('admTelefono'),
         admEmail: document.getElementById('admEmail'),
         admMetodoPago: document.getElementById('admMetodoPago'),
-        admReservaError: document.getElementById('admReservaError')
+        admReservaError: document.getElementById('admReservaError'),
+
+        tabUsuarios: document.getElementById('tabUsuarios'),
+        btnNuevoUsuario: document.getElementById('btnNuevoUsuario'),
+        usuariosTbody: document.getElementById('usuariosTableBody'),
+        usuariosEmptyMsg: document.getElementById('usuariosEmptyMsg'),
+
+        userModalOverlay: document.getElementById('userModalOverlay'),
+        btnCerrarUserModal: document.getElementById('btnCerrarUserModal'),
+        nuevoUsuarioForm: document.getElementById('nuevoUsuarioForm'),
+        usrNombre: document.getElementById('usrNombre'),
+        usrEmail: document.getElementById('usrEmail'),
+        usrPassword: document.getElementById('usrPassword'),
+        usrTelefono: document.getElementById('usrTelefono'),
+        usrRol: document.getElementById('usrRol'),
+        usrError: document.getElementById('usrError'),
+
+        passwordModalOverlay: document.getElementById('passwordModalOverlay'),
+        btnCerrarPasswordModal: document.getElementById('btnCerrarPasswordModal'),
+        passwordForm: document.getElementById('passwordForm'),
+        passwordFormUsuario: document.getElementById('passwordFormUsuario'),
+        nuevaPassword: document.getElementById('nuevaPassword'),
+        passwordError: document.getElementById('passwordError')
     };
 
     /* ======================================================================
@@ -123,6 +155,8 @@
         el.views.forEach(function (v) {
             v.classList.toggle('active', v.id === 'view-' + nombre);
         });
+        el.btnNuevaReserva.hidden = nombre === 'usuarios';
+        el.btnNuevoUsuario.hidden = !(nombre === 'usuarios' && state.esSuperadmin);
     }
 
     /* ======================================================================
@@ -397,14 +431,214 @@
     });
 
     /* ======================================================================
+       SECCIÓN USUARIOS (solo superadministrador)
+       ====================================================================== */
+    function llamarApiAdmin(endpoint, payload) {
+        return fetch('/api/' + endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + state.accessToken
+            },
+            body: JSON.stringify(payload)
+        }).then(function (res) {
+            return res.json().then(function (data) {
+                if (!res.ok) {
+                    throw new Error(data.error || 'Ocurrió un error inesperado.');
+                }
+                return data;
+            });
+        });
+    }
+
+    function cargarUsuarios() {
+        return sb.from('profiles')
+            .select('id,nombre,email,rol,created_at')
+            .order('created_at', { ascending: false })
+            .then(function (result) {
+                state.usuarios = result.data || [];
+                renderUsuarios();
+            });
+    }
+
+    function renderUsuarios() {
+        el.usuariosTbody.innerHTML = '';
+        el.usuariosEmptyMsg.hidden = state.usuarios.length > 0;
+
+        state.usuarios.forEach(function (u) {
+            var tr = document.createElement('tr');
+            var esUnoMismo = u.id === state.currentUserId;
+
+            var rolSelectHtml = '<select class="rol-select" data-id="' + u.id + '"' + (esUnoMismo ? ' disabled' : '') + '>' +
+                Object.keys(ROL_LABELS).map(function (key) {
+                    return '<option value="' + key + '"' + (key === u.rol ? ' selected' : '') + '>' + ROL_LABELS[key] + '</option>';
+                }).join('') +
+                '</select>';
+
+            var acciones = '<div class="admin-table-actions">' +
+                '<button type="button" class="btn-secundario btn-reset-password" data-id="' + u.id + '" data-nombre="' + (u.nombre || '') + '">Contraseña</button>' +
+                (esUnoMismo ? '' : '<button type="button" class="btn-cancelar btn-eliminar-usuario" data-id="' + u.id + '" data-nombre="' + (u.nombre || '') + '">Eliminar</button>') +
+                '</div>';
+
+            tr.innerHTML =
+                '<td>' + (u.nombre || '—') + (esUnoMismo ? ' <small>(tú)</small>' : '') + '</td>' +
+                '<td>' + (u.email || '—') + '</td>' +
+                '<td>' + rolSelectHtml + '</td>' +
+                '<td>' + new Date(u.created_at).toLocaleDateString('es-CL') + '</td>' +
+                '<td>' + acciones + '</td>';
+
+            el.usuariosTbody.appendChild(tr);
+        });
+
+        el.usuariosTbody.querySelectorAll('.rol-select').forEach(function (select) {
+            select.addEventListener('change', function () {
+                cambiarRol(select.getAttribute('data-id'), select.value);
+            });
+        });
+        el.usuariosTbody.querySelectorAll('.btn-eliminar-usuario').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                eliminarUsuario(btn.getAttribute('data-id'), btn.getAttribute('data-nombre'));
+            });
+        });
+        el.usuariosTbody.querySelectorAll('.btn-reset-password').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                abrirModalPassword(btn.getAttribute('data-id'), btn.getAttribute('data-nombre'));
+            });
+        });
+    }
+
+    function cambiarRol(userId, nuevoRol) {
+        if (!window.confirm('¿Cambiar el rol de este usuario a "' + ROL_LABELS[nuevoRol] + '"?')) {
+            cargarUsuarios(); // revierte el <select> a su valor real
+            return;
+        }
+        sb.from('profiles').update({ rol: nuevoRol }).eq('id', userId).then(function (result) {
+            if (result.error) {
+                window.alert('No pudimos cambiar el rol: ' + result.error.message);
+            }
+            cargarUsuarios();
+        });
+    }
+
+    function eliminarUsuario(userId, nombre) {
+        if (!window.confirm('¿Eliminar definitivamente a "' + nombre + '"? Esta acción no se puede deshacer.')) return;
+
+        llamarApiAdmin('admin-delete-user', { userId: userId })
+            .then(function () {
+                cargarUsuarios();
+            })
+            .catch(function (err) {
+                window.alert('No pudimos eliminar el usuario: ' + err.message);
+            });
+    }
+
+    function abrirModalPassword(userId, nombre) {
+        el.passwordForm.reset();
+        el.passwordError.hidden = true;
+        el.passwordForm.setAttribute('data-user-id', userId);
+        el.passwordFormUsuario.textContent = 'Usuario: ' + nombre;
+        el.passwordModalOverlay.hidden = false;
+    }
+
+    function cerrarModalPassword() {
+        el.passwordModalOverlay.hidden = true;
+    }
+
+    el.btnCerrarPasswordModal.addEventListener('click', cerrarModalPassword);
+    el.passwordModalOverlay.addEventListener('click', function (e) {
+        if (e.target === el.passwordModalOverlay) cerrarModalPassword();
+    });
+
+    el.passwordForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var userId = el.passwordForm.getAttribute('data-user-id');
+        var nuevaPassword = el.nuevaPassword.value;
+
+        if (nuevaPassword.length < 6) {
+            el.passwordError.textContent = 'La contraseña debe tener al menos 6 caracteres.';
+            el.passwordError.className = 'auth-alert';
+            el.passwordError.hidden = false;
+            return;
+        }
+
+        llamarApiAdmin('admin-set-password', { userId: userId, newPassword: nuevaPassword })
+            .then(function () {
+                cerrarModalPassword();
+                window.alert('Contraseña actualizada correctamente.');
+            })
+            .catch(function (err) {
+                el.passwordError.textContent = err.message;
+                el.passwordError.className = 'auth-alert';
+                el.passwordError.hidden = false;
+            });
+    });
+
+    function abrirModalUsuario() {
+        el.nuevoUsuarioForm.reset();
+        el.usrError.hidden = true;
+        el.userModalOverlay.hidden = false;
+    }
+
+    function cerrarModalUsuario() {
+        el.userModalOverlay.hidden = true;
+    }
+
+    el.btnNuevoUsuario.addEventListener('click', abrirModalUsuario);
+    el.btnCerrarUserModal.addEventListener('click', cerrarModalUsuario);
+    el.userModalOverlay.addEventListener('click', function (e) {
+        if (e.target === el.userModalOverlay) cerrarModalUsuario();
+    });
+
+    el.nuevoUsuarioForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        var payload = {
+            nombre: el.usrNombre.value.trim(),
+            email: el.usrEmail.value.trim(),
+            password: el.usrPassword.value,
+            telefono: el.usrTelefono.value.trim() || null,
+            rol: el.usrRol.value
+        };
+
+        if (!payload.nombre || !payload.email || !payload.password) {
+            el.usrError.textContent = 'Completa nombre, email y contraseña.';
+            el.usrError.className = 'auth-alert';
+            el.usrError.hidden = false;
+            return;
+        }
+
+        llamarApiAdmin('admin-create-user', payload)
+            .then(function () {
+                cerrarModalUsuario();
+                cargarUsuarios();
+            })
+            .catch(function (err) {
+                el.usrError.textContent = err.message;
+                el.usrError.className = 'auth-alert';
+                el.usrError.hidden = false;
+            });
+    });
+
+    /* ======================================================================
        INICIALIZACIÓN (con control de acceso)
        ====================================================================== */
     window.FutbolitoAuth.requireAdmin().then(function (info) {
         if (!info) return; // requireAdmin ya redirigió
 
+        state.accessToken = info.session.access_token;
+        state.currentUserId = info.session.user.id;
+        state.esSuperadmin = info.rol === 'superadministrador';
+
         el.gate.hidden = true;
         el.page.hidden = false;
 
-        Promise.all([cargarCatalogo(), cargarReservas()]);
+        var tareas = [cargarCatalogo(), cargarReservas()];
+
+        if (state.esSuperadmin) {
+            el.tabUsuarios.hidden = false;
+            tareas.push(cargarUsuarios());
+        }
+
+        Promise.all(tareas);
     });
 })();

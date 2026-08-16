@@ -30,6 +30,7 @@ create type public.user_role as enum ('jugador', 'administrador', 'superadminist
 create table public.profiles (
     id uuid primary key references auth.users (id) on delete cascade,
     nombre text not null,
+    email text,
     tipo_documento text check (tipo_documento in ('rut', 'pasaporte')),
     documento text,
     telefono text,
@@ -46,10 +47,11 @@ language plpgsql
 security definer set search_path = public
 as $$
 begin
-    insert into public.profiles (id, nombre, tipo_documento, documento, telefono, rol)
+    insert into public.profiles (id, nombre, email, tipo_documento, documento, telefono, rol)
     values (
         new.id,
         coalesce(new.raw_user_meta_data ->> 'nombre', ''),
+        new.email,
         new.raw_user_meta_data ->> 'tipo_documento',
         new.raw_user_meta_data ->> 'documento',
         new.raw_user_meta_data ->> 'telefono',
@@ -78,6 +80,22 @@ as $$
     select exists (
         select 1 from public.profiles
         where id = auth.uid() and rol in ('administrador', 'superadministrador')
+    );
+$$;
+
+-- Igual que is_admin(), pero solo para superadministrador. La gestión de
+-- usuarios (cambiar roles, crear, eliminar, resetear contraseñas) queda
+-- reservada al superadministrador únicamente.
+create or replace function public.is_superadmin()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+    select exists (
+        select 1 from public.profiles
+        where id = auth.uid() and rol = 'superadministrador'
     );
 $$;
 
@@ -171,6 +189,13 @@ create policy "admins_ven_todos_los_perfiles"
     on public.profiles for select
     using (public.is_admin());
 
+-- Solo el superadministrador puede editar el perfil de otras personas
+-- (cambiar su rol, nombre, etc.) desde la sección Usuarios del panel.
+create policy "superadmin_actualiza_cualquier_perfil"
+    on public.profiles for update
+    using (public.is_superadmin())
+    with check (public.is_superadmin());
+
 -- Canchas y tarifas: catálogo público, cualquiera las puede leer.
 create policy "cualquiera_ve_canchas"
     on public.canchas for select
@@ -208,9 +233,11 @@ create policy "admins_actualizan_reservas"
 -- (a diferencia de la demo en localStorage, que usaba admin123/super123 en
 -- texto plano — eso NUNCA debe replicarse en una base de datos real).
 --
--- Para crear esas dos cuentas reales:
---   1. Regístralas normalmente desde registro.html (quedan como 'jugador'),
---      o créalas desde Supabase → Authentication → Add user.
+-- Para crear el PRIMER superadministrador (solo hay que hacer esto una vez;
+-- de ahí en adelante, ese superadmin puede gestionar el resto de los
+-- usuarios desde la sección "Usuarios" del panel de administración):
+--   1. Regístralo normalmente desde registro.html (queda como 'jugador'),
+--      o créalo desde Supabase → Authentication → Add user.
 --   2. Luego, en el SQL Editor, sube su rol manualmente:
---        update public.profiles set rol = 'administrador'
+--        update public.profiles set rol = 'superadministrador'
 --        where id = '<uuid del usuario, visible en Authentication → Users>';

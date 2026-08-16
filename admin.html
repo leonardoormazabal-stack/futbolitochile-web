@@ -58,8 +58,10 @@
             <div class="admin-tabs" id="adminTabs">
                 <button type="button" class="admin-tab active" data-tab="calendario">Calendario</button>
                 <button type="button" class="admin-tab" data-tab="listado">Listado</button>
+                <button type="button" class="admin-tab" data-tab="usuarios" id="tabUsuarios" hidden>Usuarios</button>
             </div>
             <button type="button" class="btn btn-primary" id="btnNuevaReserva">+ Nueva Reserva</button>
+            <button type="button" class="btn btn-primary" id="btnNuevoUsuario" hidden>+ Nuevo Usuario</button>
         </div>
 
         <!-- VISTA CALENDARIO -->
@@ -111,6 +113,25 @@
                     <tbody id="reservasTableBody"></tbody>
                 </table>
                 <p class="admin-empty" id="adminEmptyMsg" hidden>No hay reservas para este filtro.</p>
+            </div>
+        </section>
+
+        <!-- VISTA USUARIOS (solo superadministrador) -->
+        <section class="admin-view" id="view-usuarios">
+            <div class="admin-table-wrapper">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Rol</th>
+                            <th>Creado</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="usuariosTableBody"></tbody>
+                </table>
+                <p class="admin-empty" id="usuariosEmptyMsg" hidden>No hay usuarios para mostrar.</p>
             </div>
         </section>
     </main>
@@ -177,6 +198,67 @@
                 <div class="auth-alert" id="admReservaError" hidden></div>
 
                 <button type="submit" class="btn btn-primary btn-block">Crear Reserva</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: NUEVO USUARIO -->
+    <div class="admin-modal-overlay" id="userModalOverlay" hidden>
+        <div class="admin-modal">
+            <div class="admin-modal-header">
+                <h2>Nuevo Usuario</h2>
+                <button type="button" class="admin-modal-close" id="btnCerrarUserModal" aria-label="Cerrar">&times;</button>
+            </div>
+            <form id="nuevoUsuarioForm" novalidate>
+                <div class="form-group">
+                    <label for="usrNombre">Nombre completo</label>
+                    <input type="text" id="usrNombre" required>
+                </div>
+                <div class="form-group">
+                    <label for="usrEmail">Correo electrónico</label>
+                    <input type="email" id="usrEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="usrPassword">Contraseña</label>
+                    <input type="password" id="usrPassword" minlength="6" required>
+                </div>
+                <div class="form-group">
+                    <label for="usrTelefono">Teléfono</label>
+                    <input type="tel" id="usrTelefono">
+                </div>
+                <div class="form-group">
+                    <label for="usrRol">Rol</label>
+                    <select id="usrRol">
+                        <option value="jugador">Jugador</option>
+                        <option value="administrador">Administrador</option>
+                        <option value="superadministrador">Super Administrador</option>
+                    </select>
+                </div>
+
+                <div class="auth-alert" id="usrError" hidden></div>
+
+                <button type="submit" class="btn btn-primary btn-block">Crear Usuario</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: CAMBIAR CONTRASEÑA -->
+    <div class="admin-modal-overlay" id="passwordModalOverlay" hidden>
+        <div class="admin-modal">
+            <div class="admin-modal-header">
+                <h2>Cambiar Contraseña</h2>
+                <button type="button" class="admin-modal-close" id="btnCerrarPasswordModal" aria-label="Cerrar">&times;</button>
+            </div>
+            <form id="passwordForm" novalidate>
+                <p id="passwordFormUsuario" class="admin-modal-subtitle"></p>
+                <div class="form-group">
+                    <label for="nuevaPassword">Nueva contraseña</label>
+                    <input type="password" id="nuevaPassword" minlength="6" required>
+                </div>
+
+                <div class="auth-alert" id="passwordError" hidden></div>
+
+                <button type="submit" class="btn btn-primary btn-block">Guardar Contraseña</button>
             </form>
         </div>
     </div>
