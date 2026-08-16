@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Cuenta — Futbolito Chile</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="auth.css">
+    <link rel="icon" type="image/webp" href="pictures/logo-1024x852.webp">
+</head>
+<body>
+
+    <!-- BARRA DE NAVEGACIÓN -->
+    <header class="navbar">
+        <nav class="nav-container">
+            <a href="index.html#inicio" class="logo">
+                <img src="pictures/logo-1024x852.webp" alt="Futbolito Chile" class="logo-icon">
+                <span>Futbolito Chile</span>
+            </a>
+
+            <input type="checkbox" id="menu-toggle" class="menu-toggle">
+            <label for="menu-toggle" class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </label>
+
+            <ul class="nav-links">
+                <li><a href="index.html#inicio">Inicio</a></li>
+                <li><a href="reservas.html">Reservas</a></li>
+                <li><a href="index.html#instalaciones">Instalaciones</a></li>
+                <li><a href="index.html#tarifas">Tarifas y Planes</a></li>
+                <li><a href="index.html#eventos">Eventos</a></li>
+                <li><a href="index.html#escuelas">Escuelas y Ligas</a></li>
+                <li><a href="index.html#publicidad">Publicidad</a></li>
+                <li><a href="index.html#nosotros">Quiénes Somos</a></li>
+                <li><a href="index.html#contacto">Contacto</a></li>
+                <li class="nav-auth-item" id="navAuthItem"><a href="login.html" class="nav-login-btn">Iniciar Sesión</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section class="auth-hero">
+        <h1>Crea tu Cuenta</h1>
+        <p>Regístrate como jugador para reservar canchas más rápido</p>
+    </section>
+
+    <main class="auth-page">
+        <div class="auth-card">
+            <form id="registroForm" novalidate>
+                <div class="form-group">
+                    <label for="nombre">Nombre completo</label>
+                    <input type="text" id="nombre" name="nombre" autocomplete="name" required>
+                    <span class="form-error" id="error-nombre"></span>
+                </div>
+
+                <div class="form-group">
+                    <label>Tipo de documento</label>
+                    <div class="doc-tipo-selector">
+                        <label><input type="radio" name="tipoDocumento" value="rut" checked> RUT chileno</label>
+                        <label><input type="radio" name="tipoDocumento" value="pasaporte"> Pasaporte</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="documento" id="labelDocumento">RUT</label>
+                    <input type="text" id="documento" name="documento" placeholder="12.345.678-9" autocomplete="off" required>
+                    <span class="form-error" id="error-documento"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="telefono">Teléfono</label>
+                    <input type="tel" id="telefono" name="telefono" placeholder="+56 9 1234 5678" autocomplete="tel" required>
+                    <span class="form-error" id="error-telefono"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Correo electrónico</label>
+                    <input type="email" id="email" name="email" autocomplete="email" required>
+                    <span class="form-error" id="error-email"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Contraseña</label>
+                    <input type="password" id="password" name="password" autocomplete="new-password" minlength="6" required>
+                    <span class="form-error" id="error-password"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="password2">Confirmar contraseña</label>
+                    <input type="password" id="password2" name="password2" autocomplete="new-password" required>
+                    <span class="form-error" id="error-password2"></span>
+                </div>
+
+                <div class="auth-alert" id="registroError" hidden></div>
+
+                <button type="submit" class="btn btn-primary btn-block">Crear Cuenta</button>
+            </form>
+
+            <p class="auth-switch">¿Ya tienes cuenta? <a href="login.html">Inicia sesión aquí</a></p>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer" id="contacto">
+        <div class="footer-container">
+            <div class="footer-col">
+                <h3>Futbolito Chile</h3>
+                <p>📍 Fresia #1240, La Pintana, Santiago</p>
+                <p>📞 +56 9 4408 7803</p>
+                <p>✉️ contacto@futbolitochile.cl</p>
+            </div>
+            <div class="footer-col">
+                <h3>Enlaces Rápidos</h3>
+                <div class="social-links">
+                    <a href="index.html#instalaciones">Instalaciones</a>
+                    <a href="index.html#tarifas">Tarifas y Planes</a>
+                    <a href="index.html#eventos">Eventos</a>
+                    <a href="index.html#escuelas">Escuelas y Ligas</a>
+                    <a href="index.html#publicidad">Publicidad</a>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h3>Síguenos</h3>
+                <div class="social-links">
+                    <a href="#" aria-label="Facebook">Facebook</a>
+                    <a href="#" aria-label="Instagram">Instagram</a>
+                    <a href="https://wa.me/56944087803" target="_blank" rel="noopener" aria-label="WhatsApp">WhatsApp</a>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h3>Horario de Atención</h3>
+                <p>Lunes a Domingo</p>
+                <p>09:00 - 23:00 hrs</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Futbolito Chile. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- BOTÓN FLOTANTE DE WHATSAPP -->
+    <a href="https://wa.me/56944087803?text=Hola%2C%20quiero%20m%C3%A1s%20informaci%C3%B3n" class="whatsapp-float" target="_blank" rel="noopener" aria-label="Contactar por WhatsApp">
+        <svg viewBox="0 0 448 512" class="whatsapp-icon" aria-hidden="true">
+            <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/>
+        </svg>
+    </a>
+
+    <script src="auth.js"></script>
+</body>
+</html>

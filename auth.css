@@ -1,0 +1,204 @@
+/* ==========================================================================
+   AUTENTICACIÓN — LOGIN / REGISTRO
+   Usa las variables de color definidas en style.css (:root)
+   ========================================================================== */
+
+/* BOTÓN DE LOGIN EN EL NAVBAR */
+.nav-login-btn {
+    display: inline-block;
+    background-color: var(--rojo);
+    color: var(--blanco) !important;
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
+}
+
+.nav-login-btn:hover {
+    background-color: var(--rojo-oscuro);
+}
+
+.nav-user {
+    color: var(--blanco);
+    font-size: 14px;
+    font-weight: 500;
+    margin-right: 10px;
+}
+
+.nav-user small {
+    color: #b9cdc0;
+    font-weight: 400;
+}
+
+.nav-logout-btn {
+    background-color: transparent;
+    border: 2px solid var(--blanco);
+    color: var(--blanco) !important;
+}
+
+.nav-logout-btn:hover {
+    background-color: var(--blanco);
+    color: var(--azul-oscuro) !important;
+}
+
+.nav-auth-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* ENCABEZADO */
+.auth-hero {
+    background: linear-gradient(135deg, var(--azul-oscuro) 0%, var(--azul-primario) 100%);
+    color: var(--blanco);
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.auth-hero h1 {
+    font-size: 34px;
+    margin-bottom: 10px;
+}
+
+.auth-hero p {
+    font-size: 16px;
+    color: #dceafb;
+}
+
+/* CONTENEDOR */
+.auth-page {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 50px 20px 90px;
+}
+
+.auth-card {
+    background-color: var(--blanco);
+    border-radius: 16px;
+    box-shadow: var(--sombra);
+    padding: 40px;
+}
+
+.auth-card form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--azul-oscuro);
+}
+
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="tel"],
+.form-group input[type="password"] {
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 2px solid var(--gris-claro);
+    font-family: inherit;
+    font-size: 15px;
+    transition: border-color 0.2s ease;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--azul-primario);
+}
+
+.form-group input.invalid {
+    border-color: var(--rojo);
+}
+
+.form-error {
+    font-size: 12px;
+    color: var(--rojo);
+    min-height: 16px;
+}
+
+.doc-tipo-selector {
+    display: flex;
+    gap: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--gris-texto);
+}
+
+.doc-tipo-selector label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.btn-block {
+    width: 100%;
+}
+
+.auth-alert {
+    background-color: #fdeceb;
+    border: 1px solid var(--rojo);
+    color: var(--rojo-oscuro);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    text-align: center;
+}
+
+.auth-alert.success {
+    background-color: #eafaf0;
+    border-color: #2e9e50;
+    color: #1f7a3d;
+}
+
+.auth-switch {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 14px;
+    color: var(--gris-texto);
+}
+
+.auth-switch a {
+    color: var(--azul-primario);
+    font-weight: 600;
+}
+
+.auth-demo-note {
+    margin-top: 30px;
+    padding: 16px 18px;
+    border-radius: 10px;
+    background-color: var(--gris-claro);
+    font-size: 13px;
+    color: var(--gris-texto);
+}
+
+.auth-demo-note strong {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--azul-oscuro);
+}
+
+.auth-demo-note ul {
+    margin: 0 0 8px;
+    padding-left: 18px;
+    list-style: disc;
+}
+
+@media (max-width: 480px) {
+    .auth-card {
+        padding: 28px 22px;
+    }
+
+    .auth-hero h1 {
+        font-size: 26px;
+    }
+}
