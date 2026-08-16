@@ -44,7 +44,7 @@ create table if not exists public.instalaciones_cards (
 
 insert into public.instalaciones_cards (id, orden, titulo, descripcion, imagen_url) values
     ('canchas', 1, '6 Canchas de Futbolito', 'Canchas renovadas y bien mantenidas con césped sintético de alta calidad, iluminación LED y medidas oficiales para fútbol 5 y 7.', 'pictures/cancha-sintetica.jpg'),
-    ('padel', 2, '2 Canchas de Pádel', 'Canchas de pádel de primera, ideales para jugar de día o de noche.', 'pictures/padel.jpg'),
+    ('padel', 2, '2 Canchas de Pádel', 'Canchas de pádel de primera, ideales para jugar de día o de noche.', 'pictures/cancha_padel.png'),
     ('piscina', 3, 'Piscina al aire libre', 'Espacio de recreación y descanso para toda la familia, disponible también como parte de nuestros paquetes de eventos.', 'pictures/piscina.jpeg'),
     ('quinchos', 4, 'Zona de Quinchos', 'Áreas equipadas para asados y celebraciones, perfectas para después del partido o para tu próximo evento.', 'pictures/estacionamiento.jpg'),
     ('camarines', 5, 'Camarines y Baños', 'Amplios camarines equipados con duchas de agua caliente, casilleros seguros y todas las comodidades para tu equipo.', 'pictures/camarines.jpg'),

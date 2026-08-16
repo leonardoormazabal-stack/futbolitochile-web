@@ -330,11 +330,29 @@
     }
 
     /* ======================================================================
+       MENÚ MÓVIL: cerrarlo al hacer clic en cualquier link (incluye los
+       inyectados dinámicamente como "Logueado"/"Cerrar Sesión", gracias a
+       la delegación de eventos sobre el contenedor).
+       ====================================================================== */
+    function initCierreMenuMovil() {
+        var toggle = document.getElementById('menu-toggle');
+        var navLinks = document.querySelector('.nav-links');
+        if (!toggle || !navLinks) return;
+
+        navLinks.addEventListener('click', function (e) {
+            if (e.target.tagName === 'A') {
+                toggle.checked = false;
+            }
+        });
+    }
+
+    /* ======================================================================
        INICIALIZACIÓN
        ====================================================================== */
     renderNavAuth();
     initLoginForm();
     initRegistroForm();
+    initCierreMenuMovil();
 
     window.FutbolitoAuth = {
         validarRut: validarRut,
