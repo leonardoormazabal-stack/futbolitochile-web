@@ -42,7 +42,7 @@
     <!-- ENCABEZADO -->
     <section class="wizard-hero">
         <h1>Reserva tu Cancha</h1>
-        <p>Elige tu deporte, cancha, fecha y horario en simples pasos</p>
+        <p>Elige tu deporte, fecha y horario en simples pasos</p>
     </section>
 
     <main class="wizard-page">
@@ -51,7 +51,7 @@
         <ol class="steps-indicator" id="stepsIndicator">
             <li class="step-indicator active" data-step="1">
                 <span class="step-number">1</span>
-                <span class="step-label">Deporte y Cancha</span>
+                <span class="step-label">Deporte</span>
             </li>
             <li class="step-indicator" data-step="2">
                 <span class="step-number">2</span>
@@ -70,7 +70,7 @@
         <div class="wizard-body">
             <div class="wizard-main">
 
-                <!-- PASO 1: DEPORTE Y CANCHA -->
+                <!-- PASO 1: DEPORTE -->
                 <section class="wizard-step active" id="step-1" aria-labelledby="step-1-title">
                     <h2 id="step-1-title">Elige tu deporte</h2>
                     <div class="sport-selector">
@@ -85,11 +85,8 @@
                             <span class="sport-desc">2 canchas disponibles</span>
                         </button>
                     </div>
-
-                    <div class="cancha-selector" id="canchaSelector" hidden>
-                        <h3>Elige tu cancha</h3>
-                        <div class="cancha-grid" id="canchaGrid"></div>
-                    </div>
+                    <p class="wizard-hint">Asignamos automáticamente cualquier cancha disponible del deporte que elijas a la hora que reserves.</p>
+                    <p class="wizard-error" id="catalogoError" hidden></p>
                 </section>
 
                 <!-- PASO 2: FECHA Y HORARIO -->
@@ -181,10 +178,6 @@
                         <dd id="summarySport">—</dd>
                     </div>
                     <div class="summary-row">
-                        <dt>Cancha</dt>
-                        <dd id="summaryCancha">—</dd>
-                    </div>
-                    <div class="summary-row">
                         <dt>Fecha</dt>
                         <dd id="summaryFecha">—</dd>
                     </div>
@@ -229,7 +222,7 @@
             <div class="footer-col">
                 <h3>Síguenos</h3>
                 <div class="social-links">
-                    <a href="#" aria-label="Facebook">Facebook</a>
+                    <a href="https://www.facebook.com/futbolitochilecl" target="_blank" rel="noopener" aria-label="Facebook">Facebook</a>
                     <a href="https://www.instagram.com/futbolito.chile" target="_blank" rel="noopener" aria-label="Instagram">Instagram</a>
                     <a href="https://wa.me/56944087803" target="_blank" rel="noopener" aria-label="WhatsApp">WhatsApp</a>
                 </div>
