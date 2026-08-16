@@ -600,7 +600,8 @@ tbody td:not(:first-child) {
     }
 }
 
-@media (max-width: 768px) {
+/* El menú se colapsa antes de que el navbar se apriete (9 links + sesión) */
+@media (max-width: 1150px) {
     .hamburger {
         display: flex;
     }
@@ -630,11 +631,27 @@ tbody td:not(:first-child) {
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
 
+    .nav-links .nav-auth-item {
+        justify-content: center;
+        margin-left: 0;
+        padding: 14px 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        flex-wrap: wrap;
+    }
+
+    .nav-links .nav-auth-item a {
+        display: inline-block;
+        padding: 10px 30px;
+        border-bottom: none;
+    }
+
     .menu-toggle:checked ~ .nav-links {
         max-height: 600px;
         overflow-y: auto;
     }
+}
 
+@media (max-width: 768px) {
     .hero-content h1 {
         font-size: 38px;
     }

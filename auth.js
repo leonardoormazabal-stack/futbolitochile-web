@@ -12,12 +12,6 @@
     var USERS_KEY = 'futbolitochile_usuarios';
     var SESSION_KEY = 'futbolitochile_sesion';
 
-    var ROL_LABELS = {
-        jugador: 'Jugador',
-        administrador: 'Administrador',
-        superadministrador: 'Super Administrador'
-    };
-
     /* ======================================================================
        ALMACENAMIENTO
        ====================================================================== */
@@ -149,9 +143,7 @@
 
         if (sesion) {
             slot.innerHTML =
-                '<span class="nav-user">' + escapeHtml(sesion.nombre) +
-                ' <small>(' + (ROL_LABELS[sesion.rol] || sesion.rol) + ')</small></span>' +
-                '<a href="#" id="logoutLink" class="nav-login-btn nav-logout-btn">Cerrar Sesión</a>';
+                '<a href="#" id="logoutLink" class="nav-login-btn nav-logged-in" title="Cerrar sesión">Logueado</a>';
 
             var logoutLink = document.getElementById('logoutLink');
             if (logoutLink) {
@@ -164,12 +156,6 @@
         } else {
             slot.innerHTML = '<a href="login.html" class="nav-login-btn">Iniciar Sesión</a>';
         }
-    }
-
-    function escapeHtml(str) {
-        var div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
     }
 
     /* ======================================================================

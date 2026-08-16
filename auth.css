@@ -4,47 +4,36 @@
    ========================================================================== */
 
 /* BOTÓN DE LOGIN EN EL NAVBAR */
-.nav-login-btn {
+.nav-auth-item .nav-login-btn {
     display: inline-block;
     background-color: var(--rojo);
     color: var(--blanco) !important;
-    padding: 8px 20px;
+    padding: 10px 30px;
     border-radius: 20px;
     font-weight: 600;
+    white-space: nowrap;
+    border-bottom: none !important;
     transition: background-color 0.2s ease;
 }
 
-.nav-login-btn:hover {
+.nav-auth-item .nav-login-btn:hover {
     background-color: var(--rojo-oscuro);
 }
 
-.nav-user {
-    color: var(--blanco);
-    font-size: 14px;
-    font-weight: 500;
-    margin-right: 10px;
+.nav-auth-item .nav-logged-in {
+    background-color: #2e9e50;
+    cursor: pointer;
 }
 
-.nav-user small {
-    color: #b9cdc0;
-    font-weight: 400;
-}
-
-.nav-logout-btn {
-    background-color: transparent;
-    border: 2px solid var(--blanco);
-    color: var(--blanco) !important;
-}
-
-.nav-logout-btn:hover {
-    background-color: var(--blanco);
-    color: var(--azul-oscuro) !important;
+.nav-auth-item .nav-logged-in:hover {
+    background-color: #24793e;
 }
 
 .nav-auth-item {
     display: flex;
     align-items: center;
     gap: 10px;
+    margin-left: 24px;
 }
 
 /* ENCABEZADO */
