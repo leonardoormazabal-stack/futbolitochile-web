@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administración — Futbolito Chile</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="reservas.css">
+    <link rel="stylesheet" href="auth.css">
+    <link rel="stylesheet" href="admin.css">
+    <link rel="icon" type="image/webp" href="pictures/logo-1024x852.webp">
+</head>
+<body>
+
+    <!-- BARRA DE NAVEGACIÓN -->
+    <header class="navbar">
+        <nav class="nav-container">
+            <a href="index.html#inicio" class="logo">
+                <img src="pictures/logo-1024x852.webp" alt="Futbolito Chile" class="logo-icon">
+                <span>Futbolito Chile</span>
+            </a>
+
+            <input type="checkbox" id="menu-toggle" class="menu-toggle">
+            <label for="menu-toggle" class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </label>
+
+            <ul class="nav-links">
+                <li><a href="index.html#inicio">Inicio</a></li>
+                <li><a href="reservas.html">Reservas</a></li>
+                <li><a href="index.html#instalaciones">Instalaciones</a></li>
+                <li><a href="index.html#tarifas">Tarifas y Planes</a></li>
+                <li><a href="index.html#eventos">Eventos</a></li>
+                <li><a href="index.html#escuelas">Escuelas y Ligas</a></li>
+                <li><a href="index.html#publicidad">Publicidad</a></li>
+                <li><a href="index.html#nosotros">Quiénes Somos</a></li>
+                <li><a href="index.html#contacto">Contacto</a></li>
+                <li id="navAdminItem" hidden><a href="admin.html" class="active">Administración</a></li>
+                <li class="nav-auth-item" id="navAuthItem"><a href="login.html" class="nav-login-btn">Iniciar Sesión</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section class="admin-hero">
+        <h1>Panel de Administración</h1>
+        <p>Revisa, crea y anula reservas de canchas</p>
+    </section>
+
+    <!-- Se muestra solo si el rol es administrador/superadministrador -->
+    <div class="admin-gate" id="adminGate">
+        <p>Verificando acceso...</p>
+    </div>
+
+    <main class="admin-page" id="adminPage" hidden>
+        <div class="admin-toolbar">
+            <div class="admin-tabs" id="adminTabs">
+                <button type="button" class="admin-tab active" data-tab="calendario">Calendario</button>
+                <button type="button" class="admin-tab" data-tab="listado">Listado</button>
+            </div>
+            <button type="button" class="btn btn-primary" id="btnNuevaReserva">+ Nueva Reserva</button>
+        </div>
+
+        <!-- VISTA CALENDARIO -->
+        <section class="admin-view active" id="view-calendario">
+            <div class="calendar-wrapper admin-calendar">
+                <div class="calendar-header">
+                    <button type="button" id="adminPrevMonth" class="calendar-nav" aria-label="Mes anterior">‹</button>
+                    <span id="adminCalendarMonthLabel" class="calendar-month-label"></span>
+                    <button type="button" id="adminNextMonth" class="calendar-nav" aria-label="Mes siguiente">›</button>
+                </div>
+                <div class="calendar-weekdays">
+                    <span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sa</span><span>Do</span>
+                </div>
+                <div class="calendar-grid admin-calendar-grid" id="adminCalendarGrid"></div>
+                <p class="admin-calendar-hint">Haz clic en un día con reservas para verlas en el listado.</p>
+            </div>
+        </section>
+
+        <!-- VISTA LISTADO -->
+        <section class="admin-view" id="view-listado">
+            <div class="admin-filters">
+                <div class="form-group">
+                    <label for="filtroFecha">Filtrar por fecha</label>
+                    <input type="date" id="filtroFecha">
+                </div>
+                <label class="admin-checkbox">
+                    <input type="checkbox" id="filtroCanceladas">
+                    Mostrar canceladas
+                </label>
+                <button type="button" class="btn btn-outline" id="btnLimpiarFiltro">Quitar filtro</button>
+            </div>
+
+            <div class="admin-table-wrapper">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Hora</th>
+                            <th>Cancha</th>
+                            <th>Contacto</th>
+                            <th>Documento</th>
+                            <th>Teléfono</th>
+                            <th>Precio</th>
+                            <th>Pago</th>
+                            <th>Estado</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="reservasTableBody"></tbody>
+                </table>
+                <p class="admin-empty" id="adminEmptyMsg" hidden>No hay reservas para este filtro.</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAL: NUEVA RESERVA -->
+    <div class="admin-modal-overlay" id="modalOverlay" hidden>
+        <div class="admin-modal">
+            <div class="admin-modal-header">
+                <h2>Nueva Reserva</h2>
+                <button type="button" class="admin-modal-close" id="btnCerrarModal" aria-label="Cerrar">&times;</button>
+            </div>
+            <form id="adminReservaForm" novalidate>
+                <div class="form-group">
+                    <label for="admDeporte">Deporte</label>
+                    <select id="admDeporte" required>
+                        <option value="">Selecciona un deporte</option>
+                        <option value="futbolito">Futbolito</option>
+                        <option value="padel">Pádel</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="admCancha">Cancha</label>
+                    <select id="admCancha" required disabled>
+                        <option value="">Primero elige un deporte</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="admFecha">Fecha</label>
+                    <input type="date" id="admFecha" required>
+                </div>
+                <div class="form-group">
+                    <label for="admHora">Horario</label>
+                    <select id="admHora" required disabled>
+                        <option value="">Elige cancha y fecha primero</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="admNombre">Nombre de contacto</label>
+                    <input type="text" id="admNombre" required>
+                </div>
+                <div class="form-group">
+                    <label for="admDocumento">RUT / Pasaporte</label>
+                    <input type="text" id="admDocumento">
+                </div>
+                <div class="form-group">
+                    <label for="admTelefono">Teléfono</label>
+                    <input type="tel" id="admTelefono">
+                </div>
+                <div class="form-group">
+                    <label for="admEmail">Email</label>
+                    <input type="email" id="admEmail">
+                </div>
+                <div class="form-group">
+                    <label for="admMetodoPago">Método de pago</label>
+                    <select id="admMetodoPago">
+                        <option value="Efectivo">Efectivo</option>
+                        <option value="Mercado Pago">Mercado Pago</option>
+                        <option value="Webpay (Transbank)">Webpay (Transbank)</option>
+                        <option value="GetNet">GetNet</option>
+                        <option value="Tarjeta de Crédito/Débito">Tarjeta de Crédito/Débito</option>
+                    </select>
+                </div>
+
+                <div class="auth-alert" id="admReservaError" hidden></div>
+
+                <button type="submit" class="btn btn-primary btn-block">Crear Reserva</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer" id="contacto">
+        <div class="footer-container">
+            <div class="footer-col">
+                <h3>Futbolito Chile</h3>
+                <p>📍 Fresia #1240, La Pintana, Santiago</p>
+                <p>📞 +56 9 4408 7803</p>
+                <p>✉️ contacto@futbolitochile.cl</p>
+            </div>
+            <div class="footer-col">
+                <h3>Enlaces Rápidos</h3>
+                <div class="social-links">
+                    <a href="index.html#instalaciones">Instalaciones</a>
+                    <a href="index.html#tarifas">Tarifas y Planes</a>
+                    <a href="index.html#eventos">Eventos</a>
+                    <a href="index.html#escuelas">Escuelas y Ligas</a>
+                    <a href="index.html#publicidad">Publicidad</a>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h3>Síguenos</h3>
+                <div class="social-links">
+                    <a href="#" aria-label="Facebook">Facebook</a>
+                    <a href="#" aria-label="Instagram">Instagram</a>
+                    <a href="https://wa.me/56944087803" target="_blank" rel="noopener" aria-label="WhatsApp">WhatsApp</a>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h3>Horario de Atención</h3>
+                <p>Lunes a Domingo</p>
+                <p>09:00 - 23:00 hrs</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Futbolito Chile. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
+    <script src="auth.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>

@@ -194,6 +194,13 @@ create policy "admins_ven_todas_las_reservas"
     on public.reservas for select
     using (public.is_admin());
 
+-- Admins pueden crear reservas para terceros, y anular (estado = 'cancelada')
+-- cualquier reserva desde el panel de administración.
+create policy "admins_actualizan_reservas"
+    on public.reservas for update
+    using (public.is_admin())
+    with check (public.is_admin());
+
 -- ----------------------------------------------------------------------------
 -- 7. NOTA IMPORTANTE SOBRE ADMINISTRADORES
 -- ----------------------------------------------------------------------------

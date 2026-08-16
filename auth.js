@@ -58,26 +58,40 @@
        ====================================================================== */
     function renderNavAuth() {
         var slot = document.getElementById('navAuthItem');
-        if (!slot) return;
+        var adminSlot = document.getElementById('navAdminItem');
 
         sb.auth.getSession().then(function (result) {
             var session = result.data.session;
 
             if (session) {
-                slot.innerHTML =
-                    '<a href="#" id="logoutLink" class="nav-login-btn nav-logged-in" title="Cerrar sesión">Logueado</a>';
+                if (slot) {
+                    slot.innerHTML =
+                        '<a href="#" id="logoutLink" class="nav-login-btn nav-logged-in" title="Cerrar sesión">Logueado</a>';
 
-                var logoutLink = document.getElementById('logoutLink');
-                if (logoutLink) {
-                    logoutLink.addEventListener('click', function (e) {
-                        e.preventDefault();
-                        sb.auth.signOut().then(function () {
-                            window.location.href = 'index.html';
+                    var logoutLink = document.getElementById('logoutLink');
+                    if (logoutLink) {
+                        logoutLink.addEventListener('click', function (e) {
+                            e.preventDefault();
+                            sb.auth.signOut().then(function () {
+                                window.location.href = 'index.html';
+                            });
                         });
+                    }
+                }
+
+                if (adminSlot) {
+                    sb.from('profiles').select('rol').eq('id', session.user.id).single().then(function (res) {
+                        var rol = res.data && res.data.rol;
+                        adminSlot.hidden = !(rol === 'administrador' || rol === 'superadministrador');
                     });
                 }
             } else {
-                slot.innerHTML = '<a href="login.html" class="nav-login-btn">Iniciar Sesión</a>';
+                if (slot) {
+                    slot.innerHTML = '<a href="login.html" class="nav-login-btn">Iniciar Sesión</a>';
+                }
+                if (adminSlot) {
+                    adminSlot.hidden = true;
+                }
             }
         });
     }
@@ -293,6 +307,29 @@
     }
 
     /* ======================================================================
+       CONTROL DE ACCESO PARA PÁGINAS SOLO-ADMIN (admin.html la usa)
+       Devuelve una Promise que resuelve con {session, rol, nombre} si el
+       usuario es administrador/superadministrador, o redirige y no resuelve.
+       ====================================================================== */
+    function requireAdmin() {
+        return sb.auth.getSession().then(function (result) {
+            var session = result.data.session;
+            if (!session) {
+                window.location.href = 'login.html';
+                return null;
+            }
+            return sb.from('profiles').select('rol,nombre').eq('id', session.user.id).single().then(function (res) {
+                var rol = res.data && res.data.rol;
+                if (rol !== 'administrador' && rol !== 'superadministrador') {
+                    window.location.href = 'index.html';
+                    return null;
+                }
+                return { session: session, rol: rol, nombre: res.data.nombre };
+            });
+        });
+    }
+
+    /* ======================================================================
        INICIALIZACIÓN
        ====================================================================== */
     renderNavAuth();
@@ -301,6 +338,7 @@
 
     window.FutbolitoAuth = {
         validarRut: validarRut,
-        validarPasaporte: validarPasaporte
+        validarPasaporte: validarPasaporte,
+        requireAdmin: requireAdmin
     };
 })();
