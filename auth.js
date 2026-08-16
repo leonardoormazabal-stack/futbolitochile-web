@@ -1,89 +1,10 @@
 (function () {
     'use strict';
 
-    /* ======================================================================
-       ADVERTENCIA
-       Este módulo NO es seguro: las contraseñas se guardan en texto plano
-       en localStorage porque todavía no existe backend. Es solo para
-       maquetar el flujo de login/registro. Debe reemplazarse por
-       Supabase Auth (con hashing y sesiones reales) antes de producción.
-       ====================================================================== */
-
-    var USERS_KEY = 'futbolitochile_usuarios';
-    var SESSION_KEY = 'futbolitochile_sesion';
+    var sb = window.sbClient;
 
     /* ======================================================================
-       ALMACENAMIENTO
-       ====================================================================== */
-    function getUsuarios() {
-        try {
-            var raw = localStorage.getItem(USERS_KEY);
-            return raw ? JSON.parse(raw) : [];
-        } catch (e) {
-            return [];
-        }
-    }
-
-    function guardarUsuarios(usuarios) {
-        localStorage.setItem(USERS_KEY, JSON.stringify(usuarios));
-    }
-
-    function getSesion() {
-        try {
-            var raw = localStorage.getItem(SESSION_KEY);
-            return raw ? JSON.parse(raw) : null;
-        } catch (e) {
-            return null;
-        }
-    }
-
-    function setSesion(usuario) {
-        localStorage.setItem(SESSION_KEY, JSON.stringify({
-            nombre: usuario.nombre,
-            email: usuario.email,
-            rol: usuario.rol
-        }));
-    }
-
-    function cerrarSesion() {
-        localStorage.removeItem(SESSION_KEY);
-    }
-
-    function seedUsuarios() {
-        var usuarios = getUsuarios();
-        var cambiado = false;
-
-        if (!usuarios.some(function (u) { return u.rol === 'administrador'; })) {
-            usuarios.push({
-                nombre: 'Administrador',
-                documento: '',
-                tipoDocumento: '',
-                telefono: '',
-                email: 'admin@futbolitochile.cl',
-                password: 'admin123',
-                rol: 'administrador'
-            });
-            cambiado = true;
-        }
-
-        if (!usuarios.some(function (u) { return u.rol === 'superadministrador'; })) {
-            usuarios.push({
-                nombre: 'Super Administrador',
-                documento: '',
-                tipoDocumento: '',
-                telefono: '',
-                email: 'superadmin@futbolitochile.cl',
-                password: 'super123',
-                rol: 'superadministrador'
-            });
-            cambiado = true;
-        }
-
-        if (cambiado) guardarUsuarios(usuarios);
-    }
-
-    /* ======================================================================
-       VALIDACIÓN DE RUT CHILENO (mismo algoritmo que reservas.js)
+       VALIDACIÓN DE RUT CHILENO (validación en el cliente antes de enviar)
        ====================================================================== */
     function limpiarRut(rut) {
         return rut.replace(/[^0-9kK]/g, '').toUpperCase();
@@ -139,23 +60,26 @@
         var slot = document.getElementById('navAuthItem');
         if (!slot) return;
 
-        var sesion = getSesion();
+        sb.auth.getSession().then(function (result) {
+            var session = result.data.session;
 
-        if (sesion) {
-            slot.innerHTML =
-                '<a href="#" id="logoutLink" class="nav-login-btn nav-logged-in" title="Cerrar sesión">Logueado</a>';
+            if (session) {
+                slot.innerHTML =
+                    '<a href="#" id="logoutLink" class="nav-login-btn nav-logged-in" title="Cerrar sesión">Logueado</a>';
 
-            var logoutLink = document.getElementById('logoutLink');
-            if (logoutLink) {
-                logoutLink.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    cerrarSesion();
-                    window.location.href = 'index.html';
-                });
+                var logoutLink = document.getElementById('logoutLink');
+                if (logoutLink) {
+                    logoutLink.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        sb.auth.signOut().then(function () {
+                            window.location.href = 'index.html';
+                        });
+                    });
+                }
+            } else {
+                slot.innerHTML = '<a href="login.html" class="nav-login-btn">Iniciar Sesión</a>';
             }
-        } else {
-            slot.innerHTML = '<a href="login.html" class="nav-login-btn">Iniciar Sesión</a>';
-        }
+        });
     }
 
     /* ======================================================================
@@ -168,27 +92,26 @@
         var emailInput = document.getElementById('email');
         var passwordInput = document.getElementById('password');
         var errorBox = document.getElementById('loginError');
+        var submitBtn = form.querySelector('button[type="submit"]');
 
         form.addEventListener('submit', function (e) {
             e.preventDefault();
+            errorBox.hidden = true;
+            submitBtn.disabled = true;
 
-            var email = emailInput.value.trim().toLowerCase();
-            var password = passwordInput.value;
-
-            var usuarios = getUsuarios();
-            var usuario = usuarios.find(function (u) {
-                return u.email.toLowerCase() === email && u.password === password;
+            sb.auth.signInWithPassword({
+                email: emailInput.value.trim(),
+                password: passwordInput.value
+            }).then(function (result) {
+                submitBtn.disabled = false;
+                if (result.error) {
+                    errorBox.textContent = 'Correo o contraseña incorrectos.';
+                    errorBox.className = 'auth-alert';
+                    errorBox.hidden = false;
+                    return;
+                }
+                window.location.href = 'index.html';
             });
-
-            if (!usuario) {
-                errorBox.textContent = 'Correo o contraseña incorrectos.';
-                errorBox.hidden = false;
-                errorBox.className = 'auth-alert';
-                return;
-            }
-
-            setSesion(usuario);
-            window.location.href = 'index.html';
         });
     }
 
@@ -218,6 +141,7 @@
         var errorBox = document.getElementById('registroError');
         var labelDocumento = document.getElementById('labelDocumento');
         var radiosTipoDocumento = document.querySelectorAll('input[name="tipoDocumento"]');
+        var submitBtn = form.querySelector('button[type="submit"]');
 
         function tipoDocumentoActual() {
             var seleccionado = document.querySelector('input[name="tipoDocumento"]:checked');
@@ -273,23 +197,10 @@
 
         function validarEmail() {
             var valor = campos.email.value.trim();
-            var formatoOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor);
-            if (!formatoOk) {
-                errores.email.textContent = 'Ingresa un email válido.';
-                campos.email.classList.add('invalid');
-                return false;
-            }
-            var yaExiste = getUsuarios().some(function (u) {
-                return u.email.toLowerCase() === valor.toLowerCase();
-            });
-            if (yaExiste) {
-                errores.email.textContent = 'Ya existe una cuenta con este correo.';
-                campos.email.classList.add('invalid');
-                return false;
-            }
-            errores.email.textContent = '';
-            campos.email.classList.remove('invalid');
-            return true;
+            var ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor);
+            errores.email.textContent = ok ? '' : 'Ingresa un email válido.';
+            campos.email.classList.toggle('invalid', !ok);
+            return ok;
         }
 
         function validarPassword() {
@@ -329,45 +240,66 @@
             var passwordOk = validarPassword();
             var password2Ok = validarPassword2();
 
+            errorBox.hidden = true;
+
             if (!(nombreOk && documentoOk && telefonoOk && emailOk && passwordOk && password2Ok)) {
                 errorBox.textContent = 'Revisa los campos marcados en rojo.';
-                errorBox.hidden = false;
                 errorBox.className = 'auth-alert';
+                errorBox.hidden = false;
                 return;
             }
 
-            var nuevoUsuario = {
-                nombre: campos.nombre.value.trim(),
-                documento: campos.documento.value.trim(),
-                tipoDocumento: tipoDocumentoActual(),
-                telefono: campos.telefono.value.trim(),
+            submitBtn.disabled = true;
+
+            sb.auth.signUp({
                 email: campos.email.value.trim(),
                 password: campos.password.value,
-                rol: 'jugador',
-                creadoEn: new Date().toISOString()
-            };
+                options: {
+                    data: {
+                        nombre: campos.nombre.value.trim(),
+                        tipo_documento: tipoDocumentoActual(),
+                        documento: campos.documento.value.trim(),
+                        telefono: campos.telefono.value.trim()
+                    }
+                }
+            }).then(function (result) {
+                submitBtn.disabled = false;
 
-            var usuarios = getUsuarios();
-            usuarios.push(nuevoUsuario);
-            guardarUsuarios(usuarios);
-            setSesion(nuevoUsuario);
+                if (result.error) {
+                    var msg = result.error.message || '';
+                    if (/already registered|already exists|already in use/i.test(msg)) {
+                        errores.email.textContent = 'Ya existe una cuenta con este correo.';
+                        campos.email.classList.add('invalid');
+                    } else {
+                        errorBox.textContent = 'No pudimos crear tu cuenta: ' + msg;
+                        errorBox.className = 'auth-alert';
+                        errorBox.hidden = false;
+                    }
+                    return;
+                }
 
-            window.location.href = 'index.html';
+                if (result.data.session) {
+                    // Confirmación de correo desactivada: queda con sesión iniciada.
+                    window.location.href = 'index.html';
+                } else {
+                    // Confirmación de correo activada: falta que confirme el email.
+                    errorBox.textContent = '¡Cuenta creada! Revisa tu correo (' + campos.email.value.trim() + ') para confirmar tu cuenta antes de iniciar sesión.';
+                    errorBox.className = 'auth-alert success';
+                    errorBox.hidden = false;
+                    form.reset();
+                }
+            });
         });
     }
 
     /* ======================================================================
        INICIALIZACIÓN
        ====================================================================== */
-    seedUsuarios();
     renderNavAuth();
     initLoginForm();
     initRegistroForm();
 
     window.FutbolitoAuth = {
-        getUsuarios: getUsuarios,
-        getSesion: getSesion,
-        cerrarSesion: cerrarSesion,
         validarRut: validarRut,
         validarPasaporte: validarPasaporte
     };
