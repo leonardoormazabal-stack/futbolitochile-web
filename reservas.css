@@ -659,9 +659,29 @@
         display: none;
     }
 
-    .sport-selector,
     .tipo-pago-selector {
         grid-template-columns: 1fr;
+    }
+
+    .sport-selector {
+        gap: 10px;
+    }
+
+    .sport-card {
+        padding: 16px 8px;
+        gap: 4px;
+    }
+
+    .sport-icon {
+        font-size: 26px;
+    }
+
+    .sport-name {
+        font-size: 15px;
+    }
+
+    .sport-desc {
+        font-size: 11px;
     }
 
     #reservaForm {

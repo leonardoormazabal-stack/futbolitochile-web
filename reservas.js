@@ -261,6 +261,7 @@
         return sb.auth.getSession().then(function (result) {
             var session = result.data.session;
             state.userId = session ? session.user.id : null;
+            return precargarDatosDelPerfil();
         });
     }
 
@@ -469,6 +470,22 @@
         telefono: document.getElementById('error-telefono'),
         email: document.getElementById('error-email')
     };
+
+    // Si hay una sesión activa, precarga "Tus Datos" con el perfil del
+    // usuario logueado para que no tenga que volver a escribirlos.
+    function precargarDatosDelPerfil() {
+        if (!state.userId) return;
+
+        return sb.from('profiles').select('nombre,documento,telefono,email').eq('id', state.userId).maybeSingle().then(function (result) {
+            if (result.error || !result.data) return;
+            var perfil = result.data;
+
+            if (perfil.nombre && !campos.nombre.value) campos.nombre.value = perfil.nombre;
+            if (perfil.documento && !campos.rut.value) campos.rut.value = formatearRut(perfil.documento);
+            if (perfil.telefono && !campos.telefono.value) campos.telefono.value = perfil.telefono;
+            if (perfil.email && !campos.email.value) campos.email.value = perfil.email;
+        });
+    }
 
     function validarNombre() {
         var valor = campos.nombre.value.trim();
