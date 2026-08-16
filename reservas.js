@@ -706,6 +706,28 @@
     });
 
     /* ======================================================================
+       RESUMEN: en escritorio va en la barra lateral; en móvil se traslada
+       dentro del panel de Pago, antes de elegir "Pagar Total" o "Abonar".
+       ====================================================================== */
+    (function () {
+        var resumen = document.querySelector('.wizard-summary');
+        var slotEscritorio = resumen.parentNode;
+        var slotMovil = document.getElementById('resumenMobileSlot');
+        var mq = window.matchMedia('(max-width: 900px)');
+
+        function posicionarResumen(e) {
+            if (e.matches) {
+                slotMovil.appendChild(resumen);
+            } else {
+                slotEscritorio.appendChild(resumen);
+            }
+        }
+
+        posicionarResumen(mq);
+        mq.addEventListener('change', posicionarResumen);
+    })();
+
+    /* ======================================================================
        INICIALIZACIÓN
        ====================================================================== */
     renderCalendario();

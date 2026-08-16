@@ -631,14 +631,13 @@
         grid-template-columns: 1fr;
     }
 
-    .wizard-main,
-    .wizard-summary {
+    .wizard-main {
         grid-column: auto;
     }
 
     .wizard-summary {
         position: static;
-        order: -1;
+        margin-bottom: 24px;
     }
 
     .payment-methods {
