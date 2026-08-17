@@ -18,18 +18,9 @@
         return new Date(d.getFullYear(), d.getMonth(), 1);
     }
 
-    function endOfMonth(d) {
-        return new Date(d.getFullYear(), d.getMonth() + 1, 0);
-    }
-
     function startOfWeek(d) {
         var offset = (d.getDay() + 6) % 7; // 0 = lunes
         return new Date(d.getFullYear(), d.getMonth(), d.getDate() - offset);
-    }
-
-    function endOfWeek(d) {
-        var monday = startOfWeek(d);
-        return new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
     }
 
     function toISODate(d) {
@@ -410,7 +401,13 @@
     }
 
     el.pagosPeriodo.addEventListener('change', function () {
-        el.pagosFechaEspecificaWrap.hidden = el.pagosPeriodo.value !== 'especifica';
+        var esEspecifica = el.pagosPeriodo.value === 'especifica';
+        el.pagosFechaEspecificaWrap.hidden = !esEspecifica;
+
+        if (esEspecifica) {
+            try { el.pagosFechaEspecifica.showPicker(); } catch (err) { el.pagosFechaEspecifica.focus(); }
+        }
+
         renderPagos();
     });
     el.pagosFechaEspecifica.addEventListener('change', renderPagos);
@@ -451,10 +448,10 @@
             rangoDesde = rangoHasta = toISODate(ayer);
         } else if (periodo === 'semana') {
             rangoDesde = toISODate(startOfWeek(hoy));
-            rangoHasta = toISODate(endOfWeek(hoy));
+            rangoHasta = toISODate(hoy);
         } else if (periodo === 'mes') {
             rangoDesde = toISODate(startOfMonth(hoy));
-            rangoHasta = toISODate(endOfMonth(hoy));
+            rangoHasta = toISODate(hoy);
         } else if (periodo === 'especifica' && el.pagosFechaEspecifica.value) {
             rangoDesde = rangoHasta = el.pagosFechaEspecifica.value;
         }
