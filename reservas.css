@@ -409,11 +409,6 @@
     color: var(--azul-oscuro);
 }
 
-.cancha-desc {
-    font-size: 12px;
-    color: var(--gris-texto);
-}
-
 /* PASO 3 — FORMULARIO */
 #reservaForm {
     display: grid;

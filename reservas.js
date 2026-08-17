@@ -485,8 +485,7 @@
             var btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'cancha-card';
-            btn.innerHTML = '<span class="cancha-nombre">' + c.nombre + '</span>' +
-                (c.descripcion ? '<span class="cancha-desc">' + c.descripcion + '</span>' : '');
+            btn.innerHTML = '<span class="cancha-nombre">' + c.nombre + '</span>';
 
             if (ocupada) {
                 btn.disabled = true;
