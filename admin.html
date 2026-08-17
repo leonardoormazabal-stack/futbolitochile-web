@@ -61,6 +61,7 @@
             <div class="admin-tabs" id="adminTabs">
                 <button type="button" class="admin-tab active" data-tab="calendario">Calendario</button>
                 <button type="button" class="admin-tab" data-tab="listado">Listado</button>
+                <button type="button" class="admin-tab" data-tab="pagos">Pagos</button>
                 <button type="button" class="admin-tab" data-tab="usuarios" id="tabUsuarios" hidden>Usuarios</button>
                 <button type="button" class="admin-tab" data-tab="contenido" id="tabContenido" hidden>Contenido</button>
                 <button type="button" class="admin-tab" data-tab="tarifas" id="tabTarifas" hidden>Tarifas</button>
@@ -118,6 +119,80 @@
                     <tbody id="reservasTableBody"></tbody>
                 </table>
                 <p class="admin-empty" id="adminEmptyMsg" hidden>No hay reservas para este filtro.</p>
+            </div>
+        </section>
+
+        <!-- VISTA PAGOS -->
+        <section class="admin-view" id="view-pagos">
+            <div class="admin-filters">
+                <div class="form-group">
+                    <label for="pagosPeriodo">Periodo</label>
+                    <select id="pagosPeriodo">
+                        <option value="todos">Todo el historial</option>
+                        <option value="hoy">Hoy</option>
+                        <option value="ayer">Ayer</option>
+                        <option value="semana">Acumulado esta semana</option>
+                        <option value="mes">Acumulado este mes</option>
+                        <option value="especifica">Fecha específica</option>
+                    </select>
+                </div>
+                <div class="form-group" id="pagosFechaEspecificaWrap" hidden>
+                    <label for="pagosFechaEspecifica">Fecha</label>
+                    <input type="date" id="pagosFechaEspecifica">
+                </div>
+                <div class="form-group">
+                    <label for="pagosFiltroNombre">Nombre</label>
+                    <input type="text" id="pagosFiltroNombre" placeholder="Buscar por nombre">
+                </div>
+                <div class="form-group">
+                    <label for="pagosFiltroHora">Hora</label>
+                    <select id="pagosFiltroHora">
+                        <option value="">Todas</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="pagosFiltroDeporte">Deporte</label>
+                    <select id="pagosFiltroDeporte">
+                        <option value="">Todos</option>
+                        <option value="futbolito">Futbolito</option>
+                        <option value="padel">Pádel</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="pagosFiltroCancha">Cancha</label>
+                    <select id="pagosFiltroCancha">
+                        <option value="">Todas</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="pagosFiltroTipoPago">Tipo de pago</label>
+                    <select id="pagosFiltroTipoPago">
+                        <option value="">Todos</option>
+                        <option value="completo">Pago total</option>
+                        <option value="abono">Abono</option>
+                    </select>
+                </div>
+                <button type="button" class="btn btn-outline" id="btnLimpiarFiltrosPagos">Quitar filtros</button>
+            </div>
+
+            <p class="admin-note" id="pagosResumen"></p>
+
+            <div class="admin-table-wrapper">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Hora</th>
+                            <th>Nombre</th>
+                            <th>Deporte</th>
+                            <th>Cancha</th>
+                            <th>Tipo de pago</th>
+                            <th>Monto pagado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pagosTableBody"></tbody>
+                </table>
+                <p class="admin-empty" id="pagosEmptyMsg" hidden>No hay pagos para este filtro.</p>
             </div>
         </section>
 

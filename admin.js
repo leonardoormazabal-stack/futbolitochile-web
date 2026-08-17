@@ -18,6 +18,20 @@
         return new Date(d.getFullYear(), d.getMonth(), 1);
     }
 
+    function endOfMonth(d) {
+        return new Date(d.getFullYear(), d.getMonth() + 1, 0);
+    }
+
+    function startOfWeek(d) {
+        var offset = (d.getDay() + 6) % 7; // 0 = lunes
+        return new Date(d.getFullYear(), d.getMonth(), d.getDate() - offset);
+    }
+
+    function endOfWeek(d) {
+        var monday = startOfWeek(d);
+        return new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
+    }
+
     function toISODate(d) {
         var y = d.getFullYear();
         var m = String(d.getMonth() + 1).padStart(2, '0');
@@ -75,6 +89,19 @@
         filtroFecha: document.getElementById('filtroFecha'),
         filtroCanceladas: document.getElementById('filtroCanceladas'),
         btnLimpiarFiltro: document.getElementById('btnLimpiarFiltro'),
+
+        pagosTbody: document.getElementById('pagosTableBody'),
+        pagosEmptyMsg: document.getElementById('pagosEmptyMsg'),
+        pagosResumen: document.getElementById('pagosResumen'),
+        pagosPeriodo: document.getElementById('pagosPeriodo'),
+        pagosFechaEspecificaWrap: document.getElementById('pagosFechaEspecificaWrap'),
+        pagosFechaEspecifica: document.getElementById('pagosFechaEspecifica'),
+        pagosFiltroNombre: document.getElementById('pagosFiltroNombre'),
+        pagosFiltroHora: document.getElementById('pagosFiltroHora'),
+        pagosFiltroDeporte: document.getElementById('pagosFiltroDeporte'),
+        pagosFiltroCancha: document.getElementById('pagosFiltroCancha'),
+        pagosFiltroTipoPago: document.getElementById('pagosFiltroTipoPago'),
+        btnLimpiarFiltrosPagos: document.getElementById('btnLimpiarFiltrosPagos'),
         tbody: document.getElementById('reservasTableBody'),
         emptyMsg: document.getElementById('adminEmptyMsg'),
         btnNuevaReserva: document.getElementById('btnNuevaReserva'),
@@ -182,13 +209,14 @@
 
     function cargarReservas() {
         return sb.from('reservas')
-            .select('id,fecha,hora,precio,nombre_contacto,documento_contacto,telefono_contacto,email_contacto,metodo_pago,estado,canchas(nombre,deporte)')
+            .select('id,fecha,hora,precio,nombre_contacto,documento_contacto,telefono_contacto,email_contacto,metodo_pago,monto_pagado,tipo_pago,estado,canchas(nombre,deporte)')
             .order('fecha', { ascending: true })
             .order('hora', { ascending: true })
             .then(function (result) {
                 state.reservas = result.data || [];
                 renderCalendarioAdmin();
                 renderListado();
+                renderPagos();
             });
     }
 
@@ -359,6 +387,119 @@
             }
             cargarReservas();
         });
+    }
+
+    /* ======================================================================
+       PAGOS
+       ====================================================================== */
+    for (var h = 0; h < 24; h++) {
+        var horaOption = document.createElement('option');
+        horaOption.value = String(h);
+        horaOption.textContent = String(h).padStart(2, '0') + ':00';
+        el.pagosFiltroHora.appendChild(horaOption);
+    }
+
+    function poblarFiltroCanchaPagos() {
+        el.pagosFiltroCancha.innerHTML = '<option value="">Todas</option>';
+        state.canchas.forEach(function (c) {
+            var option = document.createElement('option');
+            option.value = c.id;
+            option.textContent = c.nombre + ' (' + (SPORT_LABELS[c.deporte] || c.deporte) + ')';
+            el.pagosFiltroCancha.appendChild(option);
+        });
+    }
+
+    el.pagosPeriodo.addEventListener('change', function () {
+        el.pagosFechaEspecificaWrap.hidden = el.pagosPeriodo.value !== 'especifica';
+        renderPagos();
+    });
+    el.pagosFechaEspecifica.addEventListener('change', renderPagos);
+    el.pagosFiltroNombre.addEventListener('input', renderPagos);
+    el.pagosFiltroHora.addEventListener('change', renderPagos);
+    el.pagosFiltroDeporte.addEventListener('change', renderPagos);
+    el.pagosFiltroCancha.addEventListener('change', renderPagos);
+    el.pagosFiltroTipoPago.addEventListener('change', renderPagos);
+
+    el.btnLimpiarFiltrosPagos.addEventListener('click', function () {
+        el.pagosPeriodo.value = 'todos';
+        el.pagosFechaEspecificaWrap.hidden = true;
+        el.pagosFechaEspecifica.value = '';
+        el.pagosFiltroNombre.value = '';
+        el.pagosFiltroHora.value = '';
+        el.pagosFiltroDeporte.value = '';
+        el.pagosFiltroCancha.value = '';
+        el.pagosFiltroTipoPago.value = '';
+        renderPagos();
+    });
+
+    function renderPagos() {
+        var periodo = el.pagosPeriodo.value;
+        var nombreFiltro = el.pagosFiltroNombre.value.trim().toLowerCase();
+        var horaFiltro = el.pagosFiltroHora.value;
+        var deporteFiltro = el.pagosFiltroDeporte.value;
+        var canchaFiltro = el.pagosFiltroCancha.value;
+        var tipoPagoFiltro = el.pagosFiltroTipoPago.value;
+
+        var hoy = new Date();
+        var rangoDesde = null;
+        var rangoHasta = null;
+
+        if (periodo === 'hoy') {
+            rangoDesde = rangoHasta = toISODate(hoy);
+        } else if (periodo === 'ayer') {
+            var ayer = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - 1);
+            rangoDesde = rangoHasta = toISODate(ayer);
+        } else if (periodo === 'semana') {
+            rangoDesde = toISODate(startOfWeek(hoy));
+            rangoHasta = toISODate(endOfWeek(hoy));
+        } else if (periodo === 'mes') {
+            rangoDesde = toISODate(startOfMonth(hoy));
+            rangoHasta = toISODate(endOfMonth(hoy));
+        } else if (periodo === 'especifica' && el.pagosFechaEspecifica.value) {
+            rangoDesde = rangoHasta = el.pagosFechaEspecifica.value;
+        }
+
+        var lista = state.reservas.filter(function (r) {
+            if (r.estado !== 'confirmada') return false;
+            if (rangoDesde && (r.fecha < rangoDesde || r.fecha > rangoHasta)) return false;
+            if (nombreFiltro && (r.nombre_contacto || '').toLowerCase().indexOf(nombreFiltro) === -1) return false;
+            if (horaFiltro && String(r.hora) !== horaFiltro) return false;
+            if (deporteFiltro && (!r.canchas || r.canchas.deporte !== deporteFiltro)) return false;
+            if (canchaFiltro && r.cancha_id !== canchaFiltro) return false;
+            if (tipoPagoFiltro && r.tipo_pago !== tipoPagoFiltro) return false;
+            return true;
+        });
+
+        lista.sort(function (a, b) {
+            if (a.fecha !== b.fecha) return a.fecha < b.fecha ? 1 : -1;
+            return b.hora - a.hora;
+        });
+
+        el.pagosTbody.innerHTML = '';
+        el.pagosEmptyMsg.hidden = lista.length > 0;
+
+        var totalMonto = 0;
+        lista.forEach(function (r) {
+            totalMonto += r.monto_pagado != null ? r.monto_pagado : 0;
+
+            var canchaNombre = r.canchas ? r.canchas.nombre : r.cancha_id;
+            var deporte = r.canchas ? SPORT_LABELS[r.canchas.deporte] : '';
+            var tipoPagoLabel = r.tipo_pago === 'abono' ? 'Abono' : 'Pago total';
+
+            var tr = document.createElement('tr');
+            tr.innerHTML =
+                '<td>' + formatFechaCorta(r.fecha) + '</td>' +
+                '<td>' + String(r.hora).padStart(2, '0') + ':00</td>' +
+                '<td>' + (r.nombre_contacto || '') + '</td>' +
+                '<td>' + deporte + '</td>' +
+                '<td>' + canchaNombre + '</td>' +
+                '<td>' + tipoPagoLabel + '</td>' +
+                '<td>' + formatCLP(r.monto_pagado) + '</td>';
+            el.pagosTbody.appendChild(tr);
+        });
+
+        el.pagosResumen.textContent = lista.length + (lista.length === 1 ? ' pago encontrado — ' : ' pagos encontrados — ') +
+            'Acumulado: ' + formatCLP(totalMonto);
     }
 
     /* ======================================================================
@@ -1175,7 +1316,7 @@
         el.gate.hidden = true;
         el.page.hidden = false;
 
-        var tareas = [cargarCatalogo(), cargarReservas()];
+        var tareas = [cargarCatalogo().then(poblarFiltroCanchaPagos), cargarReservas()];
 
         if (state.esSuperadmin) {
             el.tabUsuarios.hidden = false;
