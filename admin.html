@@ -63,6 +63,7 @@
                 <button type="button" class="admin-tab" data-tab="listado">Listado</button>
                 <button type="button" class="admin-tab" data-tab="usuarios" id="tabUsuarios" hidden>Usuarios</button>
                 <button type="button" class="admin-tab" data-tab="contenido" id="tabContenido" hidden>Contenido</button>
+                <button type="button" class="admin-tab" data-tab="tarifas" id="tabTarifas" hidden>Tarifas</button>
             </div>
             <button type="button" class="btn btn-primary" id="btnNuevaReserva">+ Nueva Reserva</button>
             <button type="button" class="btn btn-primary" id="btnNuevoUsuario" hidden>+ Nuevo Usuario</button>
@@ -242,6 +243,10 @@
                 <div class="contenido-cards-grid" id="contenidoCardsGrid"></div>
             </div>
 
+        </section>
+
+        <!-- VISTA TARIFAS (solo superadministrador) -->
+        <section class="admin-view" id="view-tarifas">
             <div class="contenido-bloque">
                 <h3>Tarifas y Horarios</h3>
                 <p class="admin-note">Los horarios son en formato 24 horas (ej: 12, 18, 20). Estos precios son los mismos que usa el sistema de reservas.</p>

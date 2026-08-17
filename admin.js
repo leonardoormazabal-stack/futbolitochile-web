@@ -126,6 +126,7 @@
         passwordError: document.getElementById('passwordError'),
 
         tabContenido: document.getElementById('tabContenido'),
+        tabTarifas: document.getElementById('tabTarifas'),
         formHero: document.getElementById('formHero'),
         cHeroTitulo: document.getElementById('cHeroTitulo'),
         cHeroSubtitulo: document.getElementById('cHeroSubtitulo'),
@@ -1165,6 +1166,7 @@
         if (state.esSuperadmin) {
             el.tabUsuarios.hidden = false;
             el.tabContenido.hidden = false;
+            el.tabTarifas.hidden = false;
             tareas.push(cargarUsuarios());
             tareas.push(cargarContenido());
         }
