@@ -21,12 +21,7 @@
 }
 
 .nav-auth-item .nav-logged-in {
-    background-color: #2e9e50;
     cursor: pointer;
-}
-
-.nav-auth-item .nav-logged-in:hover {
-    background-color: #24793e;
 }
 
 .nav-auth-item {

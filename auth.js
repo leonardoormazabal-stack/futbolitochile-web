@@ -66,7 +66,7 @@
             if (session) {
                 if (slot) {
                     slot.innerHTML =
-                        '<a href="#" id="logoutLink" class="nav-login-btn nav-logged-in" title="Cerrar sesión">Logueado</a>';
+                        '<a href="#" id="logoutLink" class="nav-login-btn nav-logged-in" title="Cerrar sesión">Cerrar Sesión</a>';
 
                     var logoutLink = document.getElementById('logoutLink');
                     if (logoutLink) {
