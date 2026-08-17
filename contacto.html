@@ -3,13 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crear Cuenta | Futbolito Chile</title>
-    <meta name="description" content="Crea tu cuenta de jugador en Futbolito Chile y reserva canchas de futbolito y pádel en La Pintana en simples pasos.">
-    <meta name="robots" content="noindex, follow">
-    <link rel="canonical" href="https://futbolitochile.cl/registro.html">
+    <title>Contacto | Futbolito Chile</title>
+    <meta name="description" content="Contáctanos para consultas sobre arriendo de canchas, eventos o escuelas deportivas en Futbolito Chile, La Pintana. Escríbenos o visítanos en Fresia #1240.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://futbolitochile.cl/contacto.html">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Futbolito Chile">
+    <meta property="og:title" content="Contacto | Futbolito Chile">
+    <meta property="og:description" content="Contáctanos para consultas sobre arriendo de canchas, eventos o escuelas deportivas en Futbolito Chile, La Pintana.">
+    <meta property="og:url" content="https://futbolitochile.cl/contacto.html">
+    <meta property="og:image" content="https://futbolitochile.cl/pictures/hero-canchas.webp">
+    <meta property="og:locale" content="es_CL">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Contacto | Futbolito Chile">
+    <meta name="twitter:description" content="Contáctanos para consultas sobre arriendo de canchas, eventos o escuelas deportivas en Futbolito Chile, La Pintana.">
+    <meta name="twitter:image" content="https://futbolitochile.cl/pictures/hero-canchas.webp">
+
     <meta name="theme-color" content="#0d3b66">
+
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="auth.css">
+    <link rel="stylesheet" href="contacto.css">
     <link rel="icon" type="image/webp" href="pictures/logo-1024x852.webp">
 </head>
 <body>
@@ -36,7 +52,7 @@
                     <li><a href="index.html#eventos">Eventos</a></li>
                     <li><a href="index.html#escuelas">Escuelas y Ligas</a></li>
                     <li><a href="index.html#nosotros">Quiénes Somos</a></li>
-                    <li><a href="contacto.html">Contacto</a></li>
+                    <li><a href="contacto.html" class="active">Contacto</a></li>
                 </ul>
                 <ul class="nav-actions">
                     <li id="navAdminItem" hidden><a href="admin.html">Administración</a></li>
@@ -47,68 +63,56 @@
     </header>
 
     <section class="auth-hero">
-        <h1>Crea tu Cuenta</h1>
-        <p>Regístrate como jugador para reservar canchas más rápido</p>
+        <h1>Contáctanos</h1>
+        <p>¿Dudas, cotizaciones de eventos o reservas grupales? Escríbenos y te respondemos a la brevedad.</p>
     </section>
 
-    <main class="auth-page">
-        <div class="auth-card">
-            <form id="registroForm" novalidate>
-                <div class="form-group">
-                    <label for="nombre">Nombre completo</label>
-                    <input type="text" id="nombre" name="nombre" autocomplete="name" required>
-                    <span class="form-error" id="error-nombre"></span>
-                </div>
+    <main class="contacto-page">
+        <div class="contacto-grid">
+            <div class="contacto-info">
+                <h2>Nuestros datos</h2>
+                <p>📍 Fresia #1240, La Pintana, Santiago</p>
+                <p>📞 +56 9 4408 7803</p>
+                <p>✉️ contacto@futbolitochile.cl</p>
+                <p>🕒 Lunes a Domingo, 09:00 - 23:00 hrs</p>
+                <a href="https://maps.app.goo.gl/eQCc3gaxEPV8LV5R9" target="_blank" rel="noopener" class="footer-map-link" aria-label="Ver ubicación en Google Maps">
+                    <img src="pictures/mapa_futbolito.webp" alt="Mapa de ubicación de Futbolito Chile" width="796" height="538" loading="lazy">
+                </a>
+            </div>
 
-                <div class="form-group">
-                    <label>Tipo de documento</label>
-                    <div class="doc-tipo-selector">
-                        <label><input type="radio" name="tipoDocumento" value="rut" checked> RUT chileno</label>
-                        <label><input type="radio" name="tipoDocumento" value="pasaporte"> Pasaporte</label>
+            <div class="auth-card contacto-card">
+                <form id="contactoForm" novalidate>
+                    <div class="form-group">
+                        <label for="nombre">Nombre</label>
+                        <input type="text" id="nombre" name="nombre" autocomplete="name" required>
+                        <span class="form-error" id="error-nombre"></span>
                     </div>
-                </div>
+                    <div class="form-group">
+                        <label for="email">Correo electrónico</label>
+                        <input type="email" id="email" name="email" autocomplete="email" required>
+                        <span class="form-error" id="error-email"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="telefono">Teléfono</label>
+                        <input type="tel" id="telefono" name="telefono" autocomplete="tel" required>
+                        <span class="form-error" id="error-telefono"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="mensaje">Mensaje</label>
+                        <textarea id="mensaje" name="mensaje" rows="5" required></textarea>
+                        <span class="form-error" id="error-mensaje"></span>
+                    </div>
 
-                <div class="form-group">
-                    <label for="documento" id="labelDocumento">RUT</label>
-                    <input type="text" id="documento" name="documento" placeholder="12.345.678-9" autocomplete="off" required>
-                    <span class="form-error" id="error-documento"></span>
-                </div>
+                    <div class="auth-alert" id="contactoError" hidden></div>
 
-                <div class="form-group">
-                    <label for="telefono">Teléfono</label>
-                    <input type="tel" id="telefono" name="telefono" placeholder="+56 9 1234 5678" autocomplete="tel" required>
-                    <span class="form-error" id="error-telefono"></span>
-                </div>
-
-                <div class="form-group">
-                    <label for="email">Correo electrónico</label>
-                    <input type="email" id="email" name="email" autocomplete="email" required>
-                    <span class="form-error" id="error-email"></span>
-                </div>
-
-                <div class="form-group">
-                    <label for="password">Contraseña</label>
-                    <input type="password" id="password" name="password" autocomplete="new-password" minlength="6" required>
-                    <span class="form-error" id="error-password"></span>
-                </div>
-
-                <div class="form-group">
-                    <label for="password2">Confirmar contraseña</label>
-                    <input type="password" id="password2" name="password2" autocomplete="new-password" required>
-                    <span class="form-error" id="error-password2"></span>
-                </div>
-
-                <div class="auth-alert" id="registroError" hidden></div>
-
-                <button type="submit" class="btn btn-primary btn-block">Crear Cuenta</button>
-            </form>
-
-            <p class="auth-switch">¿Ya tienes cuenta? <a href="login.html">Inicia sesión aquí</a></p>
+                    <button type="submit" class="btn btn-primary btn-block" id="btnEnviarContacto">Enviar Mensaje</button>
+                </form>
+            </div>
         </div>
     </main>
 
     <!-- FOOTER -->
-    <footer class="footer" id="contacto">
+    <footer class="footer">
         <div class="footer-container">
             <div class="footer-col">
                 <h3>Futbolito Chile</h3>
@@ -158,5 +162,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-client.js"></script>
     <script src="auth.js"></script>
+    <script src="contacto.js"></script>
 </body>
 </html>

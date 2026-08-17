@@ -1,0 +1,77 @@
+/* ==========================================================================
+   CONTACTO
+   Usa las variables de color definidas en style.css (:root) y las clases
+   base de formulario/tarjeta definidas en auth.css
+   ========================================================================== */
+
+.contacto-page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 50px 20px 90px;
+}
+
+.contacto-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 40px;
+    align-items: start;
+}
+
+.contacto-info {
+    background-color: var(--blanco);
+    border-radius: 16px;
+    box-shadow: var(--sombra);
+    padding: 40px;
+}
+
+.contacto-info h2 {
+    color: var(--azul-oscuro);
+    font-size: 22px;
+    margin-bottom: 18px;
+}
+
+.contacto-info p {
+    margin-bottom: 12px;
+    color: var(--gris-texto);
+}
+
+.contacto-info .footer-map-link {
+    margin-top: 18px;
+    border-color: var(--gris-claro);
+}
+
+.contacto-card {
+    padding: 40px;
+}
+
+.form-group textarea {
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 2px solid var(--gris-claro);
+    font-family: inherit;
+    font-size: 15px;
+    resize: vertical;
+    transition: border-color 0.2s ease;
+}
+
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--azul-primario);
+}
+
+.form-group textarea.invalid {
+    border-color: var(--rojo);
+}
+
+@media (max-width: 800px) {
+    .contacto-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .contacto-info,
+    .contacto-card {
+        padding: 26px 22px;
+    }
+}
