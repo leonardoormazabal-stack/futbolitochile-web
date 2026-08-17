@@ -641,6 +641,8 @@
         });
     });
 
+    var METODOS_SIN_REDIRECCION = ['Transferencia', 'Efectivo'];
+
     var paymentCards = document.querySelectorAll('.payment-card');
     paymentCards.forEach(function (card) {
         card.addEventListener('click', function () {
@@ -652,7 +654,9 @@
 
             el.paymentStatus.hidden = false;
             el.paymentStatus.className = 'payment-status';
-            el.paymentStatus.textContent = 'Redirigiendo al medio de pago... (' + metodo + ')';
+            el.paymentStatus.textContent = METODOS_SIN_REDIRECCION.indexOf(metodo) === -1
+                ? 'Redirigiendo al medio de pago... (' + metodo + ')'
+                : 'Confirmando tu reserva... (' + metodo + ')';
 
             setTimeout(function () {
                 crearReserva(metodo);

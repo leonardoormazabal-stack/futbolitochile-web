@@ -519,7 +519,7 @@
 
 .payment-methods {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 16px;
 }
 
@@ -556,6 +556,8 @@
 .payment-logo--webpay { color: #ee2b39; }
 .payment-logo--getnet { color: #ff6600; }
 .payment-logo--card { color: var(--azul-oscuro); }
+.payment-logo--transferencia { color: #2e9e50; }
+.payment-logo--efectivo { color: #2e9e50; }
 
 .payment-status {
     margin-top: 24px;
