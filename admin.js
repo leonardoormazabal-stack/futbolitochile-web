@@ -200,7 +200,7 @@
 
     function cargarReservas() {
         return sb.from('reservas')
-            .select('id,fecha,hora,precio,nombre_contacto,documento_contacto,telefono_contacto,email_contacto,metodo_pago,monto_pagado,tipo_pago,estado,canchas(nombre,deporte)')
+            .select('id,fecha,hora,precio,nombre_contacto,documento_contacto,telefono_contacto,email_contacto,metodo_pago,monto_pagado,tipo_pago,estado,created_at,canchas(nombre,deporte)')
             .order('fecha', { ascending: true })
             .order('hora', { ascending: true })
             .then(function (result) {
@@ -458,7 +458,8 @@
 
         var lista = state.reservas.filter(function (r) {
             if (r.estado !== 'confirmada') return false;
-            if (rangoDesde && (r.fecha < rangoDesde || r.fecha > rangoHasta)) return false;
+            var fechaPago = toISODate(new Date(r.created_at));
+            if (rangoDesde && (fechaPago < rangoDesde || fechaPago > rangoHasta)) return false;
             if (nombreFiltro && (r.nombre_contacto || '').toLowerCase().indexOf(nombreFiltro) === -1) return false;
             if (horaFiltro && String(r.hora) !== horaFiltro) return false;
             if (deporteFiltro && (!r.canchas || r.canchas.deporte !== deporteFiltro)) return false;
@@ -468,8 +469,7 @@
         });
 
         lista.sort(function (a, b) {
-            if (a.fecha !== b.fecha) return a.fecha < b.fecha ? 1 : -1;
-            return b.hora - a.hora;
+            return new Date(b.created_at) - new Date(a.created_at);
         });
 
         el.pagosTbody.innerHTML = '';
@@ -485,7 +485,7 @@
 
             var tr = document.createElement('tr');
             tr.innerHTML =
-                '<td>' + formatFechaCorta(r.fecha) + '</td>' +
+                '<td>' + formatFechaCorta(toISODate(new Date(r.created_at))) + '</td>' +
                 '<td>' + String(r.hora).padStart(2, '0') + ':00</td>' +
                 '<td>' + (r.nombre_contacto || '') + '</td>' +
                 '<td>' + deporte + '</td>' +
