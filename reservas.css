@@ -728,6 +728,19 @@
         font-size: 11px;
     }
 
+    .cancha-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .cancha-card {
+        padding: 12px 10px;
+    }
+
+    .cancha-nombre {
+        font-size: 14px;
+    }
+
     #reservaForm {
         grid-template-columns: 1fr;
     }
