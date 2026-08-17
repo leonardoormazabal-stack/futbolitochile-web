@@ -340,11 +340,16 @@
                     <label for="admMetodoPago">Método de pago</label>
                     <select id="admMetodoPago">
                         <option value="Efectivo">Efectivo</option>
+                        <option value="Transferencia">Transferencia</option>
                         <option value="Mercado Pago">Mercado Pago</option>
                         <option value="Webpay (Transbank)">Webpay (Transbank)</option>
                         <option value="GetNet">GetNet</option>
                         <option value="Tarjeta de Crédito/Débito">Tarjeta de Crédito/Débito</option>
                     </select>
+                </div>
+                <div class="form-group">
+                    <label for="admMontoPagado">Monto pagado</label>
+                    <input type="number" id="admMontoPagado" min="0" step="1" required>
                 </div>
 
                 <div class="auth-alert" id="admReservaError" hidden></div>

@@ -90,6 +90,7 @@
         admTelefono: document.getElementById('admTelefono'),
         admEmail: document.getElementById('admEmail'),
         admMetodoPago: document.getElementById('admMetodoPago'),
+        admMontoPagado: document.getElementById('admMontoPagado'),
         admReservaError: document.getElementById('admReservaError'),
 
         tabUsuarios: document.getElementById('tabUsuarios'),
@@ -443,11 +444,22 @@
         var fecha = el.admFecha.value;
         var hora = el.admHora.value;
         var nombre = el.admNombre.value.trim();
+        var montoTexto = el.admMontoPagado.value.trim();
 
         el.admReservaError.hidden = true;
 
-        if (!deporte || !canchaId || !fecha || !hora || !nombre) {
-            el.admReservaError.textContent = 'Completa deporte, cancha, fecha, horario y nombre de contacto.';
+        if (!deporte || !canchaId || !fecha || !hora || !nombre || !montoTexto) {
+            el.admReservaError.textContent = 'Completa deporte, cancha, fecha, horario, nombre de contacto y monto pagado.';
+            el.admReservaError.className = 'auth-alert';
+            el.admReservaError.hidden = false;
+            return;
+        }
+
+        var precio = getPrecioPorHora(deporte, parseInt(hora, 10));
+        var montoPagado = parseInt(montoTexto, 10);
+
+        if (isNaN(montoPagado) || montoPagado < 0) {
+            el.admReservaError.textContent = 'El monto pagado debe ser un número válido.';
             el.admReservaError.className = 'auth-alert';
             el.admReservaError.hidden = false;
             return;
@@ -457,12 +469,14 @@
             cancha_id: canchaId,
             fecha: fecha,
             hora: parseInt(hora, 10),
-            precio: getPrecioPorHora(deporte, parseInt(hora, 10)),
+            precio: precio,
             nombre_contacto: nombre,
             documento_contacto: el.admDocumento.value.trim() || null,
             telefono_contacto: el.admTelefono.value.trim() || null,
             email_contacto: el.admEmail.value.trim() || null,
-            metodo_pago: el.admMetodoPago.value
+            metodo_pago: el.admMetodoPago.value,
+            monto_pagado: montoPagado,
+            tipo_pago: montoPagado >= precio ? 'completo' : 'abono'
         };
 
         sb.from('reservas').insert([reserva]).then(function (result) {
