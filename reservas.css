@@ -4,7 +4,7 @@
    ========================================================================== */
 
 .nav-links a.active,
-.nav-actions #navAdminItem a.active {
+.navbar-admin-bar a.active {
     color: var(--rojo);
     border-bottom-color: var(--rojo);
 }

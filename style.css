@@ -147,6 +147,18 @@ ul {
     height: auto;
 }
 
+/* En escritorio, el contenedor de navegación queda centrado con un ancho
+   máximo (1200px) dejando espacio vacío a cada lado en pantallas anchas.
+   Este desplazamiento centra visualmente el logo entre el borde izquierdo
+   real de la página y el inicio del menú, sin mover el menú ni el logo
+   fuera de su casilla actual (el ancho del logo no importa: el cálculo
+   solo depende del margen muerto y el padding del contenedor). */
+@media (min-width: 1151px) {
+    .logo {
+        transform: translateX(calc(-1 * (max(0px, (100vw - 1200px) / 2) + 30px) / 2));
+    }
+}
+
 .nav-menu {
     display: flex;
     flex: 1;
@@ -169,8 +181,7 @@ ul {
     border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-.nav-links a,
-.nav-actions #navAdminItem a {
+.nav-links a {
     color: var(--blanco);
     font-size: 15px;
     font-weight: 500;
@@ -180,8 +191,7 @@ ul {
     transition: color 0.2s ease, border-color 0.2s ease;
 }
 
-.nav-links a:hover,
-.nav-actions #navAdminItem a:hover {
+.nav-links a:hover {
     color: var(--rojo);
     border-bottom-color: var(--rojo);
 }
@@ -191,6 +201,34 @@ ul {
     align-items: center;
     gap: 14px;
     flex-shrink: 0;
+}
+
+/* BARRA DE ADMINISTRACIÓN: fila propia debajo del menú principal,
+   visible solo para administrador/superadministrador logueados. */
+.navbar-admin-bar {
+    background-color: rgba(0, 0, 0, 0.15);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.navbar-admin-bar-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 8px 30px;
+    text-align: right;
+}
+
+.navbar-admin-bar a {
+    color: var(--blanco);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 4px 2px;
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.navbar-admin-bar a:hover {
+    color: var(--rojo);
+    border-bottom-color: var(--rojo);
 }
 
 .menu-toggle {
@@ -766,8 +804,7 @@ ul {
         text-align: center;
     }
 
-    .nav-links a,
-    .nav-actions #navAdminItem a {
+    .nav-links a {
         display: block;
         padding: 16px;
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
