@@ -117,14 +117,20 @@
                 email: emailInput.value.trim(),
                 password: passwordInput.value
             }).then(function (result) {
-                submitBtn.disabled = false;
                 if (result.error) {
+                    submitBtn.disabled = false;
                     errorBox.textContent = 'Correo o contraseña incorrectos.';
                     errorBox.className = 'auth-alert';
                     errorBox.hidden = false;
                     return;
                 }
-                window.location.href = 'index.html';
+
+                sb.from('profiles').select('rol').eq('id', result.data.session.user.id).single().then(function (res) {
+                    var rol = res.data && res.data.rol;
+                    window.location.href = (rol === 'administrador' || rol === 'superadministrador')
+                        ? 'admin.html'
+                        : 'reservas.html';
+                });
             });
         });
     }
