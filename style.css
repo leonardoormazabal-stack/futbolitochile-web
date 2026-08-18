@@ -909,6 +909,15 @@ ul {
     }
 }
 
+/* En escritorio el Hero muestra el video de fondo; se agranda ~30%
+   respecto al padding base (140px) para recortar menos el encuadre. */
+@media (min-width: 1024px) {
+    .hero {
+        padding-top: 182px;
+        padding-bottom: 182px;
+    }
+}
+
 @media (max-width: 480px) {
     .hero-buttons {
         flex-direction: column;
