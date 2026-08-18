@@ -347,15 +347,15 @@
                 : '';
 
             tr.innerHTML =
-                '<td>' + formatFechaCorta(r.fecha) + '</td>' +
-                '<td>' + String(r.hora).padStart(2, '0') + ':00</td>' +
-                '<td>' + canchaNombre + ' <small>(' + deporte + ')</small></td>' +
-                '<td>' + (r.nombre_contacto || '') + '</td>' +
-                '<td>' + (r.telefono_contacto || '—') + '</td>' +
-                '<td>' + formatCLP(r.precio) + '</td>' +
-                '<td>' + (r.metodo_pago || '—') + '</td>' +
-                '<td>' + estadoBadge + '</td>' +
-                '<td>' + accion + '</td>';
+                '<td data-label="Fecha">' + formatFechaCorta(r.fecha) + '</td>' +
+                '<td data-label="Hora">' + String(r.hora).padStart(2, '0') + ':00</td>' +
+                '<td data-label="Cancha">' + canchaNombre + ' <small>(' + deporte + ')</small></td>' +
+                '<td data-label="Contacto">' + (r.nombre_contacto || '') + '</td>' +
+                '<td data-label="Teléfono">' + (r.telefono_contacto || '—') + '</td>' +
+                '<td data-label="Precio">' + formatCLP(r.precio) + '</td>' +
+                '<td data-label="Pago">' + (r.metodo_pago || '—') + '</td>' +
+                '<td data-label="Estado">' + estadoBadge + '</td>' +
+                '<td data-label="Acción" class="celda-accion">' + accion + '</td>';
 
             el.tbody.appendChild(tr);
         });

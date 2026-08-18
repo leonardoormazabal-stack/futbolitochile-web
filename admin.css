@@ -167,6 +167,65 @@
     min-width: 0;
 }
 
+/* En móvil, aunque no haya scroll horizontal, las 9 columnas no caben
+   en el ancho de pantalla: cada fila pasa a verse como una tarjeta con
+   "etiqueta: valor" en vez de columnas, así el botón Cancelar y el
+   estado quedan siempre visibles sin desplazarse. */
+@media (max-width: 700px) {
+    #reservasTable thead {
+        display: none;
+    }
+
+    #reservasTable,
+    #reservasTable tbody,
+    #reservasTable tr,
+    #reservasTable td {
+        display: block;
+        width: 100%;
+    }
+
+    #reservasTable tr {
+        margin-bottom: 14px;
+        border: 1px solid var(--gris-claro);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    #reservasTable td {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        white-space: normal;
+        text-align: right;
+        border-bottom: 1px solid var(--gris-claro);
+    }
+
+    #reservasTable td:last-child {
+        border-bottom: none;
+    }
+
+    #reservasTable td::before {
+        content: attr(data-label);
+        font-weight: 700;
+        color: var(--azul-oscuro);
+        text-align: left;
+        margin-right: 12px;
+    }
+
+    #reservasTable td.celda-accion {
+        justify-content: flex-end;
+    }
+
+    #reservasTable td.celda-accion::before {
+        content: none;
+    }
+
+    #reservasTable td.celda-accion:empty {
+        display: none;
+    }
+}
+
 .admin-table thead {
     background-color: var(--azul-oscuro);
 }
