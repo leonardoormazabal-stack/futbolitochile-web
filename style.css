@@ -253,12 +253,69 @@ ul {
    HERO
    ========================================================================== */
 .hero {
-    background:
-        linear-gradient(180deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.35) 50%, rgba(0, 0, 0, 0.6) 100%),
-        url("pictures/hero-canchas.webp") center/cover no-repeat;
+    position: relative;
+    background: url("pictures/hero-canchas.webp") center/cover no-repeat;
     text-align: center;
     padding: 140px 20px;
     color: var(--blanco);
+    overflow: hidden;
+}
+
+.hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.35) 50%, rgba(0, 0, 0, 0.6) 100%);
+    pointer-events: none;
+}
+
+.hero-video-wrap {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.hero-video-wrap .hero-video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.hero-video-toggle {
+    position: absolute;
+    right: 24px;
+    bottom: 24px;
+    z-index: 3;
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.45);
+    color: var(--blanco);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+    transition: background 0.2s ease;
+}
+
+.hero-video-toggle:not([hidden]) {
+    display: flex;
+}
+
+.hero-video-toggle:hover {
+    background: rgba(0, 0, 0, 0.65);
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
 }
 
 .hero-content h1 {
