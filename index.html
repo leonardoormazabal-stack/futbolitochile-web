@@ -27,9 +27,226 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="preload" as="image" href="pictures/hero-canchas.webp" fetchpriority="high">
 
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="auth.css">
-    <link rel="icon" type="image/webp" href="pictures/logo-1024x852.webp">
+    <!-- CSS crítico "above the fold": navbar + hero. El resto de style.css/auth.css
+         se carga diferido más abajo para no bloquear el renderizado inicial. -->
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --azul-oscuro: #0d3b66;
+            --azul-primario: #1a6bb5;
+            --azul-claro: #4a9fe0;
+            --rojo: #c0392b;
+            --rojo-oscuro: #922b21;
+            --blanco: #ffffff;
+            --gris-claro: #f4f6f5;
+            --gris-texto: #4a4a4a;
+            --sombra: 0 4px 16px rgba(0, 0, 0, 0.12);
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--blanco);
+            color: var(--gris-texto);
+            line-height: 1.6;
+        }
+
+        img { max-width: 100%; height: auto; display: block; }
+        a { text-decoration: none; }
+        ul { list-style: none; }
+
+        .btn {
+            display: inline-block;
+            padding: 15px 36px;
+            border-radius: 30px;
+            font-size: 17px;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .btn:hover { transform: translateY(-3px); }
+        .btn-primary { background-color: var(--rojo); color: var(--blanco); }
+        .btn-primary:hover { background-color: var(--rojo-oscuro); color: var(--blanco); }
+        .btn-secondary { background-color: transparent; color: var(--blanco); border-color: var(--blanco); }
+        .btn-secondary:hover { background-color: var(--blanco); color: var(--azul-oscuro); }
+
+        .navbar {
+            position: sticky;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: var(--azul-oscuro);
+            box-shadow: var(--sombra);
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 30px;
+            flex-wrap: wrap;
+        }
+
+        .logo { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: bold; color: var(--blanco); }
+        .logo-icon { width: 40px; height: auto; }
+
+        @media (min-width: 1151px) {
+            .logo { transform: translateX(calc(-1 * (max(0px, (100vw - 1200px) / 2) + 30px) / 2)); }
+        }
+
+        .nav-menu { display: flex; flex: 1; align-items: center; justify-content: flex-end; gap: 18px; margin-left: 20px; }
+
+        .nav-links {
+            display: flex;
+            flex: 1;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 6px 16px;
+            padding: 10px 18px;
+            border-radius: 30px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.05) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .nav-links a {
+            color: var(--blanco);
+            font-size: 15px;
+            font-weight: 500;
+            padding: 6px 2px;
+            border-bottom: 2px solid transparent;
+            white-space: nowrap;
+            transition: color 0.2s ease, border-color 0.2s ease;
+        }
+
+        .nav-links a:hover { color: var(--rojo); border-bottom-color: var(--rojo); }
+        .nav-actions { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+
+        .navbar-admin-bar { background-color: rgba(0, 0, 0, 0.15); border-top: 1px solid rgba(255, 255, 255, 0.1); }
+        .navbar-admin-bar-inner { max-width: 1200px; margin: 0 auto; padding: 8px 30px; text-align: right; }
+        .navbar-admin-bar a { color: var(--blanco); font-size: 14px; font-weight: 600; padding: 4px 2px; border-bottom: 2px solid transparent; transition: color 0.2s ease, border-color 0.2s ease; }
+        .navbar-admin-bar a:hover { color: var(--rojo); border-bottom-color: var(--rojo); }
+
+        .menu-toggle { display: none; }
+        .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; }
+        .hamburger span { width: 26px; height: 3px; background-color: var(--blanco); border-radius: 2px; }
+
+        .nav-auth-item .nav-login-btn {
+            display: inline-block;
+            background-color: var(--rojo);
+            color: var(--blanco) !important;
+            padding: 10px 30px;
+            border-radius: 20px;
+            font-weight: 600;
+            white-space: nowrap;
+            border-bottom: none !important;
+            transition: background-color 0.2s ease;
+        }
+
+        .nav-auth-item .nav-login-btn:hover { background-color: var(--rojo-oscuro); }
+        .nav-auth-item .nav-logged-in { cursor: pointer; }
+        .nav-auth-item { display: flex; align-items: center; gap: 10px; }
+
+        .hero {
+            position: relative;
+            background: url("pictures/hero-canchas.webp") center/cover no-repeat;
+            text-align: center;
+            padding: 140px 20px;
+            color: var(--blanco);
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.35) 50%, rgba(0, 0, 0, 0.6) 100%);
+            pointer-events: none;
+        }
+
+        .hero-video-wrap { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+        .hero-video-wrap .hero-video { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+        .hero-video-toggle {
+            position: absolute;
+            right: 24px;
+            bottom: 24px;
+            z-index: 3;
+            width: 44px;
+            height: 44px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.45);
+            color: var(--blanco);
+            font-size: 18px;
+            line-height: 1;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(2px);
+            transition: background 0.2s ease;
+        }
+
+        .hero-video-toggle:not([hidden]) { display: flex; }
+        .hero-video-toggle:hover { background: rgba(0, 0, 0, 0.65); }
+
+        .hero-content { position: relative; z-index: 2; }
+        .hero-buttons { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
+
+        @media (max-width: 1150px) {
+            .hamburger { display: flex; }
+
+            .nav-menu {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                width: 100%;
+                margin-left: 0;
+                background-color: var(--azul-oscuro);
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0;
+                max-height: 0;
+                overflow: hidden;
+                transition: max-height 0.3s ease;
+            }
+
+            .nav-links { flex-direction: column; justify-content: flex-start; gap: 0; padding: 0; border-radius: 0; background: none; border: none; }
+            .nav-links li, .nav-actions li { width: 100%; text-align: center; }
+            .nav-links a { display: block; padding: 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+            .nav-actions { flex-direction: column; gap: 0; }
+            .nav-actions .nav-auth-item { justify-content: center; padding: 14px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); flex-wrap: wrap; }
+            .nav-actions .nav-auth-item a { display: inline-block; padding: 10px 30px; border-bottom: none; }
+            .menu-toggle:checked ~ .nav-menu { max-height: 600px; overflow-y: auto; }
+        }
+
+        @media (max-width: 768px) {
+            .hero { padding: 100px 20px; }
+        }
+
+        @media (max-width: 480px) {
+            .hero-buttons { flex-direction: column; align-items: center; }
+            .btn { width: 100%; max-width: 280px; }
+        }
+    </style>
+
+    <link rel="stylesheet" href="style.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="auth.css" media="print" onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet" href="style.css">
+        <link rel="stylesheet" href="auth.css">
+    </noscript>
+    <link rel="icon" type="image/webp" href="pictures/logo-120x100.webp">
 
     <script type="application/ld+json">
     {
@@ -73,7 +290,7 @@
     <header class="navbar">
         <nav class="nav-container">
             <a href="#inicio" class="logo">
-                <img src="pictures/logo-1024x852.webp" alt="Futbolito Chile" class="logo-icon" width="1024" height="852">
+                <img src="pictures/logo-120x100.webp" alt="Futbolito Chile" class="logo-icon" width="120" height="100">
                 <span>Futbolito Chile</span>
             </a>
 
@@ -112,8 +329,6 @@
             <span class="hero-video-toggle-icon">🔇</span>
         </button>
         <div class="hero-content">
-            <h1 data-content-text="hero_title">Ven a disfrutar nuestras canchas</h1>
-            <p class="hero-subtitle" data-content-text="hero_subtitle">FutbolitoChile es tu centro deportivo familiar</p>
             <div class="hero-buttons">
                 <a href="reservas.html" class="btn btn-primary">Reservar Ahora</a>
                 <a href="#tarifas" class="btn btn-secondary">Ver Tarifas</a>
@@ -441,10 +656,10 @@
         </svg>
     </a>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase-client.js"></script>
-    <script src="auth.js"></script>
-    <script src="content.js"></script>
-    <script src="hero-video.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="supabase-client.js" defer></script>
+    <script src="auth.js" defer></script>
+    <script src="content.js" defer></script>
+    <script src="hero-video.js" defer></script>
 </body>
 </html>

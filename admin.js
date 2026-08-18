@@ -165,10 +165,6 @@
 
         tabContenido: document.getElementById('tabContenido'),
         tabTarifas: document.getElementById('tabTarifas'),
-        formHero: document.getElementById('formHero'),
-        cHeroTitulo: document.getElementById('cHeroTitulo'),
-        cHeroSubtitulo: document.getElementById('cHeroSubtitulo'),
-        guardadoHero: document.getElementById('guardadoHero'),
 
         cNosotrosImgPreview: document.getElementById('cNosotrosImgPreview'),
         cNosotrosImgInput: document.getElementById('cNosotrosImgInput'),
@@ -1043,9 +1039,6 @@
             var c = {};
             (contenidoRes.data || []).forEach(function (fila) { c[fila.key] = fila.value; });
 
-            el.cHeroTitulo.value = c.hero_title || '';
-            el.cHeroSubtitulo.value = c.hero_subtitle || '';
-
             el.cNosotrosImgPreview.src = c.nosotros_imagen_url || '';
             el.cNosotrosTagline.value = c.nosotros_tagline || '';
             el.cNosotrosParrafo1.value = c.nosotros_parrafo1 || '';
@@ -1270,20 +1263,6 @@
             el.contenidoCardsGrid.appendChild(bloque);
         });
     }
-
-    el.formHero.addEventListener('submit', function (e) {
-        e.preventDefault();
-        guardarSiteContent({
-            hero_title: el.cHeroTitulo.value.trim(),
-            hero_subtitle: el.cHeroSubtitulo.value.trim()
-        }).then(function (result) {
-            if (result.error) {
-                window.alert('No pudimos guardar: ' + result.error.message);
-                return;
-            }
-            mostrarGuardado(el.guardadoHero);
-        });
-    });
 
     el.formNosotros.addEventListener('submit', function (e) {
         e.preventDefault();
