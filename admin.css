@@ -611,5 +611,6 @@
 
     .admin-tabs {
         justify-content: center;
+        flex-wrap: wrap;
     }
 }
