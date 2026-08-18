@@ -10,6 +10,25 @@
         return '$' + n.toLocaleString('es-CL');
     }
 
+    function generarId() {
+        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+            return window.crypto.randomUUID();
+        }
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            var r = Math.random() * 16 | 0;
+            var v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+
+    function enviarCorreosReserva(reservaId) {
+        fetch('/api/reserva-confirmacion', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reservaId: reservaId })
+        }).catch(function () {});
+    }
+
     /* ======================================================================
        ESTADO
        ====================================================================== */
@@ -678,7 +697,9 @@
     }
 
     function crearReserva(metodo) {
+        var reservaId = generarId();
         var reserva = {
+            id: reservaId,
             user_id: state.userId,
             cancha_id: state.canchaId,
             fecha: state.selectedDate,
@@ -706,6 +727,8 @@
                 paymentCards.forEach(function (c) { c.disabled = false; });
                 return;
             }
+
+            enviarCorreosReserva(reservaId);
 
             completePanel('pago');
 
