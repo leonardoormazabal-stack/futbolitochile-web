@@ -161,10 +161,38 @@
     background-color: var(--blanco);
 }
 
-/* Listado de reservas: una columna menos que las demás tablas, por lo
-   que no necesita el ancho mínimo mayor ni el scroll horizontal. */
+/* Listado de reservas: en vez del ancho mínimo de 900px (que obliga a
+   hacer scroll horizontal dentro del contenedor de 1100px de .admin-page),
+   usa ancho fijo por columna y deja que el texto haga salto de línea, así
+   siempre cabe completa sin importar el ancho de la ventana. */
 #reservasTable {
     min-width: 0;
+    table-layout: fixed;
+}
+
+#reservasTable th,
+#reservasTable td {
+    white-space: normal;
+    word-break: break-word;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+#reservasTable th:nth-child(1) { width: 9%; }  /* Fecha */
+#reservasTable th:nth-child(2) { width: 6%; }  /* Hora */
+#reservasTable th:nth-child(3) { width: 13%; } /* Cancha */
+#reservasTable th:nth-child(4) { width: 15%; } /* Contacto */
+#reservasTable th:nth-child(5) { width: 12%; } /* Teléfono */
+#reservasTable th:nth-child(6) { width: 8%; }  /* Precio */
+#reservasTable th:nth-child(7) { width: 12%; } /* Pago */
+#reservasTable th:nth-child(8) { width: 12%; } /* Estado */
+#reservasTable th:nth-child(9) { width: 13%; } /* Acción */
+
+/* La insignia de estado y el botón Cancelar no deben partirse a media
+   palabra aunque el resto de la celda sí haga salto de línea. */
+#reservasTable .estado-badge,
+#reservasTable .btn-cancelar {
+    white-space: nowrap;
 }
 
 /* En móvil, aunque no haya scroll horizontal, las 9 columnas no caben
