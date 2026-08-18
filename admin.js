@@ -351,7 +351,6 @@
                 '<td>' + String(r.hora).padStart(2, '0') + ':00</td>' +
                 '<td>' + canchaNombre + ' <small>(' + deporte + ')</small></td>' +
                 '<td>' + (r.nombre_contacto || '') + '</td>' +
-                '<td>' + (r.documento_contacto || '—') + '</td>' +
                 '<td>' + (r.telefono_contacto || '—') + '</td>' +
                 '<td>' + formatCLP(r.precio) + '</td>' +
                 '<td>' + (r.metodo_pago || '—') + '</td>' +

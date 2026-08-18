@@ -161,6 +161,12 @@
     background-color: var(--blanco);
 }
 
+/* Listado de reservas: una columna menos que las demás tablas, por lo
+   que no necesita el ancho mínimo mayor ni el scroll horizontal. */
+#reservasTable {
+    min-width: 0;
+}
+
 .admin-table thead {
     background-color: var(--azul-oscuro);
 }
