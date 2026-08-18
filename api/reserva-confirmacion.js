@@ -1,20 +1,17 @@
 /* ============================================================================
    Envía los correos de una reserva nueva: confirmación al cliente y aviso a
-   los administradores/superadministradores, usando la API de Resend. Reusa
-   las mismas variables de entorno que api/contacto.js:
-
-   - RESEND_API_KEY            API key de Resend.
-   - CONTACTO_EMAIL_REMITENTE  Remitente verificado en Resend.
+   los administradores/superadministradores, usando el SMTP de Google
+   Workspace (ver lib/mailer.js).
 
    Se llama desde el navegador justo después de crear la reserva en
    Supabase, pasando solo el id — los datos reales se leen de la base con la
    clave service_role, no se confía en lo que mande el cliente. Si el envío
-   de correos no está configurado, o Resend falla, igual responde 200: el
-   correo es un extra, nunca debe hacer fallar una reserva que ya quedó
-   guardada.
+   de correos no está configurado, o falla, igual responde 200: el correo es
+   un extra, nunca debe hacer fallar una reserva que ya quedó guardada.
    ============================================================================ */
 
 const { getSupabaseAdmin } = require('../lib/supabaseAdmin');
+const { enviarCorreo, getTransporter } = require('../lib/mailer');
 
 const SPORT_LABELS = { futbolito: 'Futbolito', padel: 'Pádel' };
 
@@ -37,22 +34,6 @@ function formatFecha(fechaISO) {
     return d.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 }
 
-async function enviarCorreo(apiKey, payload) {
-    const respuesta = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-            Authorization: 'Bearer ' + apiKey,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-    });
-
-    if (!respuesta.ok) {
-        const detalle = await respuesta.text();
-        throw new Error(detalle);
-    }
-}
-
 module.exports = async function handler(req, res) {
     if (req.method !== 'POST') {
         res.status(405).json({ error: 'Método no permitido.' });
@@ -65,10 +46,7 @@ module.exports = async function handler(req, res) {
         return;
     }
 
-    const apiKey = process.env.RESEND_API_KEY;
-    const remitente = process.env.CONTACTO_EMAIL_REMITENTE;
-
-    if (!apiKey || !remitente) {
+    if (!getTransporter()) {
         res.status(200).json({ ok: false, motivo: 'El envío de correos no está configurado todavía.' });
         return;
     }
@@ -117,8 +95,7 @@ module.exports = async function handler(req, res) {
     const envios = [];
 
     if (reserva.email_contacto) {
-        envios.push(enviarCorreo(apiKey, {
-            from: remitente,
+        envios.push(enviarCorreo({
             to: [reserva.email_contacto],
             subject: 'Confirmación de tu reserva — Futbolito Chile',
             html:
@@ -130,8 +107,7 @@ module.exports = async function handler(req, res) {
     }
 
     if (adminEmails.length) {
-        envios.push(enviarCorreo(apiKey, {
-            from: remitente,
+        envios.push(enviarCorreo({
             to: adminEmails,
             subject: 'Nueva reserva — ' + reserva.nombre_contacto,
             html:

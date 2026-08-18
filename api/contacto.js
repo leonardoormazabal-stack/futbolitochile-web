@@ -1,17 +1,14 @@
 /* ============================================================================
-   Envía el formulario de contacto por correo usando la API de Resend
-   (https://resend.com). Requiere estas variables de entorno en Vercel:
+   Envía el formulario de contacto por correo usando el SMTP de Google
+   Workspace (ver lib/mailer.js). Requiere GMAIL_USER y GMAIL_APP_PASSWORD
+   en Vercel; mientras no estén configuradas, responde con un error claro en
+   vez de fallar de forma silenciosa.
 
-   - RESEND_API_KEY            API key de Resend.
-   - CONTACTO_EMAIL_REMITENTE  Remitente verificado en Resend,
-                                ej: "Futbolito Chile <contacto@futbolitochile.cl>"
-                                (el dominio debe estar verificado en Resend).
-   - CONTACTO_EMAIL_DESTINO    (opcional) a quién llega el mensaje.
-                                Por defecto: contacto@futbolitochile.cl
-
-   Mientras estas variables no estén configuradas, el endpoint responde con
-   un error claro en vez de fallar de forma silenciosa.
+   - CONTACTO_EMAIL_DESTINO  (opcional) a quién llega el mensaje.
+                              Por defecto: contacto@futbolitochile.cl
    ============================================================================ */
+
+const { enviarCorreo, getTransporter } = require('../lib/mailer');
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -45,16 +42,14 @@ module.exports = async function handler(req, res) {
         return;
     }
 
-    const apiKey = process.env.RESEND_API_KEY;
-    const remitente = process.env.CONTACTO_EMAIL_REMITENTE;
-    const destino = process.env.CONTACTO_EMAIL_DESTINO || 'contacto@futbolitochile.cl';
-
-    if (!apiKey || !remitente) {
+    if (!getTransporter()) {
         res.status(500).json({
             error: 'El envío de correos no está configurado todavía. Escríbenos directamente a contacto@futbolitochile.cl.'
         });
         return;
     }
+
+    const destino = process.env.CONTACTO_EMAIL_DESTINO || 'contacto@futbolitochile.cl';
 
     const cuerpoHtml =
         '<p><strong>Nombre:</strong> ' + escapeHtml(nombre) + '</p>' +
@@ -64,30 +59,16 @@ module.exports = async function handler(req, res) {
         '<p>' + escapeHtml(mensaje).replace(/\n/g, '<br>') + '</p>';
 
     try {
-        const respuesta = await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: {
-                Authorization: 'Bearer ' + apiKey,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                from: remitente,
-                to: [destino],
-                cc: [email],
-                reply_to: email,
-                subject: 'Nuevo mensaje de contacto — ' + nombre,
-                html: cuerpoHtml
-            })
+        await enviarCorreo({
+            to: [destino],
+            cc: [email],
+            replyTo: email,
+            subject: 'Nuevo mensaje de contacto — ' + nombre,
+            html: cuerpoHtml
         });
-
-        if (!respuesta.ok) {
-            const detalle = await respuesta.text();
-            res.status(502).json({ error: 'No pudimos enviar tu mensaje: ' + detalle });
-            return;
-        }
 
         res.status(200).json({ ok: true });
     } catch (err) {
-        res.status(500).json({ error: 'No pudimos enviar tu mensaje: ' + err.message });
+        res.status(502).json({ error: 'No pudimos enviar tu mensaje: ' + err.message });
     }
 };
