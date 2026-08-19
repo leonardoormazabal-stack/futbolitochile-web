@@ -101,6 +101,45 @@
     border-color: var(--rojo);
 }
 
+/* CAMPO DE CONTRASEÑA CON BOTÓN PARA MOSTRAR/OCULTAR */
+.password-field {
+    position: relative;
+    display: flex;
+}
+
+.password-field input[type="password"],
+.password-field input[type="text"] {
+    width: 100%;
+    padding-right: 44px;
+}
+
+.password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--gris-texto);
+    cursor: pointer;
+    border-radius: 6px;
+}
+
+.password-toggle:hover {
+    color: var(--azul-primario);
+}
+
+.password-toggle:focus-visible {
+    outline: 2px solid var(--azul-primario);
+    outline-offset: 2px;
+}
+
 .form-error {
     font-size: 12px;
     color: var(--rojo);
