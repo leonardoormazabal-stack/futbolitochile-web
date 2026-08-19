@@ -60,7 +60,7 @@ function sumaMontoPagado(filas) {
 }
 
 module.exports = async function handler(req, res) {
-    const cronSecret = process.env.CRON_SECRET;
+    const cronSecret = (process.env.CRON_SECRET || '').trim();
     if (!cronSecret) {
         res.status(200).json({ ok: false, motivo: 'Falta configurar CRON_SECRET en las variables de entorno de Vercel.' });
         return;
