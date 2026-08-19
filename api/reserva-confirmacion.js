@@ -92,6 +92,20 @@ module.exports = async function handler(req, res) {
             : 'Total pagado: ' + formatCLP(montoPagado) + ' vía ' + escapeHtml(reserva.metodo_pago || '—') + '.') +
         '</p>';
 
+    const esTransferencia = reserva.metodo_pago === 'Transferencia';
+
+    const datosTransferenciaHtml =
+        '<div style="margin:16px 0;padding:14px 16px;background:#f4f6f8;border-radius:8px;">' +
+        '<p style="margin:0 0 8px;"><strong>Datos para tu transferencia</strong></p>' +
+        '<p style="margin:0;">Nombre: Futbolito Chile<br>' +
+        'Banco: Banco de Chile<br>' +
+        'Tipo de cuenta: Cuenta Corriente<br>' +
+        'RUT: 76.713.807-5<br>' +
+        'N° de cuenta: 8840337400</p>' +
+        '</div>' +
+        '<p><strong>Importante:</strong> tu reserva queda condicionada al envío del comprobante de transferencia y a la verificación del pago en la cuenta de la empresa. ' +
+        'Envíanos el comprobante por WhatsApp al <a href="https://wa.me/56944087803">+56 9 4408 7803</a>.</p>';
+
     const envios = [];
 
     if (reserva.email_contacto) {
@@ -104,6 +118,7 @@ module.exports = async function handler(req, res) {
                 '<p>Hola ' + escapeHtml(reserva.nombre_contacto) + ',</p>' +
                 '<p>Tu reserva quedó confirmada:</p>' +
                 detalleHtml +
+                (esTransferencia ? datosTransferenciaHtml : '') +
                 '<p>¿Necesitas anular tu reserva? <a href="' + linkCancelacion + '">Haz clic aquí</a>.</p>' +
                 '<p>¿Dudas o consultas? Escríbenos por WhatsApp al <a href="https://wa.me/56944087803">+56 9 4408 7803</a>.</p>'
         }));
@@ -116,6 +131,8 @@ module.exports = async function handler(req, res) {
             html:
                 '<p>Se creó una nueva reserva:</p>' +
                 detalleHtml +
+                '<p><strong>Medio de pago:</strong> ' + escapeHtml(reserva.metodo_pago || '—') + '</p>' +
+                (esTransferencia ? '<p><strong>⚠ Pagó por Transferencia:</strong> verifica el comprobante y el abono en la cuenta antes de confirmar el uso de la cancha con el cliente.</p>' : '') +
                 '<p><strong>Contacto:</strong> ' + escapeHtml(reserva.nombre_contacto) +
                 (reserva.telefono_contacto ? ' — ' + escapeHtml(reserva.telefono_contacto) : '') +
                 (reserva.email_contacto ? ' — ' + escapeHtml(reserva.email_contacto) : '') +

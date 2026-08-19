@@ -622,6 +622,33 @@
     margin-bottom: 4px;
 }
 
+.transferencia-datos {
+    margin-top: 20px;
+    padding: 18px 20px;
+    border-radius: 10px;
+    background-color: var(--blanco);
+    border: 2px solid var(--gris-claro);
+    text-align: left;
+}
+
+.transferencia-datos h4 {
+    color: var(--azul-oscuro);
+    margin: 0 0 10px;
+    font-size: 15px;
+}
+
+.transferencia-datos p {
+    color: var(--gris-texto);
+    font-size: 14px;
+    margin: 0 0 4px;
+}
+
+.transferencia-nota {
+    margin-top: 10px !important;
+    font-size: 13px !important;
+    color: var(--azul-oscuro) !important;
+}
+
 /* RESUMEN LATERAL */
 .wizard-summary {
     grid-column: 2;

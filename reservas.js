@@ -684,6 +684,17 @@
 
     var METODOS_SIN_REDIRECCION = ['Transferencia', 'Efectivo'];
 
+    var DATOS_TRANSFERENCIA_HTML =
+        '<div class="transferencia-datos">' +
+        '<h4>Datos para tu transferencia</h4>' +
+        '<p><strong>Nombre:</strong> Futbolito Chile</p>' +
+        '<p><strong>Banco:</strong> Banco de Chile</p>' +
+        '<p><strong>Tipo de cuenta:</strong> Cuenta Corriente</p>' +
+        '<p><strong>RUT:</strong> 76.713.807-5</p>' +
+        '<p><strong>N° de cuenta:</strong> 8840337400</p>' +
+        '<p class="transferencia-nota">Envía tu comprobante por <a href="https://wa.me/56944087803" target="_blank" rel="noopener">WhatsApp al +56 9 4408 7803</a>. Tu reserva queda condicionada al envío del comprobante y a la verificación del pago en la cuenta.</p>' +
+        '</div>';
+
     var paymentCards = document.querySelectorAll('.payment-card');
     paymentCards.forEach(function (card) {
         card.addEventListener('click', function () {
@@ -766,7 +777,8 @@
                 '<p>' + (state.tipoPago === 'abono'
                     ? 'Abono pagado: ' + formatCLP(state.montoAPagar) + ' vía ' + metodo + '. Saldo a pagar en el recinto: ' + formatCLP(saldoPendiente) + '.'
                     : 'Total pagado: ' + formatCLP(state.montoAPagar) + ' vía ' + metodo + '.') + '</p>' +
-                '<p>Te enviamos la confirmación a ' + campos.email.value.trim() + '.</p>';
+                '<p>Te enviamos la confirmación a ' + campos.email.value.trim() + '.</p>' +
+                (metodo === 'Transferencia' ? DATOS_TRANSFERENCIA_HTML : '');
         });
     }
 
