@@ -649,6 +649,10 @@
     color: var(--azul-oscuro) !important;
 }
 
+.transferencia-whatsapp-btn {
+    margin-top: 14px;
+}
+
 /* RESUMEN LATERAL */
 .wizard-summary {
     grid-column: 2;

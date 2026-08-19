@@ -684,16 +684,23 @@
 
     var METODOS_SIN_REDIRECCION = ['Transferencia', 'Efectivo'];
 
-    var DATOS_TRANSFERENCIA_HTML =
-        '<div class="transferencia-datos">' +
-        '<h4>Datos para tu transferencia</h4>' +
-        '<p><strong>Nombre:</strong> Futbolito Chile</p>' +
-        '<p><strong>Banco:</strong> Banco de Chile</p>' +
-        '<p><strong>Tipo de cuenta:</strong> Cuenta Corriente</p>' +
-        '<p><strong>RUT:</strong> 76.713.807-5</p>' +
-        '<p><strong>N° de cuenta:</strong> 8840337400</p>' +
-        '<p class="transferencia-nota">Envía tu comprobante por <a href="https://wa.me/56944087803" target="_blank" rel="noopener">WhatsApp al +56 9 4408 7803</a>. Tu reserva queda condicionada al envío del comprobante y a la verificación del pago en la cuenta.</p>' +
-        '</div>';
+    function construirDatosTransferenciaHtml(tipoPago, canchaNombre, fechaLarga, horaTexto) {
+        var conceptoPago = tipoPago === 'abono' ? 'abono' : 'pago';
+        var mensajeWa = 'Hola, les envío el comprobante de mi ' + conceptoPago + ' para la reserva de ' +
+            SPORT_LABELS[state.sport] + ' — ' + canchaNombre + ' el ' + fechaLarga + ' a las ' + horaTexto + ' hrs.';
+        var linkWa = 'https://wa.me/56944087803?text=' + encodeURIComponent(mensajeWa);
+
+        return '<div class="transferencia-datos">' +
+            '<h4>Datos para tu transferencia</h4>' +
+            '<p><strong>Nombre:</strong> Futbolito Chile</p>' +
+            '<p><strong>Banco:</strong> Banco de Chile</p>' +
+            '<p><strong>Tipo de cuenta:</strong> Cuenta Corriente</p>' +
+            '<p><strong>RUT:</strong> 76.713.807-5</p>' +
+            '<p><strong>N° de cuenta:</strong> 8840337400</p>' +
+            '<p class="transferencia-nota">Tu ' + conceptoPago + ' debe confirmarse: envía la captura de tu comprobante de transferencia para validar tu reserva.</p>' +
+            '<a href="' + linkWa + '" target="_blank" rel="noopener" class="btn btn-primary btn-block transferencia-whatsapp-btn">Enviar comprobante por WhatsApp</a>' +
+            '</div>';
+    }
 
     var paymentCards = document.querySelectorAll('.payment-card');
     paymentCards.forEach(function (card) {
@@ -767,18 +774,20 @@
             completePanel('pago');
 
             var saldoPendiente = state.precio - state.montoAPagar;
+            var fechaLarga = formatFechaLarga(state.selectedDate);
+            var horaTexto = String(state.selectedHour).padStart(2, '0') + ':00';
 
             el.paymentStatus.hidden = true;
             el.paymentConfirmation.hidden = false;
             el.paymentConfirmation.innerHTML =
                 '<h3>¡Reserva confirmada!</h3>' +
                 '<p>' + SPORT_LABELS[state.sport] + ' — ' + state.canchaNombre + '</p>' +
-                '<p>' + formatFechaLarga(state.selectedDate) + ', ' + String(state.selectedHour).padStart(2, '0') + ':00 hrs</p>' +
+                '<p>' + fechaLarga + ', ' + horaTexto + ' hrs</p>' +
                 '<p>' + (state.tipoPago === 'abono'
                     ? 'Abono pagado: ' + formatCLP(state.montoAPagar) + ' vía ' + metodo + '. Saldo a pagar en el recinto: ' + formatCLP(saldoPendiente) + '.'
                     : 'Total pagado: ' + formatCLP(state.montoAPagar) + ' vía ' + metodo + '.') + '</p>' +
                 '<p>Te enviamos la confirmación a ' + campos.email.value.trim() + '.</p>' +
-                (metodo === 'Transferencia' ? DATOS_TRANSFERENCIA_HTML : '');
+                (metodo === 'Transferencia' ? construirDatosTransferenciaHtml(state.tipoPago, state.canchaNombre, fechaLarga, horaTexto) : '');
         });
     }
 
