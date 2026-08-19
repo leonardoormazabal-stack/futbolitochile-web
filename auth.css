@@ -194,6 +194,32 @@
     font-weight: 600;
 }
 
+.reserva-detalle-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 24px;
+}
+
+.reserva-detalle-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--gris-claro);
+    font-size: 14px;
+}
+
+.reserva-detalle-row dt {
+    color: var(--gris-texto);
+}
+
+.reserva-detalle-row dd {
+    font-weight: 600;
+    color: var(--azul-oscuro);
+    text-align: right;
+}
+
 .auth-demo-note {
     margin-top: 30px;
     padding: 16px 18px;

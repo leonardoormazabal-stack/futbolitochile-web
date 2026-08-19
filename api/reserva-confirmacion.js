@@ -95,6 +95,8 @@ module.exports = async function handler(req, res) {
     const envios = [];
 
     if (reserva.email_contacto) {
+        var linkCancelacion = 'https://futbolitochile.cl/cancelar-reserva.html?id=' + encodeURIComponent(reserva.id);
+
         envios.push(enviarCorreo({
             to: [reserva.email_contacto],
             subject: 'Confirmación de tu reserva — Futbolito Chile',
@@ -102,7 +104,8 @@ module.exports = async function handler(req, res) {
                 '<p>Hola ' + escapeHtml(reserva.nombre_contacto) + ',</p>' +
                 '<p>Tu reserva quedó confirmada:</p>' +
                 detalleHtml +
-                '<p>Cualquier duda, respóndenos a este correo.</p>'
+                '<p>¿Necesitas anular tu reserva? <a href="' + linkCancelacion + '">Haz clic aquí</a>.</p>' +
+                '<p>¿Dudas o consultas? Escríbenos por WhatsApp al <a href="https://wa.me/56944087803">+56 9 4408 7803</a>.</p>'
         }));
     }
 
