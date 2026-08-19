@@ -197,7 +197,11 @@
 
         equipamientoGrid: document.getElementById('equipamientoGrid'),
         btnGuardarEquipamiento: document.getElementById('btnGuardarEquipamiento'),
-        guardadoEquipamiento: document.getElementById('guardadoEquipamiento')
+        guardadoEquipamiento: document.getElementById('guardadoEquipamiento'),
+
+        metodosPagoGrid: document.getElementById('metodosPagoGrid'),
+        btnGuardarMetodosPago: document.getElementById('btnGuardarMetodosPago'),
+        guardadoMetodosPago: document.getElementById('guardadoMetodosPago')
     };
 
     /* ======================================================================
@@ -1028,13 +1032,15 @@
             sb.from('instalaciones_cards').select('id,titulo,descripcion,imagen_url').order('orden', { ascending: true }),
             cargarTarifasConFallback(),
             sb.from('planes_mensuales').select('id,nombre,horas_incluidas,precio').order('orden', { ascending: true }),
-            sb.from('equipamiento').select('id,nombre,precio').order('orden', { ascending: true })
+            sb.from('equipamiento').select('id,nombre,precio').order('orden', { ascending: true }),
+            sb.from('metodos_pago').select('id,nombre,activo').order('orden', { ascending: true })
         ]).then(function (resultados) {
             var contenidoRes = resultados[0];
             var cardsRes = resultados[1];
             var tarifasRes = resultados[2];
             var planesRes = resultados[3];
             var equipamientoRes = resultados[4];
+            var metodosPagoRes = resultados[5];
 
             var c = {};
             (contenidoRes.data || []).forEach(function (fila) { c[fila.key] = fila.value; });
@@ -1055,6 +1061,7 @@
             renderCardsEditor(cardsRes.data || []);
             renderTarifasEditor(tarifasRes.data || []);
             renderEquipamientoEditor(equipamientoRes.data || []);
+            renderMetodosPagoEditor(metodosPagoRes.data || []);
 
             var plan = (planesRes.data || [])[0];
             if (plan) {
@@ -1094,6 +1101,23 @@
                 '<label>Artículo <input type="text" class="equip-nombre" value="' + (item.nombre || '').replace(/"/g, '&quot;') + '"></label>' +
                 '<label>Precio <input type="number" class="equip-precio" min="0" step="1" value="' + item.precio + '"></label>';
             el.equipamientoGrid.appendChild(row);
+        });
+    }
+
+    function renderMetodosPagoEditor(metodos) {
+        el.metodosPagoGrid.innerHTML = '';
+
+        metodos.forEach(function (m) {
+            var row = document.createElement('div');
+            row.className = 'metodo-pago-row';
+            row.setAttribute('data-id', m.id);
+            row.innerHTML =
+                '<span class="metodo-pago-nombre">' + m.nombre + '</span>' +
+                '<label class="metodo-pago-switch">' +
+                '<input type="checkbox" class="metodo-pago-activo"' + (m.activo ? ' checked' : '') + '>' +
+                '<span class="metodo-pago-switch-track"></span>' +
+                '</label>';
+            el.metodosPagoGrid.appendChild(row);
         });
     }
 
@@ -1175,6 +1199,26 @@
                 return;
             }
             mostrarGuardado(el.guardadoEquipamiento);
+        });
+    });
+
+    el.btnGuardarMetodosPago.addEventListener('click', function () {
+        var filas = Array.from(el.metodosPagoGrid.querySelectorAll('.metodo-pago-row')).map(function (row) {
+            return {
+                id: row.getAttribute('data-id'),
+                activo: row.querySelector('.metodo-pago-activo').checked
+            };
+        });
+
+        Promise.all(filas.map(function (fila) {
+            return sb.from('metodos_pago').update({ activo: fila.activo }).eq('id', fila.id);
+        })).then(function (resultados) {
+            var conError = resultados.find(function (r) { return r.error; });
+            if (conError) {
+                window.alert('No pudimos guardar los métodos de pago: ' + conError.error.message);
+                return;
+            }
+            mostrarGuardado(el.guardadoMetodosPago);
         });
     });
 

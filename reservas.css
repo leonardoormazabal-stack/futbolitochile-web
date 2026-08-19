@@ -545,6 +545,17 @@
     background-color: #fdeceb;
 }
 
+.payment-card.payment-card--disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+    filter: grayscale(1);
+}
+
+.payment-card.payment-card--disabled:hover {
+    transform: none;
+    border-color: var(--gris-claro);
+}
+
 .payment-logo {
     font-weight: 800;
     font-size: 15px;

@@ -45,6 +45,7 @@
         montoAPagar: 0,
         canchas: [],           // desde Supabase: {id, nombre, deporte, descripcion}
         tarifas: [],            // desde Supabase: {deporte, hora_desde, hora_hasta, precio}
+        metodosPago: {},        // desde Supabase: { 'Mercado Pago': true, 'Efectivo': false, ... }
         ocupadosPorHora: {},    // { hora: cantidadDeCanchasOcupadas } para el deporte/fecha elegidos
         totalCanchasDeporte: 0, // cuántas canchas tiene el deporte elegido
         catalogoListo: false,
@@ -236,7 +237,8 @@
             el.paymentStatus.hidden = true;
             el.paymentConfirmation.hidden = true;
             document.querySelectorAll('.tipo-pago-card').forEach(function (c) { c.classList.remove('selected'); });
-            document.querySelectorAll('.payment-card').forEach(function (c) { c.classList.remove('selected'); c.disabled = false; });
+            document.querySelectorAll('.payment-card').forEach(function (c) { c.classList.remove('selected'); });
+            aplicarEstadoMetodosPago();
         }
     }
 
@@ -246,25 +248,27 @@
     function cargarCatalogo() {
         return Promise.all([
             sb.from('canchas').select('id,nombre,deporte,descripcion'),
-            sb.from('tarifas').select('deporte,hora_desde,hora_hasta,precio,abono')
+            sb.from('tarifas').select('deporte,hora_desde,hora_hasta,precio,abono'),
+            sb.from('metodos_pago').select('nombre,activo')
         ]).then(function (resultados) {
             var canchasRes = resultados[0];
             var tarifasRes = resultados[1];
+            var metodosPagoRes = resultados[2];
 
             // Si la columna "abono" todavía no existe (falta correr el parche SQL),
             // reintentamos sin ella en vez de bloquear toda la reserva: el abono
             // simplemente usa el valor por defecto de $10.000 (ver getAbonoPorHora).
             if (tarifasRes.error && tarifasRes.error.code === '42703') {
                 return sb.from('tarifas').select('deporte,hora_desde,hora_hasta,precio').then(function (fallbackRes) {
-                    return finalizarCatalogo(canchasRes, fallbackRes);
+                    return finalizarCatalogo(canchasRes, fallbackRes, metodosPagoRes);
                 });
             }
 
-            return finalizarCatalogo(canchasRes, tarifasRes);
+            return finalizarCatalogo(canchasRes, tarifasRes, metodosPagoRes);
         });
     }
 
-    function finalizarCatalogo(canchasRes, tarifasRes) {
+    function finalizarCatalogo(canchasRes, tarifasRes, metodosPagoRes) {
         if (canchasRes.error || tarifasRes.error) {
             el.catalogoError.hidden = false;
             el.catalogoError.textContent = 'No pudimos cargar los deportes disponibles. Intenta recargar la página.';
@@ -273,10 +277,27 @@
 
         state.canchas = canchasRes.data || [];
         state.tarifas = tarifasRes.data || [];
+
+        // Si la tabla "metodos_pago" todavía no existe (falta correr el parche
+        // SQL), dejamos el mapa vacío: aplicarEstadoMetodosPago() trata "sin
+        // dato" como habilitado, así no se bloquea ningún medio de pago.
+        state.metodosPago = {};
+        (metodosPagoRes && metodosPagoRes.data || []).forEach(function (m) {
+            state.metodosPago[m.nombre] = m.activo;
+        });
+
         state.catalogoListo = true;
 
         document.querySelectorAll('.sport-card').forEach(function (card) {
             card.disabled = false;
+        });
+    }
+
+    function aplicarEstadoMetodosPago() {
+        document.querySelectorAll('.payment-card').forEach(function (c) {
+            var activo = state.metodosPago[c.getAttribute('data-method')] !== false;
+            c.classList.toggle('payment-card--disabled', !activo);
+            c.disabled = !activo;
         });
     }
 
@@ -656,7 +677,8 @@
             el.paymentStatus.hidden = true;
             el.paymentConfirmation.hidden = true;
             el.paymentMethodsWrap.hidden = false;
-            document.querySelectorAll('.payment-card').forEach(function (c) { c.classList.remove('selected'); c.disabled = false; });
+            document.querySelectorAll('.payment-card').forEach(function (c) { c.classList.remove('selected'); });
+            aplicarEstadoMetodosPago();
         });
     });
 
@@ -687,7 +709,8 @@
         el.paymentStatus.hidden = false;
         el.paymentStatus.className = 'payment-status error';
         el.paymentStatus.textContent = 'Justo se ocupó esa cancha. Elige otra disponible.';
-        paymentCards.forEach(function (c) { c.disabled = false; c.classList.remove('selected'); });
+        paymentCards.forEach(function (c) { c.classList.remove('selected'); });
+        aplicarEstadoMetodosPago();
 
         resetDownstreamFrom('horario');
         unlockPanel('cancha');
@@ -724,7 +747,7 @@
                 el.paymentStatus.hidden = false;
                 el.paymentStatus.className = 'payment-status error';
                 el.paymentStatus.textContent = 'No pudimos confirmar tu reserva. Intenta de nuevo.';
-                paymentCards.forEach(function (c) { c.disabled = false; });
+                aplicarEstadoMetodosPago();
                 return;
             }
 
