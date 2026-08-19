@@ -172,6 +172,7 @@
         paymentStatus: document.getElementById('paymentStatus'),
         paymentConfirmation: document.getElementById('paymentConfirmation'),
         paymentMethodsWrap: document.getElementById('paymentMethodsWrap'),
+        avisoEfectivoAbono: document.getElementById('avisoEfectivoAbono'),
         montoOpcionCompleto: document.getElementById('montoOpcionCompleto'),
         montoOpcionAbono: document.getElementById('montoOpcionAbono'),
         summarySport: document.getElementById('summarySport'),
@@ -294,11 +295,17 @@
     }
 
     function aplicarEstadoMetodosPago() {
+        var efectivoBloqueadoPorAbono = state.tipoPago === 'abono';
+
         document.querySelectorAll('.payment-card').forEach(function (c) {
-            var activo = state.metodosPago[c.getAttribute('data-method')] !== false;
+            var metodo = c.getAttribute('data-method');
+            var activoAdmin = state.metodosPago[metodo] !== false;
+            var activo = activoAdmin && !(metodo === 'Efectivo' && efectivoBloqueadoPorAbono);
             c.classList.toggle('payment-card--disabled', !activo);
             c.disabled = !activo;
         });
+
+        el.avisoEfectivoAbono.hidden = !efectivoBloqueadoPorAbono;
     }
 
     function obtenerSesionActual() {

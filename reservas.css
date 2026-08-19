@@ -464,6 +464,12 @@
     color: var(--gris-texto);
 }
 
+.payment-aviso-efectivo {
+    margin-top: -14px;
+    color: var(--rojo-oscuro);
+    font-size: 13px;
+}
+
 .tipo-pago-selector {
     display: grid;
     grid-template-columns: 1fr 1fr;
