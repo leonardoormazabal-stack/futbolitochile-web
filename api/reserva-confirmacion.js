@@ -93,6 +93,8 @@ module.exports = async function handler(req, res) {
         '</p>';
 
     const esTransferencia = reserva.metodo_pago === 'Transferencia';
+    const esEfectivo = reserva.metodo_pago === 'Efectivo';
+    const conceptoPago = reserva.tipo_pago === 'abono' ? 'abono' : 'pago';
 
     const datosTransferenciaHtml =
         '<div style="margin:16px 0;padding:14px 16px;background:#f4f6f8;border-radius:8px;">' +
@@ -103,8 +105,12 @@ module.exports = async function handler(req, res) {
         'RUT: 76.713.807-5<br>' +
         'N° de cuenta: 8840337400</p>' +
         '</div>' +
-        '<p><strong>Importante:</strong> tu reserva queda condicionada al envío del comprobante de transferencia y a la verificación del pago en la cuenta de la empresa. ' +
+        '<p><strong>Importante:</strong> tu ' + conceptoPago + ' debe confirmarse: envía el comprobante de tu transferencia y quedará sujeto a la verificación del pago en la cuenta de la empresa. ' +
         'Envíanos el comprobante por WhatsApp al <a href="https://wa.me/56944087803">+56 9 4408 7803</a>.</p>';
+
+    const coordinacionEfectivoHtml =
+        '<p><strong>Importante:</strong> tu ' + conceptoPago + ' en efectivo debe coordinarse directamente con nuestra Administración. ' +
+        'Escríbenos por WhatsApp al <a href="https://wa.me/56944087803">+56 9 4408 7803</a> para coordinar los detalles.</p>';
 
     const envios = [];
 
@@ -119,6 +125,7 @@ module.exports = async function handler(req, res) {
                 '<p>Tu reserva quedó confirmada:</p>' +
                 detalleHtml +
                 (esTransferencia ? datosTransferenciaHtml : '') +
+                (esEfectivo ? coordinacionEfectivoHtml : '') +
                 '<p>¿Necesitas anular tu reserva? <a href="' + linkCancelacion + '">Haz clic aquí</a>.</p>' +
                 '<p>¿Dudas o consultas? Escríbenos por WhatsApp al <a href="https://wa.me/56944087803">+56 9 4408 7803</a>.</p>'
         }));

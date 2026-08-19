@@ -697,8 +697,21 @@
             '<p><strong>Tipo de cuenta:</strong> Cuenta Corriente</p>' +
             '<p><strong>RUT:</strong> 76.713.807-5</p>' +
             '<p><strong>N° de cuenta:</strong> 8840337400</p>' +
-            '<p class="transferencia-nota">Tu ' + conceptoPago + ' debe confirmarse: envía la captura de tu comprobante de transferencia para validar tu reserva.</p>' +
-            '<a href="' + linkWa + '" target="_blank" rel="noopener" class="btn btn-primary btn-block transferencia-whatsapp-btn">Enviar comprobante por WhatsApp</a>' +
+            '<p class="pago-nota">Tu ' + conceptoPago + ' debe confirmarse: envía la captura de tu comprobante de transferencia para validar tu reserva.</p>' +
+            '<a href="' + linkWa + '" target="_blank" rel="noopener" class="btn btn-primary btn-block pago-whatsapp-btn">Enviar comprobante por WhatsApp</a>' +
+            '</div>';
+    }
+
+    function construirCoordinacionEfectivoHtml(tipoPago, canchaNombre, fechaLarga, horaTexto) {
+        var conceptoPago = tipoPago === 'abono' ? 'abono' : 'pago';
+        var mensajeWa = 'Hola, quiero coordinar mi ' + conceptoPago + ' en efectivo para la reserva de ' +
+            SPORT_LABELS[state.sport] + ' — ' + canchaNombre + ' el ' + fechaLarga + ' a las ' + horaTexto + ' hrs.';
+        var linkWa = 'https://wa.me/56944087803?text=' + encodeURIComponent(mensajeWa);
+
+        return '<div class="efectivo-datos">' +
+            '<h4>Coordina tu pago en efectivo</h4>' +
+            '<p class="pago-nota">Tu ' + conceptoPago + ' en efectivo debe coordinarse directamente con nuestra Administración. Escríbenos por WhatsApp para coordinar los detalles.</p>' +
+            '<a href="' + linkWa + '" target="_blank" rel="noopener" class="btn btn-primary btn-block pago-whatsapp-btn">Coordinar por WhatsApp</a>' +
             '</div>';
     }
 
@@ -787,7 +800,8 @@
                     ? 'Abono pagado: ' + formatCLP(state.montoAPagar) + ' vía ' + metodo + '. Saldo a pagar en el recinto: ' + formatCLP(saldoPendiente) + '.'
                     : 'Total pagado: ' + formatCLP(state.montoAPagar) + ' vía ' + metodo + '.') + '</p>' +
                 '<p>Te enviamos la confirmación a ' + campos.email.value.trim() + '.</p>' +
-                (metodo === 'Transferencia' ? construirDatosTransferenciaHtml(state.tipoPago, state.canchaNombre, fechaLarga, horaTexto) : '');
+                (metodo === 'Transferencia' ? construirDatosTransferenciaHtml(state.tipoPago, state.canchaNombre, fechaLarga, horaTexto) : '') +
+                (metodo === 'Efectivo' ? construirCoordinacionEfectivoHtml(state.tipoPago, state.canchaNombre, fechaLarga, horaTexto) : '');
         });
     }
 

@@ -622,7 +622,8 @@
     margin-bottom: 4px;
 }
 
-.transferencia-datos {
+.transferencia-datos,
+.efectivo-datos {
     margin-top: 20px;
     padding: 18px 20px;
     border-radius: 10px;
@@ -631,25 +632,27 @@
     text-align: left;
 }
 
-.transferencia-datos h4 {
+.transferencia-datos h4,
+.efectivo-datos h4 {
     color: var(--azul-oscuro);
     margin: 0 0 10px;
     font-size: 15px;
 }
 
-.transferencia-datos p {
+.transferencia-datos p,
+.efectivo-datos p {
     color: var(--gris-texto);
     font-size: 14px;
     margin: 0 0 4px;
 }
 
-.transferencia-nota {
+.pago-nota {
     margin-top: 10px !important;
     font-size: 13px !important;
     color: var(--azul-oscuro) !important;
 }
 
-.transferencia-whatsapp-btn {
+.pago-whatsapp-btn {
     margin-top: 14px;
 }
 
