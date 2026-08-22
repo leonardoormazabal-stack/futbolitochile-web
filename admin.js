@@ -176,6 +176,13 @@
         nuevaPassword: document.getElementById('nuevaPassword'),
         passwordError: document.getElementById('passwordError'),
 
+        saldoModalOverlay: document.getElementById('saldoModalOverlay'),
+        btnCerrarSaldoModal: document.getElementById('btnCerrarSaldoModal'),
+        saldoForm: document.getElementById('saldoForm'),
+        saldoFormReserva: document.getElementById('saldoFormReserva'),
+        saldoMetodoPago: document.getElementById('saldoMetodoPago'),
+        saldoError: document.getElementById('saldoError'),
+
         tabContenido: document.getElementById('tabContenido'),
         tabTarifas: document.getElementById('tabTarifas'),
 
@@ -535,7 +542,7 @@
             var tipoPagoLabel = r.tipo_pago === 'abono' ? 'Abono' : 'Pago total';
             var saldo = (r.precio || 0) - (r.monto_pagado != null ? r.monto_pagado : 0);
             var saldoHtml = saldo > 0
-                ? '<span class="saldo-pendiente">' + formatCLP(saldo) + '</span>'
+                ? '<button type="button" class="btn-saldar" data-id="' + r.id + '" data-precio="' + r.precio + '" data-nombre="' + (r.nombre_contacto || '').replace(/"/g, '&quot;') + '">' + formatCLP(saldo) + '</button>'
                 : '<span class="saldo-al-dia">Al día</span>';
 
             var tr = document.createElement('tr');
@@ -551,9 +558,55 @@
             el.pagosTbody.appendChild(tr);
         });
 
+        el.pagosTbody.querySelectorAll('.btn-saldar').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                abrirModalSaldo(btn.getAttribute('data-id'), btn.getAttribute('data-precio'), btn.getAttribute('data-nombre'));
+            });
+        });
+
         el.pagosResumen.textContent = lista.length + (lista.length === 1 ? ' pago encontrado — ' : ' pagos encontrados — ') +
             'Acumulado: ' + formatCLP(totalMonto);
     }
+
+    function abrirModalSaldo(reservaId, precio, nombre) {
+        el.saldoForm.reset();
+        el.saldoError.hidden = true;
+        el.saldoForm.setAttribute('data-reserva-id', reservaId);
+        el.saldoForm.setAttribute('data-precio', precio);
+        el.saldoFormReserva.textContent = 'Reserva de ' + nombre + ' — Total a cancelar: ' + formatCLP(parseInt(precio, 10));
+        el.saldoModalOverlay.hidden = false;
+    }
+
+    function cerrarModalSaldo() {
+        el.saldoModalOverlay.hidden = true;
+    }
+
+    el.btnCerrarSaldoModal.addEventListener('click', cerrarModalSaldo);
+    el.saldoModalOverlay.addEventListener('click', function (e) {
+        if (e.target === el.saldoModalOverlay) cerrarModalSaldo();
+    });
+
+    el.saldoForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        var reservaId = el.saldoForm.getAttribute('data-reserva-id');
+        var precio = parseInt(el.saldoForm.getAttribute('data-precio'), 10);
+        var metodoPago = el.saldoMetodoPago.value;
+
+        sb.from('reservas').update({
+            monto_pagado: precio,
+            metodo_pago: metodoPago
+        }).eq('id', reservaId).then(function (result) {
+            if (result.error) {
+                el.saldoError.textContent = 'No pudimos registrar el pago: ' + result.error.message;
+                el.saldoError.className = 'auth-alert';
+                el.saldoError.hidden = false;
+                return;
+            }
+            cerrarModalSaldo();
+            cargarReservas();
+        });
+    });
 
     /* ======================================================================
        MODAL: NUEVA RESERVA

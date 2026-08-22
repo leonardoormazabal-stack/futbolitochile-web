@@ -339,9 +339,20 @@
     color: var(--rojo-oscuro);
 }
 
-.saldo-pendiente {
+.btn-saldar {
+    border: none;
+    background: none;
+    padding: 0;
+    font-family: inherit;
+    font-size: inherit;
     font-weight: 700;
     color: var(--rojo-oscuro);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.btn-saldar:hover {
+    color: var(--rojo);
 }
 
 .saldo-al-dia {

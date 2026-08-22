@@ -55,6 +55,10 @@ function formatFechaLarga(fechaISO) {
     return fecha.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 }
 
+function formatFechaCorta(isoTimestamp) {
+    return new Date(isoTimestamp).toLocaleDateString('es-CL', { timeZone: ZONA_HORARIA, day: 'numeric', month: 'short' });
+}
+
 function sumaMontoPagado(filas) {
     return filas.reduce((acc, r) => acc + Number(r.monto_pagado || 0), 0);
 }
@@ -91,7 +95,7 @@ module.exports = async function handler(req, res) {
     const [{ data: reservasHoy, error: errorHoy }, { data: reservasMes, error: errorMes }, { data: admins }] = await Promise.all([
         supabaseAdmin
             .from('reservas')
-            .select('hora,precio,monto_pagado,tipo_pago,metodo_pago,canchas(nombre,deporte)')
+            .select('hora,precio,monto_pagado,tipo_pago,metodo_pago,nombre_contacto,created_at,canchas(nombre,deporte)')
             .eq('fecha', hoy)
             .eq('estado', 'confirmada')
             .order('hora', { ascending: true }),
@@ -127,22 +131,42 @@ module.exports = async function handler(req, res) {
             const deporte = r.canchas ? (SPORT_LABELS[r.canchas.deporte] || r.canchas.deporte) : '';
             const cancha = r.canchas ? r.canchas.nombre : '—';
             const horaTexto = String(r.hora).padStart(2, '0') + ':00';
-            const tipoPagoTexto = (r.tipo_pago === 'abono' ? 'Abono' : 'Completo') + ' — ' + escapeHtml(r.metodo_pago || '—');
+            const montoPagado = r.monto_pagado != null ? r.monto_pagado : 0;
+            const tipoPagoTexto = r.tipo_pago === 'abono' ? 'Abono' : 'Pago total';
+            const saldo = (r.precio || 0) - montoPagado;
+            const saldoHtml = saldo > 0
+                ? '<strong style="color:#c0392b;">' + formatCLP(saldo) + '</strong>'
+                : '<span style="color:#1f7a3d;">Al día</span>';
             return (
                 '<tr>' +
-                '<td>' + escapeHtml(cancha) + (deporte ? ' (' + escapeHtml(deporte) + ')' : '') + '</td>' +
+                '<td>' + formatFechaCorta(r.created_at) + '</td>' +
                 '<td>' + horaTexto + ' hrs</td>' +
-                '<td>' + formatCLP(r.monto_pagado != null ? r.monto_pagado : r.precio) + '</td>' +
+                '<td>' + escapeHtml(r.nombre_contacto || '—') + '</td>' +
+                '<td>' + escapeHtml(deporte) + '</td>' +
+                '<td>' + escapeHtml(cancha) + '</td>' +
                 '<td>' + tipoPagoTexto + '</td>' +
+                '<td>' + escapeHtml(r.metodo_pago || '—') + '</td>' +
+                '<td>' + formatCLP(montoPagado) + '</td>' +
+                '<td>' + saldoHtml + '</td>' +
                 '</tr>'
             );
         }).join('')
-        : '<tr><td colspan="4">Sin arriendos registrados hoy.</td></tr>';
+        : '<tr><td colspan="9">Sin arriendos registrados hoy.</td></tr>';
 
     const html =
         '<p>Resumen de arriendos — ' + escapeHtml(formatFechaLarga(hoy)) + '</p>' +
-        '<table cellpadding="8" cellspacing="0" border="1" style="border-collapse:collapse;width:100%;font-family:sans-serif;font-size:14px;">' +
-        '<thead><tr><th align="left">Cancha</th><th align="left">Hora</th><th align="left">Monto</th><th align="left">Tipo de pago</th></tr></thead>' +
+        '<table cellpadding="8" cellspacing="0" border="1" style="border-collapse:collapse;width:100%;font-family:sans-serif;font-size:13px;">' +
+        '<thead><tr>' +
+        '<th align="left">Fecha de pago</th>' +
+        '<th align="left">Hora reserva</th>' +
+        '<th align="left">Nombre</th>' +
+        '<th align="left">Deporte</th>' +
+        '<th align="left">Cancha</th>' +
+        '<th align="left">Tipo de pago</th>' +
+        '<th align="left">Método de pago</th>' +
+        '<th align="left">Monto pagado</th>' +
+        '<th align="left">Saldo</th>' +
+        '</tr></thead>' +
         '<tbody>' + filasHtml + '</tbody>' +
         '</table>' +
         '<p style="margin-top:16px;"><strong>Total recaudado hoy:</strong> ' + formatCLP(totalHoy) + '</p>' +
