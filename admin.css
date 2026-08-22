@@ -197,25 +197,28 @@
     padding-right: 10px;
 }
 
-#reservasTable th:nth-child(1) { width: 8%; }  /* Fecha */
+#reservasTable th:nth-child(1) { width: 7%; }  /* Fecha */
 #reservasTable th:nth-child(2) { width: 6%; }  /* Hora */
-#reservasTable th:nth-child(3) { width: 12%; } /* Cancha */
-#reservasTable th:nth-child(4) { width: 13%; } /* Contacto */
-#reservasTable th:nth-child(5) { width: 10%; } /* Teléfono */
+#reservasTable th:nth-child(3) { width: 11%; } /* Cancha */
+#reservasTable th:nth-child(4) { width: 12%; } /* Contacto */
+#reservasTable th:nth-child(5) { width: 9%; }  /* Teléfono */
 #reservasTable th:nth-child(6) { width: 7%; }  /* Precio */
-#reservasTable th:nth-child(7) { width: 10%; } /* Pago */
-#reservasTable th:nth-child(8) { width: 10%; } /* Origen */
-#reservasTable th:nth-child(9) { width: 11%; } /* Estado */
-#reservasTable th:nth-child(10) { width: 13%; } /* Acción */
+#reservasTable th:nth-child(7) { width: 9%; }  /* Pago */
+#reservasTable th:nth-child(8) { width: 9%; }  /* Estado de Pago */
+#reservasTable th:nth-child(9) { width: 9%; }  /* Origen */
+#reservasTable th:nth-child(10) { width: 10%; } /* Estado */
+#reservasTable th:nth-child(11) { width: 11%; } /* Acción */
 
 /* La insignia de estado y el botón Cancelar no deben partirse a media
    palabra aunque el resto de la celda sí haga salto de línea. */
 #reservasTable .estado-badge,
+#reservasTable .estado-pago-badge,
+#reservasTable .origen-badge,
 #reservasTable .btn-cancelar {
     white-space: nowrap;
 }
 
-/* En móvil, aunque no haya scroll horizontal, las 10 columnas no caben
+/* En móvil, aunque no haya scroll horizontal, las 11 columnas no caben
    en el ancho de pantalla: cada fila pasa a verse como una tarjeta con
    "etiqueta: valor" en vez de columnas, así el botón Cancelar y el
    estado quedan siempre visibles sin desplazarse. */
@@ -337,6 +340,24 @@
 .origen-badge.admin {
     background-color: #fdeceb;
     color: var(--rojo-oscuro);
+}
+
+.estado-pago-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.estado-pago-badge.abonado {
+    background-color: #fef3e0;
+    color: #b9770e;
+}
+
+.estado-pago-badge.al-dia {
+    background-color: #eafaf0;
+    color: #1f7a3d;
 }
 
 .btn-saldar {

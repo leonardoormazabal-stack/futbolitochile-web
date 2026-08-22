@@ -400,6 +400,11 @@
             var origenBadge = '<span class="origen-badge ' + (r.origen || 'web') + '">' +
                 (r.origen === 'admin' ? 'Administrador' : 'Web') + '</span>';
 
+            var saldo = (r.precio || 0) - (r.monto_pagado != null ? r.monto_pagado : 0);
+            var estadoPagoBadge = saldo > 0
+                ? '<span class="estado-pago-badge abonado">Abonado</span>'
+                : '<span class="estado-pago-badge al-dia">Al día</span>';
+
             var accion = r.estado === 'confirmada'
                 ? '<button type="button" class="btn-cancelar" data-id="' + r.id + '">Cancelar</button>'
                 : '';
@@ -412,6 +417,7 @@
                 '<td data-label="Teléfono">' + (r.telefono_contacto || '—') + '</td>' +
                 '<td data-label="Precio">' + formatCLP(r.precio) + '</td>' +
                 '<td data-label="Pago">' + (r.metodo_pago || '—') + '</td>' +
+                '<td data-label="Estado de Pago">' + estadoPagoBadge + '</td>' +
                 '<td data-label="Origen">' + origenBadge + '</td>' +
                 '<td data-label="Estado">' + estadoBadge + '</td>' +
                 '<td data-label="Acción" class="celda-accion">' + accion + '</td>';
