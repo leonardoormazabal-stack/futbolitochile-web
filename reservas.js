@@ -29,6 +29,19 @@
         }).catch(function () {});
     }
 
+    // Detecta que falta una columna nueva (falta correr un parche SQL en
+    // Supabase). PostgREST no siempre devuelve el código Postgres crudo
+    // "42703": cuando la columna ni siquiera está en su caché de esquema,
+    // responde con su propio código "PGRST204" y el mensaje
+    // "Could not find the '...' column ... in the schema cache".
+    function esErrorColumnaFaltante(error) {
+        return !!error && (
+            error.code === '42703' ||
+            error.code === 'PGRST204' ||
+            (error.message && error.message.indexOf('schema cache') !== -1)
+        );
+    }
+
     /* ======================================================================
        ESTADO
        ====================================================================== */
@@ -259,7 +272,7 @@
             // Si la columna "abono" todavía no existe (falta correr el parche SQL),
             // reintentamos sin ella en vez de bloquear toda la reserva: el abono
             // simplemente usa el valor por defecto de $10.000 (ver getAbonoPorHora).
-            if (tarifasRes.error && tarifasRes.error.code === '42703') {
+            if (esErrorColumnaFaltante(tarifasRes.error)) {
                 return sb.from('tarifas').select('deporte,hora_desde,hora_hasta,precio').then(function (fallbackRes) {
                     return finalizarCatalogo(canchasRes, fallbackRes, metodosPagoRes);
                 });

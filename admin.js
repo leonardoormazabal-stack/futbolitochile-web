@@ -28,6 +28,19 @@
         }).catch(function () {});
     }
 
+    // Detecta que falta una columna nueva (falta correr un parche SQL en
+    // Supabase). PostgREST no siempre devuelve el código Postgres crudo
+    // "42703": cuando la columna ni siquiera está en su caché de esquema,
+    // responde con su propio código "PGRST204" y el mensaje
+    // "Could not find the '...' column ... in the schema cache".
+    function esErrorColumnaFaltante(error) {
+        return !!error && (
+            error.code === '42703' ||
+            error.code === 'PGRST204' ||
+            (error.message && error.message.indexOf('schema cache') !== -1)
+        );
+    }
+
     function formatFechaCorta(iso) {
         var parts = iso.split('-');
         return parts[2] + '-' + parts[1] + '-' + parts[0];
@@ -226,7 +239,7 @@
             .order('fecha', { ascending: true })
             .order('hora', { ascending: true })
             .then(function (result) {
-                if (result.error && result.error.code === '42703') {
+                if (esErrorColumnaFaltante(result.error)) {
                     return sb.from('reservas')
                         .select('id,fecha,hora,precio,nombre_contacto,documento_contacto,telefono_contacto,email_contacto,metodo_pago,monto_pagado,tipo_pago,estado,created_at,canchas(nombre,deporte)')
                         .order('fecha', { ascending: true })
@@ -662,7 +675,7 @@
             // Si la columna "origen" todavía no existe (falta correr el
             // parche SQL add_origen_reservas.sql), reintenta sin ella en vez
             // de bloquear la creación de la reserva.
-            if (result.error && result.error.code === '42703') {
+            if (esErrorColumnaFaltante(result.error)) {
                 delete reserva.origen;
                 return sb.from('reservas').insert([reserva]).then(manejarResultadoReservaAdmin);
             }
@@ -1051,7 +1064,7 @@
     function cargarTarifasConFallback() {
         return sb.from('tarifas').select('id,deporte,hora_desde,hora_hasta,precio,abono').order('deporte', { ascending: true }).order('hora_desde', { ascending: true })
             .then(function (res) {
-                if (res.error && res.error.code === '42703') {
+                if (esErrorColumnaFaltante(res.error)) {
                     return sb.from('tarifas').select('id,deporte,hora_desde,hora_hasta,precio').order('deporte', { ascending: true }).order('hora_desde', { ascending: true });
                 }
                 return res;
@@ -1183,7 +1196,7 @@
             }).eq('id', fila.id).then(function (res) {
                 // Si la columna "abono" todavía no existe (falta correr el parche SQL),
                 // reintenta guardando solo horario y precio para no bloquear la edición.
-                if (res.error && res.error.code === '42703') {
+                if (esErrorColumnaFaltante(res.error)) {
                     faltoColumnaAbono = true;
                     return sb.from('tarifas').update({
                         hora_desde: fila.hora_desde,
