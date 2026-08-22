@@ -217,12 +217,28 @@
         });
     }
 
+    // Si la columna "origen" todavía no existe (falta correr el parche SQL
+    // add_origen_reservas.sql), reintenta sin ella en vez de bloquear todo el
+    // listado: las reservas simplemente no muestran la columna "Origen".
     function cargarReservas() {
         return sb.from('reservas')
-            .select('id,fecha,hora,precio,nombre_contacto,documento_contacto,telefono_contacto,email_contacto,metodo_pago,monto_pagado,tipo_pago,estado,created_at,canchas(nombre,deporte)')
+            .select('id,fecha,hora,precio,nombre_contacto,documento_contacto,telefono_contacto,email_contacto,metodo_pago,monto_pagado,tipo_pago,estado,origen,created_at,canchas(nombre,deporte)')
             .order('fecha', { ascending: true })
             .order('hora', { ascending: true })
             .then(function (result) {
+                if (result.error && result.error.code === '42703') {
+                    return sb.from('reservas')
+                        .select('id,fecha,hora,precio,nombre_contacto,documento_contacto,telefono_contacto,email_contacto,metodo_pago,monto_pagado,tipo_pago,estado,created_at,canchas(nombre,deporte)')
+                        .order('fecha', { ascending: true })
+                        .order('hora', { ascending: true })
+                        .then(function (fallbackResult) {
+                            state.reservas = fallbackResult.data || [];
+                            renderCalendarioAdmin();
+                            renderListado();
+                            renderPagos();
+                        });
+                }
+
                 state.reservas = result.data || [];
                 renderCalendarioAdmin();
                 renderListado();
@@ -361,6 +377,9 @@
             var estadoBadge = '<span class="estado-badge ' + r.estado + '">' +
                 (r.estado === 'confirmada' ? 'Confirmada' : 'Cancelada') + '</span>';
 
+            var origenBadge = '<span class="origen-badge ' + (r.origen || 'web') + '">' +
+                (r.origen === 'admin' ? 'Administrador' : 'Web') + '</span>';
+
             var accion = r.estado === 'confirmada'
                 ? '<button type="button" class="btn-cancelar" data-id="' + r.id + '">Cancelar</button>'
                 : '';
@@ -373,6 +392,7 @@
                 '<td data-label="Teléfono">' + (r.telefono_contacto || '—') + '</td>' +
                 '<td data-label="Precio">' + formatCLP(r.precio) + '</td>' +
                 '<td data-label="Pago">' + (r.metodo_pago || '—') + '</td>' +
+                '<td data-label="Origen">' + origenBadge + '</td>' +
                 '<td data-label="Estado">' + estadoBadge + '</td>' +
                 '<td data-label="Acción" class="celda-accion">' + accion + '</td>';
 
@@ -634,10 +654,22 @@
             email_contacto: el.admEmail.value.trim() || null,
             metodo_pago: el.admMetodoPago.value,
             monto_pagado: montoPagado,
-            tipo_pago: montoPagado >= precio ? 'completo' : 'abono'
+            tipo_pago: montoPagado >= precio ? 'completo' : 'abono',
+            origen: 'admin'
         };
 
         sb.from('reservas').insert([reserva]).then(function (result) {
+            // Si la columna "origen" todavía no existe (falta correr el
+            // parche SQL add_origen_reservas.sql), reintenta sin ella en vez
+            // de bloquear la creación de la reserva.
+            if (result.error && result.error.code === '42703') {
+                delete reserva.origen;
+                return sb.from('reservas').insert([reserva]).then(manejarResultadoReservaAdmin);
+            }
+            return manejarResultadoReservaAdmin(result);
+        });
+
+        function manejarResultadoReservaAdmin(result) {
             if (result.error) {
                 if (result.error.code === '23505') {
                     el.admReservaError.textContent = 'Ese horario ya está ocupado. Elige otro.';
@@ -653,7 +685,7 @@
 
             cerrarModal();
             cargarReservas();
-        });
+        }
     });
 
     /* ======================================================================

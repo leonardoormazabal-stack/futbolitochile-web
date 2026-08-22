@@ -178,15 +178,16 @@
     padding-right: 10px;
 }
 
-#reservasTable th:nth-child(1) { width: 9%; }  /* Fecha */
+#reservasTable th:nth-child(1) { width: 8%; }  /* Fecha */
 #reservasTable th:nth-child(2) { width: 6%; }  /* Hora */
-#reservasTable th:nth-child(3) { width: 13%; } /* Cancha */
-#reservasTable th:nth-child(4) { width: 15%; } /* Contacto */
-#reservasTable th:nth-child(5) { width: 12%; } /* Teléfono */
-#reservasTable th:nth-child(6) { width: 8%; }  /* Precio */
-#reservasTable th:nth-child(7) { width: 12%; } /* Pago */
-#reservasTable th:nth-child(8) { width: 12%; } /* Estado */
-#reservasTable th:nth-child(9) { width: 13%; } /* Acción */
+#reservasTable th:nth-child(3) { width: 12%; } /* Cancha */
+#reservasTable th:nth-child(4) { width: 13%; } /* Contacto */
+#reservasTable th:nth-child(5) { width: 10%; } /* Teléfono */
+#reservasTable th:nth-child(6) { width: 7%; }  /* Precio */
+#reservasTable th:nth-child(7) { width: 10%; } /* Pago */
+#reservasTable th:nth-child(8) { width: 10%; } /* Origen */
+#reservasTable th:nth-child(9) { width: 11%; } /* Estado */
+#reservasTable th:nth-child(10) { width: 13%; } /* Acción */
 
 /* La insignia de estado y el botón Cancelar no deben partirse a media
    palabra aunque el resto de la celda sí haga salto de línea. */
@@ -195,7 +196,7 @@
     white-space: nowrap;
 }
 
-/* En móvil, aunque no haya scroll horizontal, las 9 columnas no caben
+/* En móvil, aunque no haya scroll horizontal, las 10 columnas no caben
    en el ancho de pantalla: cada fila pasa a verse como una tarjeta con
    "etiqueta: valor" en vez de columnas, así el botón Cancelar y el
    estado quedan siempre visibles sin desplazarse. */
@@ -299,6 +300,24 @@
 .estado-badge.cancelada {
     background-color: #f1f1f1;
     color: #777;
+}
+
+.origen-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.origen-badge.web {
+    background-color: #eaf2fb;
+    color: var(--azul-primario);
+}
+
+.origen-badge.admin {
+    background-color: #fdeceb;
+    color: var(--rojo-oscuro);
 }
 
 .btn-cancelar {
