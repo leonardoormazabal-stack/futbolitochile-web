@@ -339,6 +339,16 @@
     color: var(--rojo-oscuro);
 }
 
+.saldo-pendiente {
+    font-weight: 700;
+    color: var(--rojo-oscuro);
+}
+
+.saldo-al-dia {
+    color: #1f7a3d;
+    font-weight: 600;
+}
+
 .btn-cancelar {
     border: none;
     background-color: var(--rojo);

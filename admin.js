@@ -533,6 +533,10 @@
             var canchaNombre = r.canchas ? r.canchas.nombre : r.cancha_id;
             var deporte = r.canchas ? SPORT_LABELS[r.canchas.deporte] : '';
             var tipoPagoLabel = r.tipo_pago === 'abono' ? 'Abono' : 'Pago total';
+            var saldo = (r.precio || 0) - (r.monto_pagado != null ? r.monto_pagado : 0);
+            var saldoHtml = saldo > 0
+                ? '<span class="saldo-pendiente">' + formatCLP(saldo) + '</span>'
+                : '<span class="saldo-al-dia">Al día</span>';
 
             var tr = document.createElement('tr');
             tr.innerHTML =
@@ -542,7 +546,8 @@
                 '<td>' + deporte + '</td>' +
                 '<td>' + canchaNombre + '</td>' +
                 '<td>' + tipoPagoLabel + '</td>' +
-                '<td>' + formatCLP(r.monto_pagado) + '</td>';
+                '<td>' + formatCLP(r.monto_pagado) + '</td>' +
+                '<td>' + saldoHtml + '</td>';
             el.pagosTbody.appendChild(tr);
         });
 
