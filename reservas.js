@@ -709,6 +709,14 @@
             '</div>';
     }
 
+    function construirBotonCompartirHtml(canchaNombre, fechaLarga, horaTexto) {
+        var mensaje = '¡Reservé una cancha en Futbolito Chile! ⚽ ' + SPORT_LABELS[state.sport] + ' — ' + canchaNombre +
+            ' el ' + fechaLarga + ' a las ' + horaTexto + ' hrs. ¿Te vienes a jugar? Reserva la tuya en https://futbolitochile.cl/reservas.html';
+        var linkCompartir = 'https://wa.me/?text=' + encodeURIComponent(mensaje);
+
+        return '<a href="' + linkCompartir + '" target="_blank" rel="noopener" class="btn btn-outline btn-block compartir-reserva-btn">📲 Compartir reserva por WhatsApp</a>';
+    }
+
     function construirCoordinacionEfectivoHtml(tipoPago, canchaNombre, fechaLarga, horaTexto) {
         var conceptoPago = tipoPago === 'abono' ? 'abono' : 'pago';
         var mensajeWa = 'Hola, quiero coordinar mi ' + conceptoPago + ' en efectivo para la reserva de ' +
@@ -807,6 +815,7 @@
                     ? 'Abono pagado: ' + formatCLP(state.montoAPagar) + ' vía ' + metodo + '. Saldo a pagar en el recinto: ' + formatCLP(saldoPendiente) + '.'
                     : 'Total pagado: ' + formatCLP(state.montoAPagar) + ' vía ' + metodo + '.') + '</p>' +
                 '<p>Te enviamos la confirmación a ' + campos.email.value.trim() + '.</p>' +
+                construirBotonCompartirHtml(state.canchaNombre, fechaLarga, horaTexto) +
                 (metodo === 'Transferencia' ? construirDatosTransferenciaHtml(state.tipoPago, state.canchaNombre, fechaLarga, horaTexto) : '') +
                 (metodo === 'Efectivo' ? construirCoordinacionEfectivoHtml(state.tipoPago, state.canchaNombre, fechaLarga, horaTexto) : '');
         });

@@ -622,6 +622,10 @@
     margin: 0 0 10px;
 }
 
+.compartir-reserva-btn {
+    margin-top: 12px;
+}
+
 .payment-confirmation p {
     color: var(--gris-texto);
     font-size: 14px;

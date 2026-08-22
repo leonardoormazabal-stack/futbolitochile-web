@@ -110,6 +110,17 @@ ul {
     color: var(--azul-oscuro);
 }
 
+.btn-outline {
+    background-color: transparent;
+    color: var(--azul-primario);
+    border-color: var(--azul-primario);
+}
+
+.btn-outline:hover {
+    background-color: var(--azul-primario);
+    color: var(--blanco);
+}
+
 /* ==========================================================================
    NAVEGACIÓN
    ========================================================================== */
