@@ -50,6 +50,13 @@
     border-radius: 12px;
 }
 
+.admin-toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
 .admin-tab {
     border: none;
     background: transparent;
@@ -704,5 +711,9 @@
     .admin-tabs {
         justify-content: center;
         flex-wrap: wrap;
+    }
+
+    .admin-toolbar-actions {
+        justify-content: center;
     }
 }
