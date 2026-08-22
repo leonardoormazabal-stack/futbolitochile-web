@@ -136,12 +136,24 @@
     margin: 0;
 }
 
-.admin-filters input[type="date"] {
+.admin-filters input[type="date"],
+.admin-filters input[type="text"],
+.admin-filters select {
     padding: 10px 14px;
     border-radius: 8px;
     border: 2px solid var(--gris-claro);
     font-family: inherit;
     font-size: 14px;
+    height: 42px;
+}
+
+.admin-filters select {
+    min-width: 140px;
+    cursor: pointer;
+}
+
+.admin-filters input[type="text"] {
+    min-width: 180px;
 }
 
 .admin-checkbox {
