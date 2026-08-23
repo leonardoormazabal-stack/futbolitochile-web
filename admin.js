@@ -684,12 +684,23 @@
 
         lista.forEach(function (r) {
             var canchaNombre = r.canchas ? r.canchas.nombre : r.cancha_id;
+            var montoPagado1 = r.monto_pagado != null ? r.monto_pagado : 0;
+            var montoPagado2 = r.monto_pagado_2 != null ? r.monto_pagado_2 : 0;
+            var saldo = (r.precio || 0) - montoPagado1 - montoPagado2;
+
+            // Igual que en Pagos: si ya se registró el segundo pago muestra
+            // lo cobrado; si todavía no, muestra lo adeudado en negativo.
+            var pago2Html = montoPagado2 > 0
+                ? formatCLP(montoPagado2)
+                : (saldo > 0 ? '<span class="saldo-pendiente-monto">-' + formatCLP(saldo) + '</span>' : formatCLP(0));
+
             var row = document.createElement('tr');
             row.setAttribute('data-id', r.id);
             row.innerHTML =
                 '<td>' + String(r.hora).padStart(2, '0') + ':00</td>' +
                 '<td>' + canchaNombre + '</td>' +
-                '<td><input type="number" class="cuadratura-abono" min="0" step="1" value="' + (r.monto_pagado != null ? r.monto_pagado : 0) + '"></td>' +
+                '<td><input type="number" class="cuadratura-abono" min="0" step="1" value="' + montoPagado1 + '"></td>' +
+                '<td>' + pago2Html + '</td>' +
                 '<td><input type="number" class="cuadratura-total" min="0" step="1" value="' + (r.precio != null ? r.precio : 0) + '"></td>' +
                 '<td><select class="cuadratura-metodo1">' + opcionesMetodoPago(r.metodo_pago, false) + '</select></td>' +
                 '<td><select class="cuadratura-metodo2">' + opcionesMetodoPago(r.metodo_pago_2, true) + '</select></td>' +
