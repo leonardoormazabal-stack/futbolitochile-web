@@ -91,6 +91,21 @@ function esErrorColumnaFaltante(error) {
     );
 }
 
+// PostgREST nombra la columna exacta que falta en su mensaje de error
+// ("column reservas.X does not exist" o "Could not find the 'X' column"),
+// así que se puede quitar solo esa del select en vez de caer directo al
+// set base: una columna pendiente no debería ocultar datos de otras que
+// sí están al día.
+function extraerColumnaFaltante(error) {
+    if (!error || !error.message) return null;
+    const match = error.message.match(/column\s+(?:\w+\.)?([a-z0-9_]+)\s+does not exist/i) ||
+        error.message.match(/Could not find the '([a-z0-9_]+)' column/i);
+    return match ? match[1] : null;
+}
+
+const COLUMNAS_RESERVAS_BASE = ['id', 'fecha', 'hora', 'precio', 'monto_pagado', 'tipo_pago', 'metodo_pago', 'nombre_contacto', 'created_at'];
+const COLUMNAS_RESERVAS_OPCIONALES = ['monto_pagado_2', 'pago2_fecha', 'metodo_pago_2'];
+
 // Trae las reservas que hay que cuadrar del día del reporte: tanto las
 // canchas que se juegan ese día como cualquier reserva de otra fecha cuyo
 // pago se registró ese día (misma lógica que la pestaña Cuadratura Diaria
@@ -98,25 +113,32 @@ function esErrorColumnaFaltante(error) {
 // y aplica el filtro exacto de "ese día en Chile" en JavaScript, para no
 // depender de la aritmética de horario de verano dentro de la consulta.
 async function cargarReservasDelDia(supabaseAdmin, diaReporte) {
-    const selectCompleto = 'id,fecha,hora,precio,monto_pagado,monto_pagado_2,pago2_fecha,tipo_pago,metodo_pago,metodo_pago_2,nombre_contacto,created_at,canchas(nombre,deporte)';
-    const selectBase = 'id,fecha,hora,precio,monto_pagado,tipo_pago,metodo_pago,nombre_contacto,created_at,canchas(nombre,deporte)';
     const diaSiguiente = sumarDias(diaReporte, 2); // margen amplio para cubrir cualquier huso horario
 
-    async function consultar(select) {
-        return Promise.all([
+    async function consultar(columnas) {
+        const select = columnas.join(',') + ',canchas(nombre,deporte)';
+        const [porFecha, porCreacion] = await Promise.all([
             supabaseAdmin.from('reservas').select(select).eq('fecha', diaReporte).eq('estado', 'confirmada'),
             supabaseAdmin.from('reservas').select(select)
                 .gte('created_at', diaReporte + 'T00:00:00.000Z')
                 .lt('created_at', diaSiguiente + 'T00:00:00.000Z')
                 .eq('estado', 'confirmada')
         ]);
+
+        const error = porFecha.error || porCreacion.error;
+        if (!error) return { porFecha, porCreacion };
+
+        const faltante = extraerColumnaFaltante(error);
+        if (faltante && columnas.indexOf(faltante) !== -1) {
+            return consultar(columnas.filter((c) => c !== faltante));
+        }
+        if (esErrorColumnaFaltante(error) && columnas.length > COLUMNAS_RESERVAS_BASE.length) {
+            return consultar(COLUMNAS_RESERVAS_BASE);
+        }
+        return { porFecha, porCreacion };
     }
 
-    let [porFecha, porCreacion] = await consultar(selectCompleto);
-
-    if (esErrorColumnaFaltante(porFecha.error) || esErrorColumnaFaltante(porCreacion.error)) {
-        [porFecha, porCreacion] = await consultar(selectBase);
-    }
+    const { porFecha, porCreacion } = await consultar(COLUMNAS_RESERVAS_BASE.concat(COLUMNAS_RESERVAS_OPCIONALES));
 
     if (porFecha.error || porCreacion.error) {
         return { data: null, error: porFecha.error || porCreacion.error };

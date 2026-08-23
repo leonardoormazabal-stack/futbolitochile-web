@@ -257,37 +257,52 @@
         });
     }
 
-    // Si la columna "origen" todavía no existe (falta correr el parche SQL
-    // add_origen_reservas.sql), reintenta sin ella en vez de bloquear todo el
-    // listado: las reservas simplemente no muestran la columna "Origen".
-    function cargarReservas() {
-        return sb.from('reservas')
-            .select('id,fecha,hora,precio,nombre_contacto,documento_contacto,telefono_contacto,email_contacto,metodo_pago,metodo_pago_2,monto_pagado,monto_pagado_2,pago2_fecha,observacion,tipo_pago,estado,origen,motivo_cancelacion,cancelado_por,cancelado_en,created_at,canchas(nombre,deporte)')
+    // Columnas de "reservas" que vinieron con parches SQL posteriores al
+    // esquema original: si a alguna todavía le falta su migración, se quita
+    // SOLO ESA (no todas) del select y se reintenta, para que una columna
+    // pendiente no oculte datos de otras que sí están al día.
+    var COLUMNAS_RESERVAS_OPCIONALES = ['origen', 'metodo_pago_2', 'monto_pagado_2', 'pago2_fecha', 'observacion', 'motivo_cancelacion', 'cancelado_por', 'cancelado_en'];
+    var COLUMNAS_RESERVAS_BASE = ['id', 'fecha', 'hora', 'precio', 'nombre_contacto', 'documento_contacto', 'telefono_contacto', 'email_contacto', 'metodo_pago', 'monto_pagado', 'tipo_pago', 'estado', 'created_at'];
+
+    // PostgREST nombra la columna exacta que falta en su mensaje de error
+    // ("column reservas.X does not exist" o "Could not find the 'X' column").
+    function extraerColumnaFaltante(error) {
+        if (!error || !error.message) return null;
+        var match = error.message.match(/column\s+(?:\w+\.)?([a-z0-9_]+)\s+does not exist/i) ||
+            error.message.match(/Could not find the '([a-z0-9_]+)' column/i);
+        return match ? match[1] : null;
+    }
+
+    function consultarReservasConColumnas(columnas) {
+        var select = columnas.join(',') + ',canchas(nombre,deporte)';
+        return sb.from('reservas').select(select)
             .order('fecha', { ascending: true })
             .order('hora', { ascending: true })
             .then(function (result) {
-                if (esErrorColumnaFaltante(result.error)) {
-                    return sb.from('reservas')
-                        .select('id,fecha,hora,precio,nombre_contacto,documento_contacto,telefono_contacto,email_contacto,metodo_pago,monto_pagado,tipo_pago,estado,created_at,canchas(nombre,deporte)')
-                        .order('fecha', { ascending: true })
-                        .order('hora', { ascending: true })
-                        .then(function (fallbackResult) {
-                            state.reservas = fallbackResult.data || [];
-                            renderCalendarioAdmin();
-                            renderListado();
-                            renderPagos();
-                            renderCuadratura();
-                            renderCancelaciones();
-                        });
-                }
+                if (!result.error) return result;
 
-                state.reservas = result.data || [];
-                renderCalendarioAdmin();
-                renderListado();
-                renderPagos();
-                renderCuadratura();
-                renderCancelaciones();
+                var faltante = extraerColumnaFaltante(result.error);
+                if (faltante && columnas.indexOf(faltante) !== -1) {
+                    return consultarReservasConColumnas(columnas.filter(function (c) { return c !== faltante; }));
+                }
+                // No se pudo identificar cuál columna exacta falta: cae
+                // directo al set base en vez de quedar sin datos.
+                if (esErrorColumnaFaltante(result.error) && columnas.length > COLUMNAS_RESERVAS_BASE.length) {
+                    return consultarReservasConColumnas(COLUMNAS_RESERVAS_BASE);
+                }
+                return result;
             });
+    }
+
+    function cargarReservas() {
+        return consultarReservasConColumnas(COLUMNAS_RESERVAS_BASE.concat(COLUMNAS_RESERVAS_OPCIONALES)).then(function (result) {
+            state.reservas = result.data || [];
+            renderCalendarioAdmin();
+            renderListado();
+            renderPagos();
+            renderCuadratura();
+            renderCancelaciones();
+        });
     }
 
     /* ======================================================================
