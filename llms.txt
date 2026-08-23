@@ -1,0 +1,24 @@
+# Futbolito Chile
+
+> Centro deportivo en Fresia #1240, La Pintana, Santiago, Chile. Arrienda 6 canchas de futbolito (fútbol 5/7) y 2 canchas de pádel por hora, con reserva y pago en línea. Abierto todos los días de 09:00 a 23:00 hrs.
+
+## Páginas principales
+
+- [Inicio](https://futbolitochile.cl/): Presentación del recinto, instalaciones (canchas, camarines, piscina, quinchos, kiosco), tarifas y planes, eventos, y escuelas y ligas deportivas.
+- [Reservas](https://futbolitochile.cl/reservas.html): Reserva de cancha en línea eligiendo deporte, fecha, horario y cancha disponible, con pago mediante Mercado Pago, Webpay, GetNet, tarjeta de crédito/débito, transferencia o efectivo.
+- [Contacto](https://futbolitochile.cl/contacto.html): Formulario de contacto, dirección, teléfono y redes sociales.
+
+## Servicios y tarifas (CLP)
+
+- Arriendo cancha de Futbolito por hora: $27.000 (12:00-18:00 hrs), $32.000 (18:00-20:00 hrs), $37.000 (20:00-23:00 hrs).
+- Arriendo cancha de Pádel por hora: $35.000 (12:00-18:00 hrs), $40.000 (18:00-20:00 hrs), $45.000 (20:00-23:00 hrs).
+- Plan mensual con horas incluidas, arriendo de equipamiento deportivo (balón, guantes, ropa), eventos privados y escuelas/ligas.
+- Las reservas admiten pago total o abono con saldo pagadero en el recinto.
+
+## Datos de contacto
+
+- Dirección: Fresia #1240, La Pintana, Santiago, Chile.
+- Teléfono / WhatsApp: +56 9 4408 7803.
+- Correo: contacto@futbolitochile.cl.
+- Horario de atención: todos los días, 09:00 a 23:00 hrs.
+- Redes sociales: [Facebook](https://www.facebook.com/futbolitochilecl), [Instagram](https://www.instagram.com/futbolito.chile).
