@@ -200,6 +200,7 @@
         motivoError: document.getElementById('motivoError'),
 
         tabCancelaciones: document.getElementById('tabCancelaciones'),
+        cancelacionesFiltroFecha: document.getElementById('cancelacionesFiltroFecha'),
         cancelacionesTbody: document.getElementById('cancelacionesTableBody'),
         cancelacionesEmptyMsg: document.getElementById('cancelacionesEmptyMsg'),
 
@@ -540,10 +541,40 @@
         });
     });
 
+    if (el.cancelacionesFiltroFecha) {
+        el.cancelacionesFiltroFecha.addEventListener('change', renderCancelaciones);
+    }
+
     function renderCancelaciones() {
         if (!el.cancelacionesTbody) return;
 
-        var canceladas = state.reservas.filter(function (r) { return r.estado === 'cancelada'; });
+        var filtro = el.cancelacionesFiltroFecha ? el.cancelacionesFiltroFecha.value : 'todos';
+        var hoy = new Date();
+        var hoyISO = toISODate(hoy);
+        var rangoDesde = null;
+        var rangoHasta = null;
+        var soloFuturas = false;
+
+        if (filtro === 'hoy') {
+            rangoDesde = rangoHasta = hoyISO;
+        } else if (filtro === 'ayer') {
+            rangoDesde = rangoHasta = toISODate(new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - 1));
+        } else if (filtro === 'semana') {
+            rangoDesde = toISODate(new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - 7));
+            rangoHasta = hoyISO;
+        } else if (filtro === 'mes') {
+            rangoDesde = toISODate(new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - 30));
+            rangoHasta = hoyISO;
+        } else if (filtro === 'futuras') {
+            soloFuturas = true;
+        }
+
+        var canceladas = state.reservas.filter(function (r) {
+            if (r.estado !== 'cancelada') return false;
+            if (soloFuturas) return r.fecha > hoyISO;
+            if (rangoDesde && (r.fecha < rangoDesde || r.fecha > rangoHasta)) return false;
+            return true;
+        });
 
         canceladas.sort(function (a, b) {
             return new Date(b.cancelado_en || b.created_at) - new Date(a.cancelado_en || a.created_at);
@@ -1858,12 +1889,14 @@
             renderCuadratura(); // recalcula el % de arriendo si las tarifas llegaron después que las reservas
         }), cargarReservas()];
 
+        // Se carga para administrador y superadministrador: Cancelaciones
+        // (visible para ambos) necesita los nombres para "Cancelado por".
+        tareas.push(cargarUsuarios().then(renderCancelaciones));
+
         if (state.esSuperadmin) {
             el.tabUsuarios.hidden = false;
             el.tabContenido.hidden = false;
             el.tabTarifas.hidden = false;
-            el.tabCancelaciones.hidden = false;
-            tareas.push(cargarUsuarios().then(renderCancelaciones)); // refresca "Cancelado por" cuando lleguen los nombres
             tareas.push(cargarContenido());
         }
 

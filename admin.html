@@ -67,10 +67,10 @@
                 <button type="button" class="admin-tab" data-tab="listado">Reservas</button>
                 <button type="button" class="admin-tab" data-tab="pagos">Pagos</button>
                 <button type="button" class="admin-tab" data-tab="cuadratura">Cuadratura Diaria</button>
+                <button type="button" class="admin-tab" data-tab="cancelaciones">Cancelaciones</button>
                 <button type="button" class="admin-tab" data-tab="usuarios" id="tabUsuarios" hidden>Usuarios</button>
                 <button type="button" class="admin-tab" data-tab="contenido" id="tabContenido" hidden>Contenido</button>
                 <button type="button" class="admin-tab" data-tab="tarifas" id="tabTarifas" hidden>Tarifas</button>
-                <button type="button" class="admin-tab" data-tab="cancelaciones" id="tabCancelaciones" hidden>Cancelaciones</button>
             </div>
             <div class="admin-toolbar-actions">
                 <button type="button" class="btn btn-primary" id="btnNuevoUsuario" hidden>+ Nuevo Usuario</button>
@@ -412,8 +412,22 @@
             </div>
         </section>
 
-        <!-- VISTA CANCELACIONES (solo superadministrador) -->
+        <!-- VISTA CANCELACIONES -->
         <section class="admin-view" id="view-cancelaciones">
+            <div class="admin-filters">
+                <div class="form-group">
+                    <label for="cancelacionesFiltroFecha">Fecha de la reserva</label>
+                    <select id="cancelacionesFiltroFecha">
+                        <option value="todos">Todas</option>
+                        <option value="hoy">Hoy</option>
+                        <option value="ayer">Ayer</option>
+                        <option value="semana">Última semana</option>
+                        <option value="mes">Últimos 30 días</option>
+                        <option value="futuras">Futuras</option>
+                    </select>
+                </div>
+            </div>
+
             <div class="admin-table-wrapper">
                 <table class="admin-table">
                     <thead>
