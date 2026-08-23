@@ -148,6 +148,7 @@
         admEmail: document.getElementById('admEmail'),
         admMetodoPago: document.getElementById('admMetodoPago'),
         admMontoPagado: document.getElementById('admMontoPagado'),
+        admMetodoPago2: document.getElementById('admMetodoPago2'),
         admReservaError: document.getElementById('admReservaError'),
 
         tabUsuarios: document.getElementById('tabUsuarios'),
@@ -615,7 +616,9 @@
             metodo_pago_2: metodoPago
         }).eq('id', reservaId).then(function (result) {
             if (result.error) {
-                el.saldoError.textContent = 'No pudimos registrar el pago: ' + result.error.message;
+                el.saldoError.textContent = esErrorColumnaFaltante(result.error)
+                    ? 'Falta aplicar el parche supabase/add_cuadratura_reservas.sql en el SQL Editor de Supabase antes de poder saldar pagos.'
+                    : 'No pudimos registrar el pago: ' + result.error.message;
                 el.saldoError.className = 'auth-alert';
                 el.saldoError.hidden = false;
                 return;
@@ -628,7 +631,7 @@
     /* ======================================================================
        CUADRATURA DIARIA
        ====================================================================== */
-    var METODOS_PAGO_OPCIONES = ['Efectivo', 'Transferencia', 'Mercado Pago', 'Webpay (Transbank)', 'GetNet', 'Tarjeta de Crédito/Débito', 'Mixto'];
+    var METODOS_PAGO_OPCIONES = ['Efectivo', 'Transferencia', 'Mercado Pago', 'Webpay (Transbank)', 'GetNet', 'Tarjeta de Crédito/Débito'];
     var METODOS_TARJETA = ['Mercado Pago', 'Webpay (Transbank)', 'GetNet', 'Tarjeta de Crédito/Débito'];
 
     function opcionesMetodoPago(seleccionado, permitirVacio) {
@@ -721,7 +724,9 @@
         }).eq('id', id).then(function (result) {
             boton.disabled = false;
             if (result.error) {
-                window.alert('No pudimos guardar los cambios: ' + result.error.message);
+                window.alert(esErrorColumnaFaltante(result.error)
+                    ? 'Falta aplicar el parche supabase/add_cuadratura_reservas.sql en el SQL Editor de Supabase antes de poder guardar estos campos.'
+                    : 'No pudimos guardar los cambios: ' + result.error.message);
                 return;
             }
             guardadoSpan.hidden = false;
@@ -753,7 +758,7 @@
             '<div class="cuadratura-resumen-item"><span>Transferencia</span><strong>' + formatCLP(totales.transferencia) + '</strong></div>';
 
         if (totales.otros > 0) {
-            html += '<div class="cuadratura-resumen-item"><span>Otros / Mixto</span><strong>' + formatCLP(totales.otros) + '</strong></div>';
+            html += '<div class="cuadratura-resumen-item"><span>Otros</span><strong>' + formatCLP(totales.otros) + '</strong></div>';
         }
 
         el.cuadraturaResumenPago.innerHTML = html;
@@ -890,6 +895,9 @@
             return;
         }
 
+        var metodoPago2 = el.admMetodoPago2.value;
+        var montoPagado2 = metodoPago2 ? Math.max(precio - montoPagado, 0) : 0;
+
         var reservaId = generarId();
         var reserva = {
             id: reservaId,
@@ -903,16 +911,21 @@
             email_contacto: el.admEmail.value.trim() || null,
             metodo_pago: el.admMetodoPago.value,
             monto_pagado: montoPagado,
-            tipo_pago: montoPagado >= precio ? 'completo' : 'abono',
+            metodo_pago_2: metodoPago2 || null,
+            monto_pagado_2: montoPagado2,
+            tipo_pago: (montoPagado + montoPagado2) >= precio ? 'completo' : 'abono',
             origen: 'admin'
         };
 
         sb.from('reservas').insert([reserva]).then(function (result) {
-            // Si la columna "origen" todavía no existe (falta correr el
-            // parche SQL add_origen_reservas.sql), reintenta sin ella en vez
-            // de bloquear la creación de la reserva.
+            // Si "origen" y/o "metodo_pago_2"/"monto_pagado_2" todavía no
+            // existen (falta correr add_origen_reservas.sql y/o
+            // add_cuadratura_reservas.sql), reintenta sin esas columnas en
+            // vez de bloquear la creación de la reserva.
             if (esErrorColumnaFaltante(result.error)) {
                 delete reserva.origen;
+                delete reserva.metodo_pago_2;
+                delete reserva.monto_pagado_2;
                 return sb.from('reservas').insert([reserva]).then(manejarResultadoReservaAdmin);
             }
             return manejarResultadoReservaAdmin(result);
