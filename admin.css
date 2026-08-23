@@ -361,24 +361,37 @@
 }
 
 .btn-saldar {
+    display: inline-block;
     border: none;
-    background: none;
-    padding: 0;
+    padding: 4px 12px;
+    border-radius: 12px;
     font-family: inherit;
-    font-size: inherit;
+    font-size: 12px;
     font-weight: 700;
+    background-color: #fdeceb;
     color: var(--rojo-oscuro);
-    text-decoration: underline;
     cursor: pointer;
+    transition: background-color 0.2s ease;
 }
 
 .btn-saldar:hover {
-    color: var(--rojo);
+    background-color: var(--rojo);
+    color: var(--blanco);
 }
 
 .saldo-al-dia {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    background-color: #eafaf0;
     color: #1f7a3d;
-    font-weight: 600;
+}
+
+.saldo-pendiente-monto {
+    color: var(--rojo-oscuro);
+    font-weight: 700;
 }
 
 /* CUADRATURA DIARIA */

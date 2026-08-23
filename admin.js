@@ -551,16 +551,25 @@
 
         var totalMonto = 0;
         lista.forEach(function (r) {
+            var montoPagado1 = r.monto_pagado != null ? r.monto_pagado : 0;
             var montoPagado2 = r.monto_pagado_2 != null ? r.monto_pagado_2 : 0;
-            var montoTotalPagado = (r.monto_pagado != null ? r.monto_pagado : 0) + montoPagado2;
+            var montoTotalPagado = montoPagado1 + montoPagado2;
             totalMonto += montoTotalPagado;
 
             var canchaNombre = r.canchas ? r.canchas.nombre : r.cancha_id;
             var deporte = r.canchas ? SPORT_LABELS[r.canchas.deporte] : '';
             var tipoPagoLabel = r.tipo_pago === 'abono' ? 'Abono' : 'Pago total';
             var saldo = (r.precio || 0) - montoTotalPagado;
-            var saldoHtml = saldo > 0
-                ? '<button type="button" class="btn-saldar" data-id="' + r.id + '" data-saldo="' + saldo + '" data-nuevo-monto2="' + (montoPagado2 + saldo) + '" data-nombre="' + (r.nombre_contacto || '').replace(/"/g, '&quot;') + '">' + formatCLP(saldo) + '</button>'
+
+            // Pago 2 (Saldo): si ya se registró un segundo pago, muestra lo
+            // efectivamente cobrado; si todavía no se paga, muestra lo
+            // adeudado en negativo para que se note de inmediato.
+            var pago2Html = montoPagado2 > 0
+                ? formatCLP(montoPagado2)
+                : (saldo > 0 ? '<span class="saldo-pendiente-monto">-' + formatCLP(saldo) + '</span>' : formatCLP(0));
+
+            var estadoPagoHtml = saldo > 0
+                ? '<button type="button" class="btn-saldar" data-id="' + r.id + '" data-saldo="' + saldo + '" data-nuevo-monto2="' + (montoPagado2 + saldo) + '" data-nombre="' + (r.nombre_contacto || '').replace(/"/g, '&quot;') + '">Pendiente</button>'
                 : '<span class="saldo-al-dia">Al día</span>';
 
             var tr = document.createElement('tr');
@@ -571,8 +580,9 @@
                 '<td>' + deporte + '</td>' +
                 '<td>' + canchaNombre + '</td>' +
                 '<td>' + tipoPagoLabel + '</td>' +
-                '<td>' + formatCLP(montoTotalPagado) + '</td>' +
-                '<td>' + saldoHtml + '</td>';
+                '<td>' + formatCLP(montoPagado1) + '</td>' +
+                '<td>' + pago2Html + '</td>' +
+                '<td>' + estadoPagoHtml + '</td>';
             el.pagosTbody.appendChild(tr);
         });
 
