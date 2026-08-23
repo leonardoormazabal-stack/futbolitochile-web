@@ -780,6 +780,14 @@
 
     function crearReserva(metodo) {
         var reservaId = generarId();
+
+        // Efectivo y Transferencia no se cobran de forma instantánea: el
+        // efectivo se recibe presencialmente y la transferencia queda
+        // condicionada a verificar el comprobante. Por eso el monto queda
+        // en 0 (Pendiente) hasta que un administrador confirme el pago
+        // real, en vez de registrarlo como pagado apenas se reserva.
+        var montoPagadoConfirmado = METODOS_SIN_REDIRECCION.indexOf(metodo) === -1 ? state.montoAPagar : 0;
+
         var reserva = {
             id: reservaId,
             user_id: state.userId,
@@ -787,7 +795,7 @@
             fecha: state.selectedDate,
             hora: state.selectedHour,
             precio: state.precio,
-            monto_pagado: state.montoAPagar,
+            monto_pagado: montoPagadoConfirmado,
             tipo_pago: state.tipoPago,
             nombre_contacto: campos.nombre.value.trim(),
             documento_contacto: campos.rut.value.trim(),

@@ -583,6 +583,7 @@
                 '<td>' + tipoPagoLabel + '</td>' +
                 '<td>' + formatCLP(montoPagado1) + '</td>' +
                 '<td>' + pago2Html + '</td>' +
+                '<td>' + formatCLP(montoTotalPagado) + '</td>' +
                 '<td>' + estadoPagoHtml + '</td>';
             el.pagosTbody.appendChild(tr);
         });
