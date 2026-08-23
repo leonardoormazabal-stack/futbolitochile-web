@@ -1,8 +1,10 @@
 /* ============================================================================
-   Envía el resumen diario de arriendos a administradores y
-   superadministradores: detalle de las reservas del día (cancha, hora,
-   monto, tipo de pago), el total recaudado hoy y el acumulado del mes hasta
-   la fecha. Lo dispara el Cron Job de Vercel definido en vercel.json.
+   Envía la cuadratura del día anterior a administradores y
+   superadministradores: detalle de los pagos que entraron ese día (sean de
+   una cancha usada ese mismo día o de una reserva para otra fecha), el total
+   recaudado y el acumulado del mes hasta esa fecha. Lo dispara el Cron Job
+   de Vercel definido en vercel.json (corre a las 03:59 AM, así que reporta
+   el día que recién terminó, no el que empieza).
 
    Protegido con CRON_SECRET: Vercel agrega automáticamente el header
    "Authorization: Bearer <CRON_SECRET>" cuando llama a este endpoint, así
@@ -30,19 +32,30 @@ function formatCLP(monto) {
     return '$' + Number(monto || 0).toLocaleString('es-CL');
 }
 
-// Devuelve la fecha de hoy en Chile como "YYYY-MM-DD", sin depender de la
+// Devuelve una fecha "YYYY-MM-DD" en horario de Chile, sin depender de la
 // zona horaria del servidor donde corre la función serverless.
-function fechaHoyChile() {
+function fechaChile(fecha) {
     const partes = new Intl.DateTimeFormat('en-CA', {
         timeZone: ZONA_HORARIA,
         year: 'numeric',
         month: '2-digit',
         day: '2-digit'
-    }).formatToParts(new Date());
+    }).formatToParts(fecha);
 
     const map = {};
     partes.forEach((p) => { map[p.type] = p.value; });
     return map.year + '-' + map.month + '-' + map.day;
+}
+
+function sumarDias(fechaISO, delta) {
+    const [y, m, d] = fechaISO.split('-').map(Number);
+    // Ancla al mediodía UTC (no medianoche): así, al sumar/restar días en
+    // UTC y volver a leer la fecha en horario de Chile (que va detrás de
+    // UTC), el resultado sigue cayendo en el mismo día calendario, sin
+    // importar si Chile está en UTC-3 o UTC-4 según la época del año.
+    const fecha = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+    fecha.setUTCDate(fecha.getUTCDate() + delta);
+    return fechaChile(fecha);
 }
 
 function primerDiaDelMes(fechaISO) {
@@ -55,8 +68,10 @@ function formatFechaLarga(fechaISO) {
     return fecha.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 }
 
-function formatFechaCorta(isoTimestamp) {
-    return new Date(isoTimestamp).toLocaleDateString('es-CL', { timeZone: ZONA_HORARIA, day: 'numeric', month: 'short' });
+function formatFechaCorta(fechaISO) {
+    const [y, m, d] = fechaISO.split('-').map(Number);
+    const fecha = new Date(y, m - 1, d);
+    return fecha.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' });
 }
 
 function sumaMontoPagado(filas) {
@@ -76,35 +91,57 @@ function esErrorColumnaFaltante(error) {
     );
 }
 
-// Si la columna "monto_pagado_2" todavía no existe (falta correr el parche
-// SQL add_cuadratura_reservas.sql), reintenta sin ella en vez de dejar todo
-// el reporte diario sin enviarse.
-async function cargarReservasDelDia(supabaseAdmin, hoy) {
-    const res = await supabaseAdmin
-        .from('reservas')
-        .select('hora,precio,monto_pagado,monto_pagado_2,tipo_pago,metodo_pago,nombre_contacto,created_at,canchas(nombre,deporte)')
-        .eq('fecha', hoy)
-        .eq('estado', 'confirmada')
-        .order('hora', { ascending: true });
+// Trae las reservas que hay que cuadrar del día del reporte: tanto las
+// canchas que se juegan ese día como cualquier reserva de otra fecha cuyo
+// pago se registró ese día (misma lógica que la pestaña Cuadratura Diaria
+// del panel). Usa un margen ancho en UTC al consultar por fecha de creación
+// y aplica el filtro exacto de "ese día en Chile" en JavaScript, para no
+// depender de la aritmética de horario de verano dentro de la consulta.
+async function cargarReservasDelDia(supabaseAdmin, diaReporte) {
+    const selectCompleto = 'id,fecha,hora,precio,monto_pagado,monto_pagado_2,pago2_fecha,tipo_pago,metodo_pago,metodo_pago_2,nombre_contacto,created_at,canchas(nombre,deporte)';
+    const selectBase = 'id,fecha,hora,precio,monto_pagado,tipo_pago,metodo_pago,nombre_contacto,created_at,canchas(nombre,deporte)';
+    const diaSiguiente = sumarDias(diaReporte, 2); // margen amplio para cubrir cualquier huso horario
 
-    if (esErrorColumnaFaltante(res.error)) {
-        return supabaseAdmin
-            .from('reservas')
-            .select('hora,precio,monto_pagado,tipo_pago,metodo_pago,nombre_contacto,created_at,canchas(nombre,deporte)')
-            .eq('fecha', hoy)
-            .eq('estado', 'confirmada')
-            .order('hora', { ascending: true });
+    async function consultar(select) {
+        return Promise.all([
+            supabaseAdmin.from('reservas').select(select).eq('fecha', diaReporte).eq('estado', 'confirmada'),
+            supabaseAdmin.from('reservas').select(select)
+                .gte('created_at', diaReporte + 'T00:00:00.000Z')
+                .lt('created_at', diaSiguiente + 'T00:00:00.000Z')
+                .eq('estado', 'confirmada')
+        ]);
     }
 
-    return res;
+    let [porFecha, porCreacion] = await consultar(selectCompleto);
+
+    if (esErrorColumnaFaltante(porFecha.error) || esErrorColumnaFaltante(porCreacion.error)) {
+        [porFecha, porCreacion] = await consultar(selectBase);
+    }
+
+    if (porFecha.error || porCreacion.error) {
+        return { data: null, error: porFecha.error || porCreacion.error };
+    }
+
+    const mapa = new Map();
+    (porFecha.data || []).concat(porCreacion.data || []).forEach((r) => { mapa.set(r.id, r); });
+
+    const combinadas = Array.from(mapa.values()).filter((r) => {
+        return r.fecha === diaReporte || fechaChile(new Date(r.created_at)) === diaReporte;
+    });
+
+    combinadas.sort((a, b) => a.hora - b.hora);
+
+    return { data: combinadas, error: null };
 }
 
-async function cargarReservasDelMes(supabaseAdmin, inicioMes, hoy) {
+// Si la columna "monto_pagado_2" todavía no existe (falta correr el parche
+// SQL), reintenta sin ella en vez de dejar todo el reporte sin enviarse.
+async function cargarReservasDelMes(supabaseAdmin, inicioMes, hastaFecha) {
     const res = await supabaseAdmin
         .from('reservas')
         .select('monto_pagado,monto_pagado_2')
         .gte('fecha', inicioMes)
-        .lte('fecha', hoy)
+        .lte('fecha', hastaFecha)
         .eq('estado', 'confirmada');
 
     if (esErrorColumnaFaltante(res.error)) {
@@ -112,7 +149,7 @@ async function cargarReservasDelMes(supabaseAdmin, inicioMes, hoy) {
             .from('reservas')
             .select('monto_pagado')
             .gte('fecha', inicioMes)
-            .lte('fecha', hoy)
+            .lte('fecha', hastaFecha)
             .eq('estado', 'confirmada');
     }
 
@@ -145,19 +182,22 @@ module.exports = async function handler(req, res) {
         return;
     }
 
-    const hoy = fechaHoyChile();
-    const inicioMes = primerDiaDelMes(hoy);
+    // El cron corre a las 03:59 AM: a esa hora "hoy" recién empieza, así que
+    // el día a cuadrar es el que acaba de terminar (ayer).
+    const hoy = fechaChile(new Date());
+    const diaReporte = sumarDias(hoy, -1);
+    const inicioMes = primerDiaDelMes(diaReporte);
 
-    const [{ data: reservasHoy, error: errorHoy }, { data: reservasMes, error: errorMes }, { data: admins }] = await Promise.all([
-        cargarReservasDelDia(supabaseAdmin, hoy),
-        cargarReservasDelMes(supabaseAdmin, inicioMes, hoy),
+    const [{ data: filas, error: errorDia }, { data: reservasMes, error: errorMes }, { data: admins }] = await Promise.all([
+        cargarReservasDelDia(supabaseAdmin, diaReporte),
+        cargarReservasDelMes(supabaseAdmin, inicioMes, diaReporte),
         supabaseAdmin
             .from('profiles')
             .select('email')
             .in('rol', ['administrador', 'superadministrador'])
     ]);
 
-    if (errorHoy || errorMes) {
+    if (errorDia || errorMes) {
         res.status(200).json({ ok: false, motivo: 'No se pudieron leer las reservas.' });
         return;
     }
@@ -168,60 +208,66 @@ module.exports = async function handler(req, res) {
         return;
     }
 
-    const filasHoy = reservasHoy || [];
-    const totalHoy = sumaMontoPagado(filasHoy);
+    const filasDia = filas || [];
+    const totalDia = sumaMontoPagado(filasDia);
     const totalMes = sumaMontoPagado(reservasMes || []);
 
-    const filasHtml = filasHoy.length
-        ? filasHoy.map((r) => {
+    const filasHtml = filasDia.length
+        ? filasDia.map((r) => {
             const deporte = r.canchas ? (SPORT_LABELS[r.canchas.deporte] || r.canchas.deporte) : '';
             const cancha = r.canchas ? r.canchas.nombre : '—';
             const horaTexto = String(r.hora).padStart(2, '0') + ':00';
-            const montoPagado = (r.monto_pagado != null ? r.monto_pagado : 0) + (r.monto_pagado_2 != null ? r.monto_pagado_2 : 0);
+            const montoPagado1 = r.monto_pagado != null ? r.monto_pagado : 0;
+            const montoPagado2 = r.monto_pagado_2 != null ? r.monto_pagado_2 : 0;
+            const montoTotalPagado = montoPagado1 + montoPagado2;
             const tipoPagoTexto = r.tipo_pago === 'abono' ? 'Abono' : 'Pago total';
-            const saldo = (r.precio || 0) - montoPagado;
-            const saldoHtml = saldo > 0
-                ? '<strong style="color:#c0392b;">' + formatCLP(saldo) + '</strong>'
+            const saldo = (r.precio || 0) - montoTotalPagado;
+            const estadoHtml = saldo > 0
+                ? '<strong style="color:#c0392b;">Pendiente (-' + formatCLP(saldo) + ')</strong>'
                 : '<span style="color:#1f7a3d;">Al día</span>';
+            const fechaCanchaTexto = r.fecha === diaReporte ? 'Hoy' : formatFechaCorta(r.fecha);
             return (
                 '<tr>' +
-                '<td>' + formatFechaCorta(r.created_at) + '</td>' +
+                '<td>' + escapeHtml(fechaCanchaTexto) + '</td>' +
                 '<td>' + horaTexto + ' hrs</td>' +
                 '<td>' + escapeHtml(r.nombre_contacto || '—') + '</td>' +
                 '<td>' + escapeHtml(deporte) + '</td>' +
                 '<td>' + escapeHtml(cancha) + '</td>' +
                 '<td>' + tipoPagoTexto + '</td>' +
-                '<td>' + escapeHtml(r.metodo_pago || '—') + '</td>' +
-                '<td>' + formatCLP(montoPagado) + '</td>' +
-                '<td>' + saldoHtml + '</td>' +
+                '<td>' + formatCLP(montoPagado1) + ' vía ' + escapeHtml(r.metodo_pago || '—') + '</td>' +
+                '<td>' + (montoPagado2 > 0 ? formatCLP(montoPagado2) + ' vía ' + escapeHtml(r.metodo_pago_2 || '—') : '—') + '</td>' +
+                '<td>' + formatCLP(montoTotalPagado) + '</td>' +
+                '<td>' + estadoHtml + '</td>' +
                 '</tr>'
             );
         }).join('')
-        : '<tr><td colspan="9">Sin arriendos registrados hoy.</td></tr>';
+        : '<tr><td colspan="10">Sin pagos registrados este día.</td></tr>';
 
     const html =
-        '<p>Resumen de arriendos — ' + escapeHtml(formatFechaLarga(hoy)) + '</p>' +
+        '<p>Cuadratura — ' + escapeHtml(formatFechaLarga(diaReporte)) + '</p>' +
+        '<p style="font-size:12px;color:#666;">Incluye las canchas usadas este día y cualquier pago que haya entrado este día para una reserva de otra fecha (columna "Cancha para").</p>' +
         '<table cellpadding="8" cellspacing="0" border="1" style="border-collapse:collapse;width:100%;font-family:sans-serif;font-size:13px;">' +
         '<thead><tr>' +
-        '<th align="left">Fecha de pago</th>' +
-        '<th align="left">Hora reserva</th>' +
+        '<th align="left">Cancha para</th>' +
+        '<th align="left">Hora</th>' +
         '<th align="left">Nombre</th>' +
         '<th align="left">Deporte</th>' +
         '<th align="left">Cancha</th>' +
         '<th align="left">Tipo de pago</th>' +
-        '<th align="left">Método de pago</th>' +
-        '<th align="left">Monto pagado</th>' +
-        '<th align="left">Saldo</th>' +
+        '<th align="left">Pago 1 (Abono)</th>' +
+        '<th align="left">Pago 2 (Saldo)</th>' +
+        '<th align="left">Monto Total Pagado</th>' +
+        '<th align="left">Estado</th>' +
         '</tr></thead>' +
         '<tbody>' + filasHtml + '</tbody>' +
         '</table>' +
-        '<p style="margin-top:16px;"><strong>Total recaudado hoy:</strong> ' + formatCLP(totalHoy) + '</p>' +
-        '<p><strong>Acumulado del mes hasta hoy:</strong> ' + formatCLP(totalMes) + '</p>';
+        '<p style="margin-top:16px;"><strong>Total recaudado este día:</strong> ' + formatCLP(totalDia) + '</p>' +
+        '<p><strong>Acumulado del mes hasta esta fecha:</strong> ' + formatCLP(totalMes) + '</p>';
 
     try {
         await enviarCorreo({
             to: adminEmails,
-            subject: 'Resumen diario de arriendos — ' + hoy + ' — Futbolito Chile',
+            subject: 'Cuadratura diaria — ' + diaReporte + ' — Futbolito Chile',
             html
         });
     } catch (err) {
@@ -229,5 +275,5 @@ module.exports = async function handler(req, res) {
         return;
     }
 
-    res.status(200).json({ ok: true, fecha: hoy, reservas: filasHoy.length, totalHoy, totalMes });
+    res.status(200).json({ ok: true, fecha: diaReporte, reservas: filasDia.length, totalDia, totalMes });
 };

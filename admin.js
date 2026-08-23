@@ -251,7 +251,7 @@
     // listado: las reservas simplemente no muestran la columna "Origen".
     function cargarReservas() {
         return sb.from('reservas')
-            .select('id,fecha,hora,precio,nombre_contacto,documento_contacto,telefono_contacto,email_contacto,metodo_pago,metodo_pago_2,monto_pagado,monto_pagado_2,observacion,tipo_pago,estado,origen,created_at,canchas(nombre,deporte)')
+            .select('id,fecha,hora,precio,nombre_contacto,documento_contacto,telefono_contacto,email_contacto,metodo_pago,metodo_pago_2,monto_pagado,monto_pagado_2,pago2_fecha,observacion,tipo_pago,estado,origen,created_at,canchas(nombre,deporte)')
             .order('fecha', { ascending: true })
             .order('hora', { ascending: true })
             .then(function (result) {
@@ -573,6 +573,14 @@
                 ? '<button type="button" class="btn-saldar" data-id="' + r.id + '" data-saldo="' + saldo + '" data-nuevo-monto2="' + (montoPagado2 + saldo) + '" data-nombre="' + (r.nombre_contacto || '').replace(/"/g, '&quot;') + '">Pendiente</button>'
                 : '<span class="saldo-al-dia">Al día</span>';
 
+            // El abono y el saldo suelen pagarse en días distintos, así que
+            // cada monto muestra su propia fecha de pago debajo, en vez de
+            // depender de una sola columna "Fecha de pago" para toda la fila.
+            var pago1FechaHtml = '<div class="pago-fecha-hint">' + formatFechaCorta(toISODate(new Date(r.created_at))) + '</div>';
+            var pago2FechaHtml = montoPagado2 > 0 && r.pago2_fecha
+                ? '<div class="pago-fecha-hint">' + formatFechaCorta(r.pago2_fecha) + '</div>'
+                : '';
+
             var tr = document.createElement('tr');
             tr.innerHTML =
                 '<td>' + formatFechaCorta(toISODate(new Date(r.created_at))) + '</td>' +
@@ -581,8 +589,8 @@
                 '<td>' + deporte + '</td>' +
                 '<td>' + canchaNombre + '</td>' +
                 '<td>' + tipoPagoLabel + '</td>' +
-                '<td>' + formatCLP(montoPagado1) + '</td>' +
-                '<td>' + pago2Html + '</td>' +
+                '<td>' + formatCLP(montoPagado1) + pago1FechaHtml + '</td>' +
+                '<td>' + pago2Html + pago2FechaHtml + '</td>' +
                 '<td>' + formatCLP(montoTotalPagado) + '</td>' +
                 '<td>' + estadoPagoHtml + '</td>';
             el.pagosTbody.appendChild(tr);
@@ -625,11 +633,12 @@
 
         sb.from('reservas').update({
             monto_pagado_2: nuevoMonto2,
-            metodo_pago_2: metodoPago
+            metodo_pago_2: metodoPago,
+            pago2_fecha: toISODate(new Date())
         }).eq('id', reservaId).select().then(function (result) {
             if (result.error) {
                 el.saldoError.textContent = esErrorColumnaFaltante(result.error)
-                    ? 'Falta aplicar el parche supabase/add_cuadratura_reservas.sql en el SQL Editor de Supabase antes de poder saldar pagos.'
+                    ? 'Falta aplicar algún parche pendiente en Supabase (add_cuadratura_reservas.sql y/o add_pago2_fecha.sql) antes de poder saldar pagos.'
                     : 'No pudimos registrar el pago: ' + result.error.message;
                 el.saldoError.className = 'auth-alert';
                 el.saldoError.hidden = false;
@@ -758,6 +767,18 @@
             return;
         }
 
+        // Conserva la fecha original del Pago 2 si el monto no cambió; si es
+        // nuevo o se modificó, queda registrado con la fecha de hoy.
+        var original = state.reservas.find(function (r) { return r.id === id; });
+        var pago2Fecha;
+        if (montoPagado2 <= 0) {
+            pago2Fecha = null;
+        } else if (original && original.monto_pagado_2 === montoPagado2 && original.pago2_fecha) {
+            pago2Fecha = original.pago2_fecha;
+        } else {
+            pago2Fecha = toISODate(new Date());
+        }
+
         guardadoSpan.hidden = true;
         boton.disabled = true;
 
@@ -767,12 +788,13 @@
             metodo_pago: metodo1,
             metodo_pago_2: metodo2 || null,
             monto_pagado_2: montoPagado2,
+            pago2_fecha: pago2Fecha,
             observacion: observacion || null
         }).eq('id', id).select().then(function (result) {
             boton.disabled = false;
             if (result.error) {
                 window.alert(esErrorColumnaFaltante(result.error)
-                    ? 'Falta aplicar el parche supabase/add_cuadratura_reservas.sql en el SQL Editor de Supabase antes de poder guardar estos campos.'
+                    ? 'Falta aplicar algún parche pendiente en Supabase (add_cuadratura_reservas.sql y/o add_pago2_fecha.sql) antes de poder guardar estos campos.'
                     : 'No pudimos guardar los cambios: ' + result.error.message);
                 return;
             }
