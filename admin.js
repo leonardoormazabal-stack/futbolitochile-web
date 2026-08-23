@@ -668,13 +668,21 @@
         if (!el.cuadraturaTbody) return;
 
         var hoy = toISODate(new Date());
-        el.cuadraturaFecha.textContent = 'Canchas arrendadas el ' + formatFechaCorta(hoy);
+        el.cuadraturaFecha.textContent = 'Cuadratura del ' + formatFechaCorta(hoy);
 
+        // Incluye tanto las canchas que se juegan hoy como cualquier pago
+        // que haya entrado hoy para una reserva de otro día (ej. alguien que
+        // reserva y paga hoy para jugar la próxima semana): la cuadratura de
+        // caja debe cuadrar todo el dinero que entró en el día, sin importar
+        // para cuándo es la reserva.
         var lista = state.reservas.filter(function (r) {
-            return r.fecha === hoy && r.estado === 'confirmada';
+            if (r.estado !== 'confirmada') return false;
+            var fechaDePago = toISODate(new Date(r.created_at));
+            return r.fecha === hoy || fechaDePago === hoy;
         });
 
         lista.sort(function (a, b) {
+            if (a.fecha !== b.fecha) return a.fecha < b.fecha ? -1 : 1;
             if (a.hora !== b.hora) return a.hora - b.hora;
             var nombreA = a.canchas ? a.canchas.nombre : a.cancha_id;
             var nombreB = b.canchas ? b.canchas.nombre : b.cancha_id;
@@ -697,6 +705,7 @@
             var row = document.createElement('tr');
             row.setAttribute('data-id', r.id);
             row.innerHTML =
+                '<td>' + (r.fecha === hoy ? 'Hoy' : formatFechaCorta(r.fecha)) + '</td>' +
                 '<td>' + String(r.hora).padStart(2, '0') + ':00</td>' +
                 '<td>' + canchaNombre + '</td>' +
                 '<td><input type="number" class="cuadratura-abono" min="0" step="1" value="' + montoPagado1 + '"></td>' +
@@ -718,8 +727,14 @@
             });
         });
 
+        // El resumen de pagos cuadra todo el dinero que entró hoy (lista
+        // completa), pero el % de arriendo por bloque horario es sobre el
+        // uso real de las canchas hoy, así que solo cuenta las reservas
+        // cuya fecha de cancha es hoy (no las pagadas hoy para otro día).
+        var listaCanchasHoy = lista.filter(function (r) { return r.fecha === hoy; });
+
         renderResumenPagoCuadratura(lista);
-        renderOcupacionCuadratura(lista);
+        renderOcupacionCuadratura(listaCanchasHoy);
     }
 
     function guardarFilaCuadratura(row) {

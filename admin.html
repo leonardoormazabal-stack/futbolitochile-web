@@ -134,7 +134,7 @@
         <section class="admin-view" id="view-pagos">
             <div class="admin-filters">
                 <div class="form-group">
-                    <label for="pagosPeriodo">Periodo</label>
+                    <label for="pagosPeriodo">Periodo (por fecha de pago)</label>
                     <select id="pagosPeriodo">
                         <option value="todos">Todo el historial</option>
                         <option value="hoy">Hoy</option>
@@ -183,6 +183,7 @@
                 <button type="button" class="btn btn-outline" id="btnLimpiarFiltrosPagos">Quitar filtros</button>
             </div>
 
+            <p class="admin-note">El periodo filtra por la fecha en que se registró el pago, no por la fecha de la reserva — por eso puede no coincidir con Cuadratura Diaria (que sí filtra por el día en que se juega).</p>
             <p class="admin-note" id="pagosResumen"></p>
 
             <div class="admin-table-wrapper">
@@ -210,11 +211,13 @@
         <!-- VISTA CUADRATURA DIARIA -->
         <section class="admin-view" id="view-cuadratura">
             <p class="admin-note" id="cuadraturaFecha"></p>
+            <p class="admin-note">Incluye las canchas que se juegan hoy y también cualquier pago que haya entrado hoy para una reserva de otro día.</p>
 
             <div class="admin-table-wrapper">
                 <table class="admin-table" id="cuadraturaTable">
                     <thead>
                         <tr>
+                            <th>Fecha</th>
                             <th>Horario</th>
                             <th>Cancha</th>
                             <th>Pago 1 (Abono)</th>
