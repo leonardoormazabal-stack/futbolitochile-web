@@ -468,11 +468,11 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="admMontoPagado">Monto pagado</label>
+                    <label for="admMontoPagado">Pago 1 (Abono)</label>
                     <input type="number" id="admMontoPagado" min="0" step="1" required>
                 </div>
                 <div class="form-group">
-                    <label for="admMetodoPago2">Segundo método de pago (si el cliente pagó con dos medios)</label>
+                    <label for="admMetodoPago2">Segundo método de pago (solo si el cliente ya pagó con dos medios)</label>
                     <select id="admMetodoPago2">
                         <option value="">— Ninguno —</option>
                         <option value="Efectivo">Efectivo</option>
@@ -482,6 +482,10 @@
                         <option value="GetNet">GetNet</option>
                         <option value="Tarjeta de Crédito/Débito">Tarjeta de Crédito/Débito</option>
                     </select>
+                </div>
+                <div class="form-group">
+                    <label for="admMontoPagado2">Pago 2 (Saldo)</label>
+                    <input type="number" id="admMontoPagado2" min="0" step="1" placeholder="0" value="0">
                 </div>
 
                 <div class="auth-alert" id="admReservaError" hidden></div>

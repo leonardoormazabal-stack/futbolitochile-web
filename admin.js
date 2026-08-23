@@ -149,6 +149,7 @@
         admMetodoPago: document.getElementById('admMetodoPago'),
         admMontoPagado: document.getElementById('admMontoPagado'),
         admMetodoPago2: document.getElementById('admMetodoPago2'),
+        admMontoPagado2: document.getElementById('admMontoPagado2'),
         admReservaError: document.getElementById('admReservaError'),
 
         tabUsuarios: document.getElementById('tabUsuarios'),
@@ -688,11 +689,9 @@
             var montoPagado2 = r.monto_pagado_2 != null ? r.monto_pagado_2 : 0;
             var saldo = (r.precio || 0) - montoPagado1 - montoPagado2;
 
-            // Igual que en Pagos: si ya se registró el segundo pago muestra
-            // lo cobrado; si todavía no, muestra lo adeudado en negativo.
-            var pago2Html = montoPagado2 > 0
-                ? formatCLP(montoPagado2)
-                : (saldo > 0 ? '<span class="saldo-pendiente-monto">-' + formatCLP(saldo) + '</span>' : formatCLP(0));
+            var pago2Html =
+                '<input type="number" class="cuadratura-pago2" min="0" step="1" value="' + montoPagado2 + '">' +
+                (saldo > 0 ? '<div class="cuadratura-saldo-hint">Pendiente: -' + formatCLP(saldo) + '</div>' : '');
 
             var row = document.createElement('tr');
             row.setAttribute('data-id', r.id);
@@ -725,6 +724,7 @@
     function guardarFilaCuadratura(row) {
         var id = row.getAttribute('data-id');
         var abono = parseInt(row.querySelector('.cuadratura-abono').value, 10);
+        var montoPagado2 = parseInt(row.querySelector('.cuadratura-pago2').value, 10);
         var total = parseInt(row.querySelector('.cuadratura-total').value, 10);
         var metodo1 = row.querySelector('.cuadratura-metodo1').value;
         var metodo2 = row.querySelector('.cuadratura-metodo2').value;
@@ -732,15 +732,15 @@
         var guardadoSpan = row.querySelector('.cuadratura-guardado');
         var boton = row.querySelector('.cuadratura-guardar');
 
-        if (isNaN(abono) || isNaN(total) || abono < 0 || total < 0) {
-            window.alert('El abono y el pago total deben ser números válidos.');
+        if (isNaN(abono) || isNaN(montoPagado2) || isNaN(total) || abono < 0 || montoPagado2 < 0 || total < 0) {
+            window.alert('El abono, el pago 2 y el pago total deben ser números válidos.');
             return;
         }
 
-        // El monto del medio de pago 2 es lo que queda del total una vez
-        // descontado el abono; si no se indicó un segundo medio, se asume
-        // que ese resto todavía está pendiente (no se le atribuye a nadie).
-        var montoPagado2 = metodo2 ? Math.max(total - abono, 0) : 0;
+        if (montoPagado2 > 0 && !metodo2) {
+            window.alert('Indicaste un monto en Pago 2, pero falta elegir su medio de pago.');
+            return;
+        }
 
         guardadoSpan.hidden = true;
         boton.disabled = true;
@@ -931,7 +931,14 @@
         }
 
         var metodoPago2 = el.admMetodoPago2.value;
-        var montoPagado2 = metodoPago2 ? Math.max(precio - montoPagado, 0) : 0;
+        var montoPagado2 = metodoPago2 ? (parseInt(el.admMontoPagado2.value, 10) || 0) : 0;
+
+        if (metodoPago2 && (isNaN(parseInt(el.admMontoPagado2.value, 10)) || montoPagado2 <= 0)) {
+            el.admReservaError.textContent = 'Si eliges un segundo método de pago, indica el monto pagado con ese medio.';
+            el.admReservaError.className = 'auth-alert';
+            el.admReservaError.hidden = false;
+            return;
+        }
 
         var reservaId = generarId();
         var reserva = {
