@@ -614,11 +614,21 @@
         sb.from('reservas').update({
             monto_pagado_2: nuevoMonto2,
             metodo_pago_2: metodoPago
-        }).eq('id', reservaId).then(function (result) {
+        }).eq('id', reservaId).select().then(function (result) {
             if (result.error) {
                 el.saldoError.textContent = esErrorColumnaFaltante(result.error)
                     ? 'Falta aplicar el parche supabase/add_cuadratura_reservas.sql en el SQL Editor de Supabase antes de poder saldar pagos.'
                     : 'No pudimos registrar el pago: ' + result.error.message;
+                el.saldoError.className = 'auth-alert';
+                el.saldoError.hidden = false;
+                return;
+            }
+            // Con Row Level Security, un update que no encuentra permiso
+            // sobre la fila no siempre devuelve error: puede "tener éxito"
+            // sin cambiar 0 filas. Si no volvió ninguna fila, avisamos en
+            // vez de cerrar el modal como si hubiese funcionado.
+            if (!result.data || !result.data.length) {
+                el.saldoError.textContent = 'No se pudo actualizar la reserva (no se modificó ninguna fila). Puede ser un problema de permisos.';
                 el.saldoError.className = 'auth-alert';
                 el.saldoError.hidden = false;
                 return;
@@ -721,12 +731,16 @@
             metodo_pago_2: metodo2 || null,
             monto_pagado_2: montoPagado2,
             observacion: observacion || null
-        }).eq('id', id).then(function (result) {
+        }).eq('id', id).select().then(function (result) {
             boton.disabled = false;
             if (result.error) {
                 window.alert(esErrorColumnaFaltante(result.error)
                     ? 'Falta aplicar el parche supabase/add_cuadratura_reservas.sql en el SQL Editor de Supabase antes de poder guardar estos campos.'
                     : 'No pudimos guardar los cambios: ' + result.error.message);
+                return;
+            }
+            if (!result.data || !result.data.length) {
+                window.alert('No se pudo guardar (no se modificó ninguna fila). Puede ser un problema de permisos.');
                 return;
             }
             guardadoSpan.hidden = false;
