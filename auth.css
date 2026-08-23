@@ -84,7 +84,8 @@
 .form-group input[type="email"],
 .form-group input[type="tel"],
 .form-group input[type="password"],
-.form-group select {
+.form-group select,
+.form-group textarea {
     padding: 12px 14px;
     border-radius: 8px;
     border: 2px solid var(--gris-claro);
@@ -95,12 +96,18 @@
     transition: border-color 0.2s ease;
 }
 
+.form-group textarea {
+    width: 100%;
+    resize: vertical;
+}
+
 .form-group select {
     cursor: pointer;
 }
 
 .form-group input:focus,
-.form-group select:focus {
+.form-group select:focus,
+.form-group textarea:focus {
     outline: none;
     border-color: var(--azul-primario);
 }

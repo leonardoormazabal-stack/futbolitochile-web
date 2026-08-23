@@ -70,6 +70,7 @@
                 <button type="button" class="admin-tab" data-tab="usuarios" id="tabUsuarios" hidden>Usuarios</button>
                 <button type="button" class="admin-tab" data-tab="contenido" id="tabContenido" hidden>Contenido</button>
                 <button type="button" class="admin-tab" data-tab="tarifas" id="tabTarifas" hidden>Tarifas</button>
+                <button type="button" class="admin-tab" data-tab="cancelaciones" id="tabCancelaciones" hidden>Cancelaciones</button>
             </div>
             <div class="admin-toolbar-actions">
                 <button type="button" class="btn btn-primary" id="btnNuevoUsuario" hidden>+ Nuevo Usuario</button>
@@ -410,6 +411,27 @@
                 </div>
             </div>
         </section>
+
+        <!-- VISTA CANCELACIONES (solo superadministrador) -->
+        <section class="admin-view" id="view-cancelaciones">
+            <div class="admin-table-wrapper">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha reserva</th>
+                            <th>Hora</th>
+                            <th>Cancha</th>
+                            <th>Contacto</th>
+                            <th>Motivo</th>
+                            <th>Cancelado por</th>
+                            <th>Fecha cancelación</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cancelacionesTableBody"></tbody>
+                </table>
+                <p class="admin-empty" id="cancelacionesEmptyMsg" hidden>No hay reservas canceladas.</p>
+            </div>
+        </section>
     </main>
 
     <!-- MODAL: NUEVA RESERVA -->
@@ -619,6 +641,27 @@
                 <div class="auth-alert" id="saldoError" hidden></div>
 
                 <button type="submit" class="btn btn-primary btn-block">Marcar como Pagado</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: MOTIVO DE CANCELACIÓN -->
+    <div class="admin-modal-overlay" id="motivoModalOverlay" hidden>
+        <div class="admin-modal">
+            <div class="admin-modal-header">
+                <h2>Motivo de Cancelación</h2>
+                <button type="button" class="admin-modal-close" id="btnCerrarMotivoModal" aria-label="Cerrar">&times;</button>
+            </div>
+            <form id="motivoForm" novalidate>
+                <p id="motivoFormReserva" class="admin-modal-subtitle"></p>
+                <div class="form-group">
+                    <label for="motivoTexto">¿Por qué se anula esta reserva?</label>
+                    <textarea id="motivoTexto" rows="3" required></textarea>
+                </div>
+
+                <div class="auth-alert" id="motivoError" hidden></div>
+
+                <button type="submit" class="btn btn-primary btn-block">Anular Reserva</button>
             </form>
         </div>
     </div>

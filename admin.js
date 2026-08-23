@@ -192,6 +192,17 @@
         saldoMetodoPago: document.getElementById('saldoMetodoPago'),
         saldoError: document.getElementById('saldoError'),
 
+        motivoModalOverlay: document.getElementById('motivoModalOverlay'),
+        btnCerrarMotivoModal: document.getElementById('btnCerrarMotivoModal'),
+        motivoForm: document.getElementById('motivoForm'),
+        motivoFormReserva: document.getElementById('motivoFormReserva'),
+        motivoTexto: document.getElementById('motivoTexto'),
+        motivoError: document.getElementById('motivoError'),
+
+        tabCancelaciones: document.getElementById('tabCancelaciones'),
+        cancelacionesTbody: document.getElementById('cancelacionesTableBody'),
+        cancelacionesEmptyMsg: document.getElementById('cancelacionesEmptyMsg'),
+
         tabContenido: document.getElementById('tabContenido'),
         tabTarifas: document.getElementById('tabTarifas'),
 
@@ -251,7 +262,7 @@
     // listado: las reservas simplemente no muestran la columna "Origen".
     function cargarReservas() {
         return sb.from('reservas')
-            .select('id,fecha,hora,precio,nombre_contacto,documento_contacto,telefono_contacto,email_contacto,metodo_pago,metodo_pago_2,monto_pagado,monto_pagado_2,pago2_fecha,observacion,tipo_pago,estado,origen,created_at,canchas(nombre,deporte)')
+            .select('id,fecha,hora,precio,nombre_contacto,documento_contacto,telefono_contacto,email_contacto,metodo_pago,metodo_pago_2,monto_pagado,monto_pagado_2,pago2_fecha,observacion,tipo_pago,estado,origen,motivo_cancelacion,cancelado_por,cancelado_en,created_at,canchas(nombre,deporte)')
             .order('fecha', { ascending: true })
             .order('hora', { ascending: true })
             .then(function (result) {
@@ -266,6 +277,7 @@
                             renderListado();
                             renderPagos();
                             renderCuadratura();
+                            renderCancelaciones();
                         });
                 }
 
@@ -274,6 +286,7 @@
                 renderListado();
                 renderPagos();
                 renderCuadratura();
+                renderCancelaciones();
             });
     }
 
@@ -444,14 +457,107 @@
     }
 
     function cancelarReserva(id) {
-        if (!window.confirm('¿Anular esta reserva? El horario quedará disponible nuevamente.')) return;
+        abrirModalMotivo(id);
+    }
 
-        sb.from('reservas').update({ estado: 'cancelada' }).eq('id', id).then(function (result) {
+    function abrirModalMotivo(id) {
+        var reserva = state.reservas.find(function (r) { return r.id === id; });
+
+        el.motivoForm.reset();
+        el.motivoError.hidden = true;
+        el.motivoForm.setAttribute('data-reserva-id', id);
+
+        if (reserva) {
+            var canchaNombre = reserva.canchas ? reserva.canchas.nombre : reserva.cancha_id;
+            el.motivoFormReserva.textContent = 'Reserva de ' + (reserva.nombre_contacto || '—') + ' — ' + canchaNombre +
+                ', ' + formatFechaCorta(reserva.fecha) + ' ' + String(reserva.hora).padStart(2, '0') + ':00. El horario quedará disponible nuevamente.';
+        } else {
+            el.motivoFormReserva.textContent = 'El horario quedará disponible nuevamente.';
+        }
+
+        el.motivoModalOverlay.hidden = false;
+    }
+
+    function cerrarModalMotivo() {
+        el.motivoModalOverlay.hidden = true;
+    }
+
+    el.btnCerrarMotivoModal.addEventListener('click', cerrarModalMotivo);
+    el.motivoModalOverlay.addEventListener('click', function (e) {
+        if (e.target === el.motivoModalOverlay) cerrarModalMotivo();
+    });
+
+    el.motivoForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        var reservaId = el.motivoForm.getAttribute('data-reserva-id');
+        var motivo = el.motivoTexto.value.trim();
+
+        if (!motivo) {
+            el.motivoError.textContent = 'Debes indicar un motivo para anular la reserva.';
+            el.motivoError.className = 'auth-alert';
+            el.motivoError.hidden = false;
+            return;
+        }
+
+        sb.from('reservas').update({
+            estado: 'cancelada',
+            motivo_cancelacion: motivo,
+            cancelado_por: state.currentUserId,
+            cancelado_en: new Date().toISOString()
+        }).eq('id', reservaId).select().then(function (result) {
             if (result.error) {
-                window.alert('No pudimos anular la reserva: ' + result.error.message);
+                el.motivoError.textContent = esErrorColumnaFaltante(result.error)
+                    ? 'Falta aplicar el parche supabase/add_motivo_cancelacion.sql en el SQL Editor de Supabase antes de poder anular con motivo.'
+                    : 'No pudimos anular la reserva: ' + result.error.message;
+                el.motivoError.className = 'auth-alert';
+                el.motivoError.hidden = false;
                 return;
             }
+            if (!result.data || !result.data.length) {
+                el.motivoError.textContent = 'No se pudo anular (no se modificó ninguna fila). Puede ser un problema de permisos.';
+                el.motivoError.className = 'auth-alert';
+                el.motivoError.hidden = false;
+                return;
+            }
+            cerrarModalMotivo();
             cargarReservas();
+        });
+    });
+
+    function renderCancelaciones() {
+        if (!el.cancelacionesTbody) return;
+
+        var canceladas = state.reservas.filter(function (r) { return r.estado === 'cancelada'; });
+
+        canceladas.sort(function (a, b) {
+            return new Date(b.cancelado_en || b.created_at) - new Date(a.cancelado_en || a.created_at);
+        });
+
+        el.cancelacionesTbody.innerHTML = '';
+        el.cancelacionesEmptyMsg.hidden = canceladas.length > 0;
+
+        canceladas.forEach(function (r) {
+            var canchaNombre = r.canchas ? r.canchas.nombre : r.cancha_id;
+
+            var canceladoPor = '—';
+            if (r.cancelado_por) {
+                var usuario = state.usuarios.find(function (u) { return u.id === r.cancelado_por; });
+                canceladoPor = usuario ? usuario.nombre : '—';
+            }
+
+            var fechaCancelacion = r.cancelado_en ? formatFechaCorta(toISODate(new Date(r.cancelado_en))) : '—';
+
+            var tr = document.createElement('tr');
+            tr.innerHTML =
+                '<td>' + formatFechaCorta(r.fecha) + '</td>' +
+                '<td>' + String(r.hora).padStart(2, '0') + ':00</td>' +
+                '<td>' + canchaNombre + '</td>' +
+                '<td>' + (r.nombre_contacto || '') + '</td>' +
+                '<td>' + (r.motivo_cancelacion || '—') + '</td>' +
+                '<td>' + canceladoPor + '</td>' +
+                '<td>' + fechaCancelacion + '</td>';
+            el.cancelacionesTbody.appendChild(tr);
         });
     }
 
@@ -1741,7 +1847,8 @@
             el.tabUsuarios.hidden = false;
             el.tabContenido.hidden = false;
             el.tabTarifas.hidden = false;
-            tareas.push(cargarUsuarios());
+            el.tabCancelaciones.hidden = false;
+            tareas.push(cargarUsuarios().then(renderCancelaciones)); // refresca "Cancelado por" cuando lleguen los nombres
             tareas.push(cargarContenido());
         }
 
