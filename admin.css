@@ -381,6 +381,81 @@
     font-weight: 600;
 }
 
+/* CUADRATURA DIARIA */
+#cuadraturaTable input,
+#cuadraturaTable select {
+    width: 100%;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 2px solid var(--gris-claro);
+    font-family: inherit;
+    font-size: 13px;
+    background-color: var(--blanco);
+}
+
+#cuadraturaTable input:focus,
+#cuadraturaTable select:focus {
+    outline: none;
+    border-color: var(--azul-primario);
+}
+
+#cuadraturaTable input[type="number"] {
+    min-width: 80px;
+}
+
+#cuadraturaTable input[type="text"] {
+    min-width: 140px;
+}
+
+#cuadraturaTable select {
+    min-width: 130px;
+    cursor: pointer;
+}
+
+.cuadratura-celda-guardar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+}
+
+.cuadratura-guardado {
+    color: #1f7a3d;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.cuadratura-resumen {
+    margin-top: 32px;
+}
+
+.cuadratura-resumen-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin-bottom: 30px;
+}
+
+.cuadratura-resumen-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px 18px;
+    background-color: var(--gris-claro);
+    border-radius: 10px;
+}
+
+.cuadratura-resumen-item span {
+    font-size: 13px;
+    color: var(--gris-texto);
+    font-weight: 600;
+}
+
+.cuadratura-resumen-item strong {
+    font-size: 20px;
+    color: var(--azul-oscuro);
+}
+
 .btn-cancelar {
     border: none;
     background-color: var(--rojo);
@@ -395,6 +470,23 @@
 
 .btn-cancelar:hover {
     background-color: var(--rojo-oscuro);
+}
+
+.btn-guardar-cuadratura {
+    border: none;
+    background-color: var(--azul-primario);
+    color: var(--blanco);
+    padding: 6px 14px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.2s ease;
+}
+
+.btn-guardar-cuadratura:hover {
+    background-color: var(--azul-oscuro);
 }
 
 /* SECCIÓN USUARIOS */

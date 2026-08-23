@@ -60,7 +60,63 @@ function formatFechaCorta(isoTimestamp) {
 }
 
 function sumaMontoPagado(filas) {
-    return filas.reduce((acc, r) => acc + Number(r.monto_pagado || 0), 0);
+    return filas.reduce((acc, r) => acc + Number(r.monto_pagado || 0) + Number(r.monto_pagado_2 || 0), 0);
+}
+
+// Detecta que falta una columna nueva (falta correr un parche SQL en
+// Supabase). PostgREST no siempre devuelve el código Postgres crudo
+// "42703": cuando la columna ni siquiera está en su caché de esquema,
+// responde con su propio código "PGRST204" y el mensaje
+// "Could not find the '...' column ... in the schema cache".
+function esErrorColumnaFaltante(error) {
+    return !!error && (
+        error.code === '42703' ||
+        error.code === 'PGRST204' ||
+        (error.message && error.message.indexOf('schema cache') !== -1)
+    );
+}
+
+// Si la columna "monto_pagado_2" todavía no existe (falta correr el parche
+// SQL add_cuadratura_reservas.sql), reintenta sin ella en vez de dejar todo
+// el reporte diario sin enviarse.
+async function cargarReservasDelDia(supabaseAdmin, hoy) {
+    const res = await supabaseAdmin
+        .from('reservas')
+        .select('hora,precio,monto_pagado,monto_pagado_2,tipo_pago,metodo_pago,nombre_contacto,created_at,canchas(nombre,deporte)')
+        .eq('fecha', hoy)
+        .eq('estado', 'confirmada')
+        .order('hora', { ascending: true });
+
+    if (esErrorColumnaFaltante(res.error)) {
+        return supabaseAdmin
+            .from('reservas')
+            .select('hora,precio,monto_pagado,tipo_pago,metodo_pago,nombre_contacto,created_at,canchas(nombre,deporte)')
+            .eq('fecha', hoy)
+            .eq('estado', 'confirmada')
+            .order('hora', { ascending: true });
+    }
+
+    return res;
+}
+
+async function cargarReservasDelMes(supabaseAdmin, inicioMes, hoy) {
+    const res = await supabaseAdmin
+        .from('reservas')
+        .select('monto_pagado,monto_pagado_2')
+        .gte('fecha', inicioMes)
+        .lte('fecha', hoy)
+        .eq('estado', 'confirmada');
+
+    if (esErrorColumnaFaltante(res.error)) {
+        return supabaseAdmin
+            .from('reservas')
+            .select('monto_pagado')
+            .gte('fecha', inicioMes)
+            .lte('fecha', hoy)
+            .eq('estado', 'confirmada');
+    }
+
+    return res;
 }
 
 module.exports = async function handler(req, res) {
@@ -93,18 +149,8 @@ module.exports = async function handler(req, res) {
     const inicioMes = primerDiaDelMes(hoy);
 
     const [{ data: reservasHoy, error: errorHoy }, { data: reservasMes, error: errorMes }, { data: admins }] = await Promise.all([
-        supabaseAdmin
-            .from('reservas')
-            .select('hora,precio,monto_pagado,tipo_pago,metodo_pago,nombre_contacto,created_at,canchas(nombre,deporte)')
-            .eq('fecha', hoy)
-            .eq('estado', 'confirmada')
-            .order('hora', { ascending: true }),
-        supabaseAdmin
-            .from('reservas')
-            .select('monto_pagado')
-            .gte('fecha', inicioMes)
-            .lte('fecha', hoy)
-            .eq('estado', 'confirmada'),
+        cargarReservasDelDia(supabaseAdmin, hoy),
+        cargarReservasDelMes(supabaseAdmin, inicioMes, hoy),
         supabaseAdmin
             .from('profiles')
             .select('email')
@@ -131,7 +177,7 @@ module.exports = async function handler(req, res) {
             const deporte = r.canchas ? (SPORT_LABELS[r.canchas.deporte] || r.canchas.deporte) : '';
             const cancha = r.canchas ? r.canchas.nombre : '—';
             const horaTexto = String(r.hora).padStart(2, '0') + ':00';
-            const montoPagado = r.monto_pagado != null ? r.monto_pagado : 0;
+            const montoPagado = (r.monto_pagado != null ? r.monto_pagado : 0) + (r.monto_pagado_2 != null ? r.monto_pagado_2 : 0);
             const tipoPagoTexto = r.tipo_pago === 'abono' ? 'Abono' : 'Pago total';
             const saldo = (r.precio || 0) - montoPagado;
             const saldoHtml = saldo > 0

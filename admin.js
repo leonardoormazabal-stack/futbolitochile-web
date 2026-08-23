@@ -125,6 +125,13 @@
         pagosFiltroCancha: document.getElementById('pagosFiltroCancha'),
         pagosFiltroTipoPago: document.getElementById('pagosFiltroTipoPago'),
         btnLimpiarFiltrosPagos: document.getElementById('btnLimpiarFiltrosPagos'),
+
+        cuadraturaFecha: document.getElementById('cuadraturaFecha'),
+        cuadraturaTbody: document.getElementById('cuadraturaTableBody'),
+        cuadraturaEmptyMsg: document.getElementById('cuadraturaEmptyMsg'),
+        cuadraturaResumenPago: document.getElementById('cuadraturaResumenPago'),
+        cuadraturaOcupacionBody: document.getElementById('cuadraturaOcupacionBody'),
+
         tbody: document.getElementById('reservasTableBody'),
         emptyMsg: document.getElementById('adminEmptyMsg'),
         btnNuevaReserva: document.getElementById('btnNuevaReserva'),
@@ -242,7 +249,7 @@
     // listado: las reservas simplemente no muestran la columna "Origen".
     function cargarReservas() {
         return sb.from('reservas')
-            .select('id,fecha,hora,precio,nombre_contacto,documento_contacto,telefono_contacto,email_contacto,metodo_pago,monto_pagado,tipo_pago,estado,origen,created_at,canchas(nombre,deporte)')
+            .select('id,fecha,hora,precio,nombre_contacto,documento_contacto,telefono_contacto,email_contacto,metodo_pago,metodo_pago_2,monto_pagado,monto_pagado_2,observacion,tipo_pago,estado,origen,created_at,canchas(nombre,deporte)')
             .order('fecha', { ascending: true })
             .order('hora', { ascending: true })
             .then(function (result) {
@@ -256,6 +263,7 @@
                             renderCalendarioAdmin();
                             renderListado();
                             renderPagos();
+                            renderCuadratura();
                         });
                 }
 
@@ -263,6 +271,7 @@
                 renderCalendarioAdmin();
                 renderListado();
                 renderPagos();
+                renderCuadratura();
             });
     }
 
@@ -400,7 +409,7 @@
             var origenBadge = '<span class="origen-badge ' + (r.origen || 'web') + '">' +
                 (r.origen === 'admin' ? 'Administrador' : 'Web') + '</span>';
 
-            var saldo = (r.precio || 0) - (r.monto_pagado != null ? r.monto_pagado : 0);
+            var saldo = (r.precio || 0) - (r.monto_pagado != null ? r.monto_pagado : 0) - (r.monto_pagado_2 != null ? r.monto_pagado_2 : 0);
             var estadoPagoBadge = saldo > 0
                 ? '<span class="estado-pago-badge abonado">Abonado</span>'
                 : '<span class="estado-pago-badge al-dia">Al día</span>';
@@ -541,14 +550,16 @@
 
         var totalMonto = 0;
         lista.forEach(function (r) {
-            totalMonto += r.monto_pagado != null ? r.monto_pagado : 0;
+            var montoPagado2 = r.monto_pagado_2 != null ? r.monto_pagado_2 : 0;
+            var montoTotalPagado = (r.monto_pagado != null ? r.monto_pagado : 0) + montoPagado2;
+            totalMonto += montoTotalPagado;
 
             var canchaNombre = r.canchas ? r.canchas.nombre : r.cancha_id;
             var deporte = r.canchas ? SPORT_LABELS[r.canchas.deporte] : '';
             var tipoPagoLabel = r.tipo_pago === 'abono' ? 'Abono' : 'Pago total';
-            var saldo = (r.precio || 0) - (r.monto_pagado != null ? r.monto_pagado : 0);
+            var saldo = (r.precio || 0) - montoTotalPagado;
             var saldoHtml = saldo > 0
-                ? '<button type="button" class="btn-saldar" data-id="' + r.id + '" data-precio="' + r.precio + '" data-nombre="' + (r.nombre_contacto || '').replace(/"/g, '&quot;') + '">' + formatCLP(saldo) + '</button>'
+                ? '<button type="button" class="btn-saldar" data-id="' + r.id + '" data-saldo="' + saldo + '" data-nuevo-monto2="' + (montoPagado2 + saldo) + '" data-nombre="' + (r.nombre_contacto || '').replace(/"/g, '&quot;') + '">' + formatCLP(saldo) + '</button>'
                 : '<span class="saldo-al-dia">Al día</span>';
 
             var tr = document.createElement('tr');
@@ -559,14 +570,14 @@
                 '<td>' + deporte + '</td>' +
                 '<td>' + canchaNombre + '</td>' +
                 '<td>' + tipoPagoLabel + '</td>' +
-                '<td>' + formatCLP(r.monto_pagado) + '</td>' +
+                '<td>' + formatCLP(montoTotalPagado) + '</td>' +
                 '<td>' + saldoHtml + '</td>';
             el.pagosTbody.appendChild(tr);
         });
 
         el.pagosTbody.querySelectorAll('.btn-saldar').forEach(function (btn) {
             btn.addEventListener('click', function () {
-                abrirModalSaldo(btn.getAttribute('data-id'), btn.getAttribute('data-precio'), btn.getAttribute('data-nombre'));
+                abrirModalSaldo(btn.getAttribute('data-id'), btn.getAttribute('data-saldo'), btn.getAttribute('data-nuevo-monto2'), btn.getAttribute('data-nombre'));
             });
         });
 
@@ -574,12 +585,12 @@
             'Acumulado: ' + formatCLP(totalMonto);
     }
 
-    function abrirModalSaldo(reservaId, precio, nombre) {
+    function abrirModalSaldo(reservaId, saldo, nuevoMonto2, nombre) {
         el.saldoForm.reset();
         el.saldoError.hidden = true;
         el.saldoForm.setAttribute('data-reserva-id', reservaId);
-        el.saldoForm.setAttribute('data-precio', precio);
-        el.saldoFormReserva.textContent = 'Reserva de ' + nombre + ' — Total a cancelar: ' + formatCLP(parseInt(precio, 10));
+        el.saldoForm.setAttribute('data-nuevo-monto2', nuevoMonto2);
+        el.saldoFormReserva.textContent = 'Reserva de ' + nombre + ' — Saldo pendiente: ' + formatCLP(parseInt(saldo, 10));
         el.saldoModalOverlay.hidden = false;
     }
 
@@ -596,12 +607,12 @@
         e.preventDefault();
 
         var reservaId = el.saldoForm.getAttribute('data-reserva-id');
-        var precio = parseInt(el.saldoForm.getAttribute('data-precio'), 10);
+        var nuevoMonto2 = parseInt(el.saldoForm.getAttribute('data-nuevo-monto2'), 10);
         var metodoPago = el.saldoMetodoPago.value;
 
         sb.from('reservas').update({
-            monto_pagado: precio,
-            metodo_pago: metodoPago
+            monto_pagado_2: nuevoMonto2,
+            metodo_pago_2: metodoPago
         }).eq('id', reservaId).then(function (result) {
             if (result.error) {
                 el.saldoError.textContent = 'No pudimos registrar el pago: ' + result.error.message;
@@ -613,6 +624,167 @@
             cargarReservas();
         });
     });
+
+    /* ======================================================================
+       CUADRATURA DIARIA
+       ====================================================================== */
+    var METODOS_PAGO_OPCIONES = ['Efectivo', 'Transferencia', 'Mercado Pago', 'Webpay (Transbank)', 'GetNet', 'Tarjeta de Crédito/Débito', 'Mixto'];
+    var METODOS_TARJETA = ['Mercado Pago', 'Webpay (Transbank)', 'GetNet', 'Tarjeta de Crédito/Débito'];
+
+    function opcionesMetodoPago(seleccionado, permitirVacio) {
+        var html = permitirVacio ? '<option value=""' + (!seleccionado ? ' selected' : '') + '>—</option>' : '';
+        html += METODOS_PAGO_OPCIONES.map(function (m) {
+            return '<option value="' + m + '"' + (m === seleccionado ? ' selected' : '') + '>' + m + '</option>';
+        }).join('');
+        return html;
+    }
+
+    function renderCuadratura() {
+        if (!el.cuadraturaTbody) return;
+
+        var hoy = toISODate(new Date());
+        el.cuadraturaFecha.textContent = 'Canchas arrendadas el ' + formatFechaCorta(hoy);
+
+        var lista = state.reservas.filter(function (r) {
+            return r.fecha === hoy && r.estado === 'confirmada';
+        });
+
+        lista.sort(function (a, b) {
+            if (a.hora !== b.hora) return a.hora - b.hora;
+            var nombreA = a.canchas ? a.canchas.nombre : a.cancha_id;
+            var nombreB = b.canchas ? b.canchas.nombre : b.cancha_id;
+            return nombreA.localeCompare(nombreB);
+        });
+
+        el.cuadraturaTbody.innerHTML = '';
+        el.cuadraturaEmptyMsg.hidden = lista.length > 0;
+
+        lista.forEach(function (r) {
+            var canchaNombre = r.canchas ? r.canchas.nombre : r.cancha_id;
+            var row = document.createElement('tr');
+            row.setAttribute('data-id', r.id);
+            row.innerHTML =
+                '<td>' + String(r.hora).padStart(2, '0') + ':00</td>' +
+                '<td>' + canchaNombre + '</td>' +
+                '<td><input type="number" class="cuadratura-abono" min="0" step="1" value="' + (r.monto_pagado != null ? r.monto_pagado : 0) + '"></td>' +
+                '<td><input type="number" class="cuadratura-total" min="0" step="1" value="' + (r.precio != null ? r.precio : 0) + '"></td>' +
+                '<td><select class="cuadratura-metodo1">' + opcionesMetodoPago(r.metodo_pago, false) + '</select></td>' +
+                '<td><select class="cuadratura-metodo2">' + opcionesMetodoPago(r.metodo_pago_2, true) + '</select></td>' +
+                '<td><input type="text" class="cuadratura-observacion" value="' + (r.observacion || '').replace(/"/g, '&quot;') + '"></td>' +
+                '<td class="celda-accion cuadratura-celda-guardar">' +
+                '<button type="button" class="btn-guardar-cuadratura cuadratura-guardar">Guardar</button>' +
+                '<span class="contenido-guardado cuadratura-guardado" hidden>Guardado ✓</span>' +
+                '</td>';
+            el.cuadraturaTbody.appendChild(row);
+        });
+
+        el.cuadraturaTbody.querySelectorAll('.cuadratura-guardar').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                guardarFilaCuadratura(btn.closest('tr'));
+            });
+        });
+
+        renderResumenPagoCuadratura(lista);
+        renderOcupacionCuadratura(lista);
+    }
+
+    function guardarFilaCuadratura(row) {
+        var id = row.getAttribute('data-id');
+        var abono = parseInt(row.querySelector('.cuadratura-abono').value, 10);
+        var total = parseInt(row.querySelector('.cuadratura-total').value, 10);
+        var metodo1 = row.querySelector('.cuadratura-metodo1').value;
+        var metodo2 = row.querySelector('.cuadratura-metodo2').value;
+        var observacion = row.querySelector('.cuadratura-observacion').value.trim();
+        var guardadoSpan = row.querySelector('.cuadratura-guardado');
+        var boton = row.querySelector('.cuadratura-guardar');
+
+        if (isNaN(abono) || isNaN(total) || abono < 0 || total < 0) {
+            window.alert('El abono y el pago total deben ser números válidos.');
+            return;
+        }
+
+        // El monto del medio de pago 2 es lo que queda del total una vez
+        // descontado el abono; si no se indicó un segundo medio, se asume
+        // que ese resto todavía está pendiente (no se le atribuye a nadie).
+        var montoPagado2 = metodo2 ? Math.max(total - abono, 0) : 0;
+
+        guardadoSpan.hidden = true;
+        boton.disabled = true;
+
+        sb.from('reservas').update({
+            monto_pagado: abono,
+            precio: total,
+            metodo_pago: metodo1,
+            metodo_pago_2: metodo2 || null,
+            monto_pagado_2: montoPagado2,
+            observacion: observacion || null
+        }).eq('id', id).then(function (result) {
+            boton.disabled = false;
+            if (result.error) {
+                window.alert('No pudimos guardar los cambios: ' + result.error.message);
+                return;
+            }
+            guardadoSpan.hidden = false;
+            cargarReservas();
+        });
+    }
+
+    function renderResumenPagoCuadratura(lista) {
+        if (!el.cuadraturaResumenPago) return;
+
+        var totales = { tarjetas: 0, efectivo: 0, transferencia: 0, otros: 0 };
+
+        function sumar(metodo, monto) {
+            if (!monto) return;
+            if (METODOS_TARJETA.indexOf(metodo) !== -1) totales.tarjetas += monto;
+            else if (metodo === 'Efectivo') totales.efectivo += monto;
+            else if (metodo === 'Transferencia') totales.transferencia += monto;
+            else totales.otros += monto;
+        }
+
+        lista.forEach(function (r) {
+            sumar(r.metodo_pago, r.monto_pagado != null ? r.monto_pagado : 0);
+            sumar(r.metodo_pago_2, r.monto_pagado_2 != null ? r.monto_pagado_2 : 0);
+        });
+
+        var html =
+            '<div class="cuadratura-resumen-item"><span>Tarjetas</span><strong>' + formatCLP(totales.tarjetas) + '</strong></div>' +
+            '<div class="cuadratura-resumen-item"><span>Efectivo</span><strong>' + formatCLP(totales.efectivo) + '</strong></div>' +
+            '<div class="cuadratura-resumen-item"><span>Transferencia</span><strong>' + formatCLP(totales.transferencia) + '</strong></div>';
+
+        if (totales.otros > 0) {
+            html += '<div class="cuadratura-resumen-item"><span>Otros / Mixto</span><strong>' + formatCLP(totales.otros) + '</strong></div>';
+        }
+
+        el.cuadraturaResumenPago.innerHTML = html;
+    }
+
+    function renderOcupacionCuadratura(lista) {
+        if (!el.cuadraturaOcupacionBody) return;
+
+        el.cuadraturaOcupacionBody.innerHTML = '';
+
+        state.tarifas.forEach(function (t) {
+            var canchasDeporte = state.canchas.filter(function (c) { return c.deporte === t.deporte; }).length;
+            var horasEnBloque = t.hora_hasta - t.hora_desde;
+            var horasDisponibles = canchasDeporte * horasEnBloque;
+            var horasArrendadas = lista.filter(function (r) {
+                return r.canchas && r.canchas.deporte === t.deporte && r.hora >= t.hora_desde && r.hora < t.hora_hasta;
+            }).length;
+            var porcentaje = horasDisponibles > 0 ? (horasArrendadas / horasDisponibles * 100) : 0;
+
+            var bloqueLabel = (SPORT_LABELS[t.deporte] || t.deporte) + ' ' +
+                String(t.hora_desde).padStart(2, '0') + ':00–' + String(t.hora_hasta).padStart(2, '0') + ':00';
+
+            var tr = document.createElement('tr');
+            tr.innerHTML =
+                '<td>' + bloqueLabel + '</td>' +
+                '<td>' + horasDisponibles + '</td>' +
+                '<td>' + horasArrendadas + '</td>' +
+                '<td>' + porcentaje.toFixed(0) + '%</td>';
+            el.cuadraturaOcupacionBody.appendChild(tr);
+        });
+    }
 
     /* ======================================================================
        MODAL: NUEVA RESERVA
@@ -1280,7 +1452,7 @@
             if (faltoColumnaAbono) {
                 window.alert('Se guardaron los horarios y precios, pero el abono no se pudo guardar todavía: falta correr el parche supabase/add_abono_tarifas.sql en Supabase.');
             }
-            cargarCatalogo(); // refresca los precios que usa "+ Nueva Reserva"
+            cargarCatalogo().then(renderCuadratura); // refresca precios y el % de arriendo
         });
     });
 
@@ -1467,7 +1639,10 @@
         el.gate.hidden = true;
         el.page.hidden = false;
 
-        var tareas = [cargarCatalogo().then(poblarFiltroCanchaPagos), cargarReservas()];
+        var tareas = [cargarCatalogo().then(function () {
+            poblarFiltroCanchaPagos();
+            renderCuadratura(); // recalcula el % de arriendo si las tarifas llegaron después que las reservas
+        }), cargarReservas()];
 
         if (state.esSuperadmin) {
             el.tabUsuarios.hidden = false;

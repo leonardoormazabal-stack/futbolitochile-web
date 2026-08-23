@@ -66,6 +66,7 @@
                 <button type="button" class="admin-tab active" data-tab="calendario">Calendario</button>
                 <button type="button" class="admin-tab" data-tab="listado">Reservas</button>
                 <button type="button" class="admin-tab" data-tab="pagos">Pagos</button>
+                <button type="button" class="admin-tab" data-tab="cuadratura">Cuadratura Diaria</button>
                 <button type="button" class="admin-tab" data-tab="usuarios" id="tabUsuarios" hidden>Usuarios</button>
                 <button type="button" class="admin-tab" data-tab="contenido" id="tabContenido" hidden>Contenido</button>
                 <button type="button" class="admin-tab" data-tab="tarifas" id="tabTarifas" hidden>Tarifas</button>
@@ -201,6 +202,50 @@
                     <tbody id="pagosTableBody"></tbody>
                 </table>
                 <p class="admin-empty" id="pagosEmptyMsg" hidden>No hay pagos para este filtro.</p>
+            </div>
+        </section>
+
+        <!-- VISTA CUADRATURA DIARIA -->
+        <section class="admin-view" id="view-cuadratura">
+            <p class="admin-note" id="cuadraturaFecha"></p>
+
+            <div class="admin-table-wrapper">
+                <table class="admin-table" id="cuadraturaTable">
+                    <thead>
+                        <tr>
+                            <th>Horario</th>
+                            <th>Cancha</th>
+                            <th>Abono</th>
+                            <th>Pago Total</th>
+                            <th>Medio de pago 1</th>
+                            <th>Medio de pago 2</th>
+                            <th>Observación</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="cuadraturaTableBody"></tbody>
+                </table>
+                <p class="admin-empty" id="cuadraturaEmptyMsg" hidden>No hay canchas arrendadas hoy.</p>
+            </div>
+
+            <div class="cuadratura-resumen">
+                <h4 class="contenido-subtitulo">Resumen por medio de pago</h4>
+                <div class="cuadratura-resumen-grid" id="cuadraturaResumenPago"></div>
+
+                <h4 class="contenido-subtitulo">% de arriendo por bloque horario</h4>
+                <div class="admin-table-wrapper">
+                    <table class="admin-table" id="cuadraturaOcupacionTable">
+                        <thead>
+                            <tr>
+                                <th>Bloque</th>
+                                <th>Horas disponibles</th>
+                                <th>Horas arrendadas</th>
+                                <th>% Arriendo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuadraturaOcupacionBody"></tbody>
+                    </table>
+                </div>
             </div>
         </section>
 
