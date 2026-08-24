@@ -58,7 +58,7 @@
         montoAPagar: 0,
         canchas: [],           // desde Supabase: {id, nombre, deporte, descripcion}
         tarifas: [],            // desde Supabase: {deporte, hora_desde, hora_hasta, precio}
-        metodosPago: {},        // desde Supabase: { 'Mercado Pago': true, 'Efectivo': false, ... }
+        metodosPago: {},        // desde Supabase: { 'Mercado Pago': true, 'Transferencia': false, ... }
         ocupadosPorHora: {},    // { hora: cantidadDeCanchasOcupadas } para el deporte/fecha elegidos
         totalCanchasDeporte: 0, // cuántas canchas tiene el deporte elegido
         catalogoListo: false,
@@ -185,7 +185,6 @@
         paymentStatus: document.getElementById('paymentStatus'),
         paymentConfirmation: document.getElementById('paymentConfirmation'),
         paymentMethodsWrap: document.getElementById('paymentMethodsWrap'),
-        avisoEfectivoAbono: document.getElementById('avisoEfectivoAbono'),
         montoOpcionCompleto: document.getElementById('montoOpcionCompleto'),
         montoOpcionAbono: document.getElementById('montoOpcionAbono'),
         summarySport: document.getElementById('summarySport'),
@@ -308,17 +307,12 @@
     }
 
     function aplicarEstadoMetodosPago() {
-        var efectivoBloqueadoPorAbono = state.tipoPago === 'abono';
-
         document.querySelectorAll('.payment-card').forEach(function (c) {
             var metodo = c.getAttribute('data-method');
-            var activoAdmin = state.metodosPago[metodo] !== false;
-            var activo = activoAdmin && !(metodo === 'Efectivo' && efectivoBloqueadoPorAbono);
+            var activo = state.metodosPago[metodo] !== false;
             c.classList.toggle('payment-card--disabled', !activo);
             c.disabled = !activo;
         });
-
-        el.avisoEfectivoAbono.hidden = !efectivoBloqueadoPorAbono;
     }
 
     function obtenerSesionActual() {
@@ -702,7 +696,7 @@
         });
     });
 
-    var METODOS_SIN_REDIRECCION = ['Transferencia', 'Efectivo'];
+    var METODOS_SIN_REDIRECCION = ['Transferencia'];
 
     function construirDatosTransferenciaHtml(tipoPago, canchaNombre, fechaLarga, horaTexto) {
         var conceptoPago = tipoPago === 'abono' ? 'abono' : 'pago';
@@ -728,19 +722,6 @@
         var linkCompartir = 'https://wa.me/?text=' + encodeURIComponent(mensaje);
 
         return '<a href="' + linkCompartir + '" target="_blank" rel="noopener" class="btn btn-outline btn-block compartir-reserva-btn">📲 Compartir reserva por WhatsApp</a>';
-    }
-
-    function construirCoordinacionEfectivoHtml(tipoPago, canchaNombre, fechaLarga, horaTexto) {
-        var conceptoPago = tipoPago === 'abono' ? 'abono' : 'pago';
-        var mensajeWa = 'Hola, quiero coordinar mi ' + conceptoPago + ' en efectivo para la reserva de ' +
-            SPORT_LABELS[state.sport] + ' — ' + canchaNombre + ' el ' + fechaLarga + ' a las ' + horaTexto + ' hrs.';
-        var linkWa = 'https://wa.me/56944087803?text=' + encodeURIComponent(mensajeWa);
-
-        return '<div class="efectivo-datos">' +
-            '<h4>Coordina tu pago en efectivo</h4>' +
-            '<p class="pago-nota">Tu ' + conceptoPago + ' en efectivo debe coordinarse directamente con nuestra Administración. Escríbenos por WhatsApp para coordinar los detalles.</p>' +
-            '<a href="' + linkWa + '" target="_blank" rel="noopener" class="btn btn-primary btn-block pago-whatsapp-btn">Coordinar por WhatsApp</a>' +
-            '</div>';
     }
 
     var paymentCards = document.querySelectorAll('.payment-card');
@@ -781,11 +762,10 @@
     function crearReserva(metodo) {
         var reservaId = generarId();
 
-        // Efectivo y Transferencia no se cobran de forma instantánea: el
-        // efectivo se recibe presencialmente y la transferencia queda
-        // condicionada a verificar el comprobante. Por eso el monto queda
-        // en 0 (Pendiente) hasta que un administrador confirme el pago
-        // real, en vez de registrarlo como pagado apenas se reserva.
+        // Transferencia no se cobra de forma instantánea: queda condicionada
+        // a verificar el comprobante. Por eso el monto queda en 0 (Pendiente)
+        // hasta que un administrador confirme el pago real, en vez de
+        // registrarlo como pagado apenas se reserva.
         var montoPagadoConfirmado = METODOS_SIN_REDIRECCION.indexOf(metodo) === -1 ? state.montoAPagar : 0;
 
         var reserva = {
@@ -837,8 +817,7 @@
                     : 'Total pagado: ' + formatCLP(state.montoAPagar) + ' vía ' + metodo + '.') + '</p>' +
                 '<p>Te enviamos la confirmación a ' + campos.email.value.trim() + '.</p>' +
                 construirBotonCompartirHtml(state.canchaNombre, fechaLarga, horaTexto) +
-                (metodo === 'Transferencia' ? construirDatosTransferenciaHtml(state.tipoPago, state.canchaNombre, fechaLarga, horaTexto) : '') +
-                (metodo === 'Efectivo' ? construirCoordinacionEfectivoHtml(state.tipoPago, state.canchaNombre, fechaLarga, horaTexto) : '');
+                (metodo === 'Transferencia' ? construirDatosTransferenciaHtml(state.tipoPago, state.canchaNombre, fechaLarga, horaTexto) : '');
         });
     }
 
