@@ -505,8 +505,10 @@
                         <option value="Webpay (Transbank)">Webpay (Transbank)</option>
                         <option value="GetNet">GetNet</option>
                         <option value="Tarjeta de Crédito/Débito">Tarjeta de Crédito/Débito</option>
+                        <option value="Pago Presencial">Pago Presencial (se paga después)</option>
                     </select>
                 </div>
+                <p class="admin-note" id="admPagoPresencialNota" hidden>La reserva queda agendada con $0 pagado, hasta que confirmes el pago en Pagos o Cuadratura Diaria.</p>
                 <div class="form-group">
                     <label for="admMontoPagado">Pago 1 (Abono)</label>
                     <input type="number" id="admMontoPagado" min="0" step="1" required>

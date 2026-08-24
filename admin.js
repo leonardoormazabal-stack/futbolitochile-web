@@ -150,6 +150,7 @@
         admMontoPagado: document.getElementById('admMontoPagado'),
         admMetodoPago2: document.getElementById('admMetodoPago2'),
         admMontoPagado2: document.getElementById('admMontoPagado2'),
+        admPagoPresencialNota: document.getElementById('admPagoPresencialNota'),
         admReservaError: document.getElementById('admReservaError'),
 
         tabUsuarios: document.getElementById('tabUsuarios'),
@@ -815,7 +816,7 @@
     /* ======================================================================
        CUADRATURA DIARIA
        ====================================================================== */
-    var METODOS_PAGO_OPCIONES = ['Efectivo', 'Transferencia', 'Mercado Pago', 'Webpay (Transbank)', 'GetNet', 'Tarjeta de Crédito/Débito'];
+    var METODOS_PAGO_OPCIONES = ['Efectivo', 'Transferencia', 'Mercado Pago', 'Webpay (Transbank)', 'GetNet', 'Tarjeta de Crédito/Débito', 'Pago Presencial'];
     var METODOS_TARJETA = ['Mercado Pago', 'Webpay (Transbank)', 'GetNet', 'Tarjeta de Crédito/Débito'];
 
     function opcionesMetodoPago(seleccionado, permitirVacio) {
@@ -1028,8 +1029,30 @@
         el.admHora.innerHTML = '<option value="">Elige cancha y fecha primero</option>';
         el.admHora.disabled = true;
         el.admFecha.min = toISODate(new Date());
+        aplicarEstadoPagoPresencial();
         el.modalOverlay.hidden = false;
     }
+
+    // "Pago Presencial" significa que todavía no se cobra nada: la reserva
+    // queda con $0 pagado hasta que un administrador confirme el pago real
+    // después, en Pagos o en Cuadratura Diaria.
+    function aplicarEstadoPagoPresencial() {
+        var esPresencial = el.admMetodoPago.value === 'Pago Presencial';
+
+        el.admPagoPresencialNota.hidden = !esPresencial;
+
+        el.admMontoPagado.disabled = esPresencial;
+        el.admMontoPagado.value = esPresencial ? '0' : '';
+
+        el.admMetodoPago2.disabled = esPresencial;
+        el.admMontoPagado2.disabled = esPresencial;
+        if (esPresencial) {
+            el.admMetodoPago2.value = '';
+            el.admMontoPagado2.value = '0';
+        }
+    }
+
+    el.admMetodoPago.addEventListener('change', aplicarEstadoPagoPresencial);
 
     function cerrarModal() {
         el.modalOverlay.hidden = true;
@@ -1131,6 +1154,18 @@
             return;
         }
 
+        var metodoPago = el.admMetodoPago.value;
+        var esPagoPresencial = metodoPago === 'Pago Presencial';
+
+        // Refuerza el estado sin cobro, sin importar lo que hayan quedado
+        // los campos (que ya se deshabilitan y ponen en 0 al elegir este
+        // método, ver aplicarEstadoPagoPresencial).
+        if (esPagoPresencial) {
+            montoPagado = 0;
+            metodoPago2 = null;
+            montoPagado2 = 0;
+        }
+
         var reservaId = generarId();
         var reserva = {
             id: reservaId,
@@ -1142,7 +1177,7 @@
             documento_contacto: el.admDocumento.value.trim() || null,
             telefono_contacto: el.admTelefono.value.trim() || null,
             email_contacto: el.admEmail.value.trim() || null,
-            metodo_pago: el.admMetodoPago.value,
+            metodo_pago: metodoPago,
             monto_pagado: montoPagado,
             metodo_pago_2: metodoPago2 || null,
             monto_pagado_2: montoPagado2,
