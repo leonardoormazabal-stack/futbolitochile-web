@@ -84,12 +84,16 @@ module.exports = async function handler(req, res) {
     const montoPagado = reserva.monto_pagado != null ? reserva.monto_pagado : reserva.precio;
     const saldoPendiente = reserva.precio - montoPagado;
 
+    const esPagoPresencial = reserva.metodo_pago === 'Pago Presencial';
+
     const detalleHtml =
         '<p><strong>' + escapeHtml(deporte) + '</strong> — ' + escapeHtml(canchaNombre) + '</p>' +
         '<p>' + escapeHtml(fechaTexto) + ', ' + horaTexto + ' hrs</p>' +
-        '<p>' + (reserva.tipo_pago === 'abono'
-            ? 'Abono pagado: ' + formatCLP(montoPagado) + ' vía ' + escapeHtml(reserva.metodo_pago || '—') + '. Saldo a pagar en el recinto: ' + formatCLP(saldoPendiente) + '.'
-            : 'Total pagado: ' + formatCLP(montoPagado) + ' vía ' + escapeHtml(reserva.metodo_pago || '—') + '.') +
+        '<p>' + (esPagoPresencial
+            ? 'Pago pendiente: ' + formatCLP(reserva.precio) + ' a pagar en el recinto.'
+            : reserva.tipo_pago === 'abono'
+                ? 'Abono pagado: ' + formatCLP(montoPagado) + ' vía ' + escapeHtml(reserva.metodo_pago || '—') + '. Saldo a pagar en el recinto: ' + formatCLP(saldoPendiente) + '.'
+                : 'Total pagado: ' + formatCLP(montoPagado) + ' vía ' + escapeHtml(reserva.metodo_pago || '—') + '.') +
         '</p>';
 
     const esTransferencia = reserva.metodo_pago === 'Transferencia';
@@ -112,6 +116,10 @@ module.exports = async function handler(req, res) {
         '<p><strong>Importante:</strong> tu ' + conceptoPago + ' en efectivo debe coordinarse directamente con nuestra Administración. ' +
         'Escríbenos por WhatsApp al <a href="https://wa.me/56944087803">+56 9 4408 7803</a> para coordinar los detalles.</p>';
 
+    const coordinacionPresencialHtml =
+        '<p><strong>Importante:</strong> tu pago queda pendiente y se paga presencialmente en el recinto. ' +
+        'Escríbenos por WhatsApp al <a href="https://wa.me/56944087803">+56 9 4408 7803</a> con los datos de tu reserva para coordinarlo.</p>';
+
     const envios = [];
 
     if (reserva.email_contacto) {
@@ -126,6 +134,7 @@ module.exports = async function handler(req, res) {
                 detalleHtml +
                 (esTransferencia ? datosTransferenciaHtml : '') +
                 (esEfectivo ? coordinacionEfectivoHtml : '') +
+                (esPagoPresencial ? coordinacionPresencialHtml : '') +
                 '<p>¿Necesitas anular tu reserva? <a href="' + linkCancelacion + '">Haz clic aquí</a>.</p>' +
                 '<p>¿Dudas o consultas? Escríbenos por WhatsApp al <a href="https://wa.me/56944087803">+56 9 4408 7803</a>.</p>'
         }));
@@ -140,6 +149,7 @@ module.exports = async function handler(req, res) {
                 detalleHtml +
                 '<p><strong>Medio de pago:</strong> ' + escapeHtml(reserva.metodo_pago || '—') + '</p>' +
                 (esTransferencia ? '<p><strong>⚠ Pagó por Transferencia:</strong> verifica el comprobante y el abono en la cuenta antes de confirmar el uso de la cancha con el cliente.</p>' : '') +
+                (esPagoPresencial ? '<p><strong>⚠ Pago pendiente:</strong> el cliente pagará ' + formatCLP(reserva.precio) + ' presencialmente en el recinto. Confirma el pago después en Pagos o Cuadratura Diaria.</p>' : '') +
                 '<p><strong>Contacto:</strong> ' + escapeHtml(reserva.nombre_contacto) +
                 (reserva.telefono_contacto ? ' — ' + escapeHtml(reserva.telefono_contacto) : '') +
                 (reserva.email_contacto ? ' — ' + escapeHtml(reserva.email_contacto) : '') +

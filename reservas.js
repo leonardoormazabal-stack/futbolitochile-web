@@ -667,7 +667,7 @@
 
         resetDownstreamFrom('datos');
         el.montoOpcionCompleto.textContent = formatCLP(state.precio);
-        el.montoOpcionAbono.textContent = formatCLP(state.abono);
+        el.montoOpcionAbono.textContent = formatCLP(state.precio);
 
         unlockPanel('pago');
         openPanel('pago');
@@ -675,6 +675,12 @@
 
     /* ======================================================================
        PANEL 6: TIPO DE PAGO + MÉTODO DE PAGO
+
+       "completo" (Pagar Ahora) muestra los medios de pago para cobrar en
+       línea. "abono" (Pagar Presencial) no cobra nada acá: agenda la
+       reserva de inmediato con $0 pagado y el cliente coordina el pago
+       real por WhatsApp, tal como hace un administrador al usar "Pago
+       Presencial" desde su panel.
        ====================================================================== */
     document.querySelectorAll('.tipo-pago-card').forEach(function (card) {
         card.addEventListener('click', function () {
@@ -684,19 +690,29 @@
             card.classList.add('selected');
 
             state.tipoPago = tipo;
-            state.montoAPagar = tipo === 'abono' ? state.abono : state.precio;
-
-            el.resumenPago.textContent = tipo === 'abono' ? 'Abono ' + formatCLP(state.abono) : 'Pago total';
+            state.montoAPagar = tipo === 'abono' ? 0 : state.precio;
 
             el.paymentStatus.hidden = true;
             el.paymentConfirmation.hidden = true;
+
+            if (tipo === 'abono') {
+                el.resumenPago.textContent = 'Pago presencial';
+                el.paymentMethodsWrap.hidden = true;
+                el.paymentStatus.hidden = false;
+                el.paymentStatus.className = 'payment-status';
+                el.paymentStatus.textContent = 'Agendando tu reserva...';
+                setTimeout(function () { crearReserva('Pago Presencial'); }, 800);
+                return;
+            }
+
+            el.resumenPago.textContent = 'Pago ahora';
             el.paymentMethodsWrap.hidden = false;
             document.querySelectorAll('.payment-card').forEach(function (c) { c.classList.remove('selected'); });
             aplicarEstadoMetodosPago();
         });
     });
 
-    var METODOS_SIN_REDIRECCION = ['Transferencia'];
+    var METODOS_SIN_REDIRECCION = ['Transferencia', 'Pago Presencial'];
 
     function construirDatosTransferenciaHtml(tipoPago, canchaNombre, fechaLarga, horaTexto) {
         var conceptoPago = tipoPago === 'abono' ? 'abono' : 'pago';
@@ -713,6 +729,19 @@
             '<p><strong>N° de cuenta:</strong> 8840337400</p>' +
             '<p class="pago-nota">Tu ' + conceptoPago + ' debe confirmarse: envía la captura de tu comprobante de transferencia para validar tu reserva.</p>' +
             '<a href="' + linkWa + '" target="_blank" rel="noopener" class="btn btn-primary btn-block pago-whatsapp-btn">Enviar comprobante por WhatsApp</a>' +
+            '</div>';
+    }
+
+    function construirCoordinacionPresencialHtml(canchaNombre, fechaLarga, horaTexto) {
+        var mensajeWa = 'Hola, quiero confirmar mi reserva con pago presencial: ' +
+            SPORT_LABELS[state.sport] + ' — ' + canchaNombre + ' el ' + fechaLarga + ' a las ' + horaTexto +
+            ' hrs. Total a pagar: ' + formatCLP(state.precio) + '.';
+        var linkWa = 'https://wa.me/56944087803?text=' + encodeURIComponent(mensajeWa);
+
+        return '<div class="presencial-datos">' +
+            '<h4>Coordina tu pago presencial</h4>' +
+            '<p class="pago-nota">Tu reserva quedó agendada con el pago pendiente. Escríbenos por WhatsApp con los datos de tu reserva para coordinar el pago en el recinto.</p>' +
+            '<a href="' + linkWa + '" target="_blank" rel="noopener" class="btn btn-primary btn-block pago-whatsapp-btn">Contactar por WhatsApp</a>' +
             '</div>';
     }
 
@@ -802,9 +831,15 @@
 
             completePanel('pago');
 
-            var saldoPendiente = state.precio - state.montoAPagar;
             var fechaLarga = formatFechaLarga(state.selectedDate);
             var horaTexto = String(state.selectedHour).padStart(2, '0') + ':00';
+
+            var mensajePago;
+            if (metodo === 'Pago Presencial') {
+                mensajePago = 'Pago pendiente: ' + formatCLP(state.precio) + ' a pagar en el recinto.';
+            } else {
+                mensajePago = 'Total pagado: ' + formatCLP(state.montoAPagar) + ' vía ' + metodo + '.';
+            }
 
             el.paymentStatus.hidden = true;
             el.paymentConfirmation.hidden = false;
@@ -812,12 +847,11 @@
                 '<h3>¡Reserva confirmada!</h3>' +
                 '<p>' + SPORT_LABELS[state.sport] + ' — ' + state.canchaNombre + '</p>' +
                 '<p>' + fechaLarga + ', ' + horaTexto + ' hrs</p>' +
-                '<p>' + (state.tipoPago === 'abono'
-                    ? 'Abono pagado: ' + formatCLP(state.montoAPagar) + ' vía ' + metodo + '. Saldo a pagar en el recinto: ' + formatCLP(saldoPendiente) + '.'
-                    : 'Total pagado: ' + formatCLP(state.montoAPagar) + ' vía ' + metodo + '.') + '</p>' +
+                '<p>' + mensajePago + '</p>' +
                 '<p>Te enviamos la confirmación a ' + campos.email.value.trim() + '.</p>' +
                 construirBotonCompartirHtml(state.canchaNombre, fechaLarga, horaTexto) +
-                (metodo === 'Transferencia' ? construirDatosTransferenciaHtml(state.tipoPago, state.canchaNombre, fechaLarga, horaTexto) : '');
+                (metodo === 'Transferencia' ? construirDatosTransferenciaHtml(state.tipoPago, state.canchaNombre, fechaLarga, horaTexto) : '') +
+                (metodo === 'Pago Presencial' ? construirCoordinacionPresencialHtml(state.canchaNombre, fechaLarga, horaTexto) : '');
         });
     }
 
@@ -835,7 +869,7 @@
 
     /* ======================================================================
        RESUMEN: en escritorio va en la barra lateral; en móvil se traslada
-       dentro del panel de Pago, antes de elegir "Pagar Total" o "Abonar".
+       dentro del panel de Pago, antes de elegir "Pagar Ahora" o "Pagar Presencial".
        ====================================================================== */
     (function () {
         var resumen = document.querySelector('.wizard-summary');

@@ -633,7 +633,7 @@
 }
 
 .transferencia-datos,
-.efectivo-datos {
+.presencial-datos {
     margin-top: 20px;
     padding: 18px 20px;
     border-radius: 10px;
@@ -643,14 +643,14 @@
 }
 
 .transferencia-datos h4,
-.efectivo-datos h4 {
+.presencial-datos h4 {
     color: var(--azul-oscuro);
     margin: 0 0 10px;
     font-size: 15px;
 }
 
 .transferencia-datos p,
-.efectivo-datos p {
+.presencial-datos p {
     color: var(--gris-texto);
     font-size: 14px;
     margin: 0 0 4px;
