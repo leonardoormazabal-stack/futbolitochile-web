@@ -167,6 +167,8 @@
         usrPassword: document.getElementById('usrPassword'),
         usrTelefono: document.getElementById('usrTelefono'),
         usrRol: document.getElementById('usrRol'),
+        usrRolGrupo: document.getElementById('usrRolGrupo'),
+        usrRolNota: document.getElementById('usrRolNota'),
         usrError: document.getElementById('usrError'),
 
         editUsuarioModalOverlay: document.getElementById('editUsuarioModalOverlay'),
@@ -323,7 +325,6 @@
             v.classList.toggle('active', v.id === 'view-' + nombre);
         });
         el.btnNuevaReserva.hidden = nombre !== 'calendario' && nombre !== 'listado';
-        el.btnNuevoUsuario.hidden = !(nombre === 'usuarios' && state.esSuperadmin);
     }
 
     /* ======================================================================
@@ -1363,6 +1364,11 @@
     function abrirModalUsuario() {
         el.nuevoUsuarioForm.reset();
         el.usrError.hidden = true;
+        // Solo el superadministrador puede elegir el rol; un administrador
+        // únicamente puede crear cuentas de jugador (el backend lo refuerza
+        // igual, esto es solo para no confundir con una opción que no aplica).
+        el.usrRolGrupo.hidden = !state.esSuperadmin;
+        el.usrRolNota.hidden = state.esSuperadmin;
         el.userModalOverlay.hidden = false;
     }
 
@@ -1384,7 +1390,10 @@
             email: el.usrEmail.value.trim(),
             password: el.usrPassword.value,
             telefono: el.usrTelefono.value.trim() || null,
-            rol: el.usrRol.value
+            // El backend igual lo obliga a 'jugador' si quien llama no es
+            // superadministrador; esto solo evita mandar un rol que ni
+            // siquiera se le muestra en el formulario.
+            rol: state.esSuperadmin ? el.usrRol.value : 'jugador'
         };
 
         if (!payload.nombre || !payload.email || !payload.password) {

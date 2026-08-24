@@ -1,4 +1,4 @@
-const { getSupabaseAdmin, requireSuperadmin } = require('../lib/supabaseAdmin');
+const { getSupabaseAdmin, requireAdmin } = require('../lib/supabaseAdmin');
 
 const ROLES_VALIDOS = ['jugador', 'administrador', 'superadministrador'];
 
@@ -16,7 +16,7 @@ module.exports = async function handler(req, res) {
         return;
     }
 
-    const auth = await requireSuperadmin(req, supabaseAdmin);
+    const auth = await requireAdmin(req, supabaseAdmin);
     if (auth.error) {
         res.status(auth.status).json({ error: auth.error });
         return;
@@ -29,7 +29,12 @@ module.exports = async function handler(req, res) {
     const tipoDocumento = body.tipoDocumento || null;
     const documento = body.documento || null;
     const telefono = body.telefono || null;
-    const rol = ROLES_VALIDOS.includes(body.rol) ? body.rol : 'jugador';
+    const rolSolicitado = ROLES_VALIDOS.includes(body.rol) ? body.rol : 'jugador';
+
+    // Un administrador solo puede crear cuentas de jugador: si pide un rol
+    // de administrador o superadministrador, se ignora y queda en jugador.
+    // Esto no depende de lo que mande el formulario, se decide acá.
+    const rol = auth.rol === 'superadministrador' ? rolSolicitado : 'jugador';
 
     if (!email || !password || !nombre) {
         res.status(400).json({ error: 'Faltan campos obligatorios (email, contraseña, nombre).' });

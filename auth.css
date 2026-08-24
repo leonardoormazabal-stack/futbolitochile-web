@@ -74,6 +74,13 @@
     gap: 6px;
 }
 
+/* El atributo hidden por sí solo pierde contra ".form-group { display:
+   flex }" (misma especificidad, pero la regla del navegador va primero en
+   la cascada): sin esto, un .form-group oculto seguía mostrándose. */
+.form-group[hidden] {
+    display: none;
+}
+
 .form-group label {
     font-size: 14px;
     font-weight: 600;

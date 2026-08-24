@@ -73,7 +73,7 @@
                 <button type="button" class="admin-tab" data-tab="tarifas" id="tabTarifas" hidden>Tarifas</button>
             </div>
             <div class="admin-toolbar-actions">
-                <button type="button" class="btn btn-primary" id="btnNuevoUsuario" hidden>+ Nuevo Usuario</button>
+                <button type="button" class="btn btn-primary" id="btnNuevoUsuario">+ Nuevo Usuario</button>
                 <button type="button" class="btn btn-primary" id="btnNuevaReserva">+ Nueva Reserva</button>
             </div>
         </div>
@@ -559,7 +559,7 @@
                     <label for="usrTelefono">Teléfono</label>
                     <input type="tel" id="usrTelefono">
                 </div>
-                <div class="form-group">
+                <div class="form-group" id="usrRolGrupo">
                     <label for="usrRol">Rol</label>
                     <select id="usrRol">
                         <option value="jugador">Jugador</option>
@@ -567,6 +567,7 @@
                         <option value="superadministrador">Super Administrador</option>
                     </select>
                 </div>
+                <p class="admin-note" id="usrRolNota" hidden>Como administrador, solo puedes crear cuentas de jugador.</p>
 
                 <div class="auth-alert" id="usrError" hidden></div>
 
