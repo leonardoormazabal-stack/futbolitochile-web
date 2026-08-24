@@ -732,16 +732,20 @@
             '</div>';
     }
 
-    function construirCoordinacionPresencialHtml(canchaNombre, fechaLarga, horaTexto) {
+    function construirLinkWhatsappPresencial(canchaNombre, fechaLarga, horaTexto) {
         var mensajeWa = 'Hola, quiero confirmar mi reserva con pago presencial: ' +
             SPORT_LABELS[state.sport] + ' — ' + canchaNombre + ' el ' + fechaLarga + ' a las ' + horaTexto +
             ' hrs. Total a pagar: ' + formatCLP(state.precio) + '.';
-        var linkWa = 'https://wa.me/56944087803?text=' + encodeURIComponent(mensajeWa);
+        return 'https://wa.me/56944087803?text=' + encodeURIComponent(mensajeWa);
+    }
+
+    function construirCoordinacionPresencialHtml(canchaNombre, fechaLarga, horaTexto) {
+        var linkWa = construirLinkWhatsappPresencial(canchaNombre, fechaLarga, horaTexto);
 
         return '<div class="presencial-datos">' +
             '<h4>Coordina tu pago presencial</h4>' +
-            '<p class="pago-nota">Tu reserva quedó agendada con el pago pendiente. Escríbenos por WhatsApp con los datos de tu reserva para coordinar el pago en el recinto.</p>' +
-            '<a href="' + linkWa + '" target="_blank" rel="noopener" class="btn btn-primary btn-block pago-whatsapp-btn">Contactar por WhatsApp</a>' +
+            '<p class="pago-nota">Tu reserva quedó agendada con el pago pendiente. Te estamos redirigiendo a WhatsApp para coordinar el pago en el recinto; si no se abre, usa este botón.</p>' +
+            '<a href="' + linkWa + '" target="_blank" rel="noopener" class="btn btn-primary btn-block pago-whatsapp-btn">Abrir WhatsApp</a>' +
             '</div>';
     }
 
@@ -852,6 +856,15 @@
                 construirBotonCompartirHtml(state.canchaNombre, fechaLarga, horaTexto) +
                 (metodo === 'Transferencia' ? construirDatosTransferenciaHtml(state.tipoPago, state.canchaNombre, fechaLarga, horaTexto) : '') +
                 (metodo === 'Pago Presencial' ? construirCoordinacionPresencialHtml(state.canchaNombre, fechaLarga, horaTexto) : '');
+
+            if (metodo === 'Pago Presencial') {
+                // Pequeño margen para que el aviso al correo (fetch de
+                // enviarCorreosReserva) alcance a salir antes de que esta
+                // pestaña navegue a WhatsApp.
+                setTimeout(function () {
+                    window.location.href = construirLinkWhatsappPresencial(state.canchaNombre, fechaLarga, horaTexto);
+                }, 900);
+            }
         });
     }
 
