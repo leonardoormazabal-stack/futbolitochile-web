@@ -46,6 +46,16 @@
         return parts[2] + '-' + parts[1] + '-' + parts[0];
     }
 
+    // Convierte un teléfono de contacto (con o sin +56, espacios, guiones)
+    // al formato que necesita un link wa.me. Un celular chileno normal son
+    // 9 dígitos (9XXXXXXXX); si viene así, se le antepone el código de país.
+    function telefonoParaWhatsapp(telefono) {
+        var digitos = (telefono || '').replace(/\D/g, '');
+        if (!digitos) return null;
+        if (digitos.length === 9) return '56' + digitos;
+        return digitos;
+    }
+
     function startOfMonth(d) {
         return new Date(d.getFullYear(), d.getMonth(), 1);
     }
@@ -152,6 +162,12 @@
         admMontoPagado2: document.getElementById('admMontoPagado2'),
         admPagoPresencialNota: document.getElementById('admPagoPresencialNota'),
         admReservaError: document.getElementById('admReservaError'),
+
+        reservaCreadaModalOverlay: document.getElementById('reservaCreadaModalOverlay'),
+        btnCerrarReservaCreadaModal: document.getElementById('btnCerrarReservaCreadaModal'),
+        btnCerrarReservaCreada: document.getElementById('btnCerrarReservaCreada'),
+        btnEnviarComprobanteWhatsapp: document.getElementById('btnEnviarComprobanteWhatsapp'),
+        reservaCreadaSinTelefono: document.getElementById('reservaCreadaSinTelefono'),
 
         tabUsuarios: document.getElementById('tabUsuarios'),
         btnNuevoUsuario: document.getElementById('btnNuevoUsuario'),
@@ -1064,6 +1080,42 @@
         if (e.target === el.modalOverlay) cerrarModal();
     });
 
+    // Al terminar de crear una reserva, se ofrece enviar el comprobante por
+    // WhatsApp al teléfono del jugador (no al de la empresa).
+    function abrirModalReservaCreada(datos) {
+        var numero = telefonoParaWhatsapp(datos.telefono);
+
+        if (numero) {
+            var estadoPago = datos.metodoPago === 'Pago Presencial'
+                ? 'Pago pendiente: ' + formatCLP(datos.precio) + ' a pagar en el recinto.'
+                : 'Pagado: ' + formatCLP(datos.montoPagado + datos.montoPagado2) + ' de ' + formatCLP(datos.precio) + '.';
+
+            var mensaje = 'Hola ' + datos.nombre + ', te confirmamos tu reserva en Futbolito Chile: ' +
+                (SPORT_LABELS[datos.deporte] || datos.deporte) + ' — ' + datos.canchaNombre +
+                ' el ' + formatFechaCorta(datos.fecha) + ' a las ' + String(datos.hora).padStart(2, '0') + ':00 hrs. ' +
+                estadoPago;
+
+            el.btnEnviarComprobanteWhatsapp.href = 'https://wa.me/' + numero + '?text=' + encodeURIComponent(mensaje);
+            el.btnEnviarComprobanteWhatsapp.hidden = false;
+            el.reservaCreadaSinTelefono.hidden = true;
+        } else {
+            el.btnEnviarComprobanteWhatsapp.hidden = true;
+            el.reservaCreadaSinTelefono.hidden = false;
+        }
+
+        el.reservaCreadaModalOverlay.hidden = false;
+    }
+
+    function cerrarModalReservaCreada() {
+        el.reservaCreadaModalOverlay.hidden = true;
+    }
+
+    el.btnCerrarReservaCreadaModal.addEventListener('click', cerrarModalReservaCreada);
+    el.btnCerrarReservaCreada.addEventListener('click', cerrarModalReservaCreada);
+    el.reservaCreadaModalOverlay.addEventListener('click', function (e) {
+        if (e.target === el.reservaCreadaModalOverlay) cerrarModalReservaCreada();
+    });
+
     el.admDeporte.addEventListener('change', function () {
         var deporte = el.admDeporte.value;
         el.admCancha.innerHTML = '';
@@ -1213,8 +1265,22 @@
 
             enviarCorreosReserva(reservaId);
 
+            var canchaOption = el.admCancha.options[el.admCancha.selectedIndex];
+
             cerrarModal();
             cargarReservas();
+            abrirModalReservaCreada({
+                telefono: el.admTelefono.value.trim(),
+                nombre: nombre,
+                deporte: deporte,
+                canchaNombre: canchaOption ? canchaOption.textContent : '',
+                fecha: fecha,
+                hora: parseInt(hora, 10),
+                precio: precio,
+                montoPagado: montoPagado,
+                montoPagado2: montoPagado2,
+                metodoPago: metodoPago
+            });
         }
     });
 

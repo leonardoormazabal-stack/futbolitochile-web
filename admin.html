@@ -537,6 +537,22 @@
         </div>
     </div>
 
+    <!-- MODAL: RESERVA CREADA (opción de enviar comprobante por WhatsApp) -->
+    <div class="admin-modal-overlay" id="reservaCreadaModalOverlay" hidden>
+        <div class="admin-modal">
+            <div class="admin-modal-header">
+                <h2>Reserva creada</h2>
+                <button type="button" class="admin-modal-close" id="btnCerrarReservaCreadaModal" aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="admin-modal-body">
+                <p>La reserva se creó correctamente.</p>
+                <a href="#" target="_blank" rel="noopener" class="btn btn-primary btn-block" id="btnEnviarComprobanteWhatsapp" hidden>Enviar comprobante por WhatsApp</a>
+                <p class="admin-note" id="reservaCreadaSinTelefono" hidden>No se ingresó un teléfono de contacto, así que no se puede enviar por WhatsApp.</p>
+                <button type="button" class="btn btn-outline btn-block" id="btnCerrarReservaCreada">Listo</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL: NUEVO USUARIO -->
     <div class="admin-modal-overlay" id="userModalOverlay" hidden>
         <div class="admin-modal">

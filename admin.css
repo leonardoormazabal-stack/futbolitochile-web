@@ -858,7 +858,8 @@
     cursor: pointer;
 }
 
-.admin-modal form {
+.admin-modal form,
+.admin-modal-body {
     display: flex;
     flex-direction: column;
     gap: 16px;
