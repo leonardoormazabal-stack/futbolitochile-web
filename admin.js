@@ -97,6 +97,19 @@
 
     var MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
+    // Si ninguna tarifa configurada cubre exactamente la hora pedida (ej. las
+    // 23:00 cuando el último bloque guardado todavía dice "hasta las 23"),
+    // usa el bloque de horario más tardío en vez del primero: es la
+    // aproximación correcta para un horario nocturno faltante, y evita
+    // cobrar por error la tarifa más barata del mediodía.
+    function bloqueMasTardio(tabla) {
+        var masTardio = null;
+        for (var i = 0; i < tabla.length; i++) {
+            if (!masTardio || tabla[i].hora_desde > masTardio.hora_desde) masTardio = tabla[i];
+        }
+        return masTardio;
+    }
+
     function getPrecioPorHora(sport, horaInicio) {
         var tabla = state.tarifas.filter(function (t) { return t.deporte === sport; });
         for (var i = 0; i < tabla.length; i++) {
@@ -104,7 +117,8 @@
                 return tabla[i].precio;
             }
         }
-        return tabla.length ? tabla[0].precio : 0;
+        var masTardio = bloqueMasTardio(tabla);
+        return masTardio ? masTardio.precio : 0;
     }
 
     /* ======================================================================
@@ -217,6 +231,14 @@
         motivoFormReserva: document.getElementById('motivoFormReserva'),
         motivoTexto: document.getElementById('motivoTexto'),
         motivoError: document.getElementById('motivoError'),
+
+        editReservaModalOverlay: document.getElementById('editReservaModalOverlay'),
+        btnCerrarEditReservaModal: document.getElementById('btnCerrarEditReservaModal'),
+        editReservaForm: document.getElementById('editReservaForm'),
+        editReservaFormInfo: document.getElementById('editReservaFormInfo'),
+        editReservaFecha: document.getElementById('editReservaFecha'),
+        editReservaHora: document.getElementById('editReservaHora'),
+        editReservaError: document.getElementById('editReservaError'),
 
         tabCancelaciones: document.getElementById('tabCancelaciones'),
         cancelacionesFiltroFecha: document.getElementById('cancelacionesFiltroFecha'),
@@ -464,7 +486,10 @@
                 : '<span class="estado-pago-badge al-dia">Al día</span>';
 
             var accion = r.estado === 'confirmada'
-                ? '<button type="button" class="btn-cancelar" data-id="' + r.id + '">Cancelar</button>'
+                ? '<div class="admin-table-actions">' +
+                  '<button type="button" class="btn-secundario btn-editar-reserva" data-id="' + r.id + '">Modificar</button>' +
+                  '<button type="button" class="btn-cancelar" data-id="' + r.id + '">Cancelar</button>' +
+                  '</div>'
                 : '';
 
             tr.innerHTML =
@@ -486,6 +511,12 @@
         el.tbody.querySelectorAll('.btn-cancelar').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 cancelarReserva(btn.getAttribute('data-id'));
+            });
+        });
+
+        el.tbody.querySelectorAll('.btn-editar-reserva').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                abrirModalEditarReserva(btn.getAttribute('data-id'));
             });
         });
     }
@@ -555,6 +586,141 @@
                 return;
             }
             cerrarModalMotivo();
+            cargarReservas();
+        });
+    });
+
+    /* ======================================================================
+       EDITAR HORARIO/DÍA DE UNA RESERVA
+       ====================================================================== */
+    function abrirModalEditarReserva(id) {
+        var reserva = state.reservas.find(function (r) { return r.id === id; });
+        if (!reserva) return;
+
+        el.editReservaForm.reset();
+        el.editReservaError.hidden = true;
+        el.editReservaForm.setAttribute('data-reserva-id', id);
+
+        var canchaNombre = reserva.canchas ? reserva.canchas.nombre : reserva.cancha_id;
+        var deporteLabel = reserva.canchas ? SPORT_LABELS[reserva.canchas.deporte] : '';
+        el.editReservaFormInfo.textContent = 'Reserva de ' + (reserva.nombre_contacto || '—') + ' — ' +
+            canchaNombre + (deporteLabel ? ' (' + deporteLabel + ')' : '') + '. Actualmente: ' +
+            formatFechaCorta(reserva.fecha) + ' ' + String(reserva.hora).padStart(2, '0') + ':00.';
+
+        el.editReservaFecha.min = toISODate(new Date());
+        el.editReservaFecha.value = reserva.fecha;
+        actualizarHorasDisponiblesEdit(reserva);
+
+        el.editReservaModalOverlay.hidden = false;
+    }
+
+    function cerrarModalEditarReserva() {
+        el.editReservaModalOverlay.hidden = true;
+    }
+
+    el.btnCerrarEditReservaModal.addEventListener('click', cerrarModalEditarReserva);
+    el.editReservaModalOverlay.addEventListener('click', function (e) {
+        if (e.target === el.editReservaModalOverlay) cerrarModalEditarReserva();
+    });
+
+    // Igual que actualizarHorasDisponibles (creación), pero sin excluir el
+    // horario actual de la reserva que se está editando: si el admin no
+    // cambia la fecha, su propia hora debe seguir apareciendo como opción
+    // (no es un conflicto real, es la misma reserva ocupándola).
+    function actualizarHorasDisponiblesEdit(reserva) {
+        var canchaId = reserva.cancha_id;
+        var fecha = el.editReservaFecha.value;
+
+        el.editReservaHora.innerHTML = '<option value="">Cargando...</option>';
+        el.editReservaHora.disabled = true;
+
+        if (!fecha) {
+            el.editReservaHora.innerHTML = '<option value="">Elige una fecha primero</option>';
+            return;
+        }
+
+        sb.from('disponibilidad')
+            .select('hora')
+            .eq('cancha_id', canchaId)
+            .eq('fecha', fecha)
+            .then(function (result) {
+                var esMismaFecha = fecha === reserva.fecha;
+                var ocupadas = (result.data || [])
+                    .map(function (r) { return r.hora; })
+                    .filter(function (hora) { return !(esMismaFecha && hora === reserva.hora); });
+
+                var opciones = '<option value="">Selecciona un horario</option>';
+                for (var hora = 12; hora <= 23; hora++) {
+                    if (ocupadas.indexOf(hora) !== -1) continue;
+                    var esActual = esMismaFecha && hora === reserva.hora;
+                    opciones += '<option value="' + hora + '"' + (esActual ? ' selected' : '') + '>' +
+                        String(hora).padStart(2, '0') + ':00' + (esActual ? ' (actual)' : '') + '</option>';
+                }
+                el.editReservaHora.innerHTML = opciones;
+                el.editReservaHora.disabled = false;
+            });
+    }
+
+    el.editReservaFecha.addEventListener('change', function () {
+        var reservaId = el.editReservaForm.getAttribute('data-reserva-id');
+        var reserva = state.reservas.find(function (r) { return r.id === reservaId; });
+        if (reserva) actualizarHorasDisponiblesEdit(reserva);
+    });
+
+    el.editReservaForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        var reservaId = el.editReservaForm.getAttribute('data-reserva-id');
+        var reserva = state.reservas.find(function (r) { return r.id === reservaId; });
+        if (!reserva) return;
+
+        var nuevaFecha = el.editReservaFecha.value;
+        var nuevaHoraTexto = el.editReservaHora.value;
+
+        el.editReservaError.hidden = true;
+
+        if (!nuevaFecha || nuevaHoraTexto === '') {
+            el.editReservaError.textContent = 'Elige una fecha y un horario.';
+            el.editReservaError.className = 'auth-alert';
+            el.editReservaError.hidden = false;
+            return;
+        }
+
+        var nuevaHora = parseInt(nuevaHoraTexto, 10);
+
+        if (nuevaFecha === reserva.fecha && nuevaHora === reserva.hora) {
+            cerrarModalEditarReserva();
+            return;
+        }
+
+        // El precio depende del bloque horario (ver tarifas): al mover la
+        // reserva a otra hora, se recalcula para no dejarla con un precio
+        // que ya no corresponde a su nuevo horario. Lo ya pagado no cambia.
+        var deporte = reserva.canchas ? reserva.canchas.deporte : null;
+        var nuevoPrecio = deporte ? getPrecioPorHora(deporte, nuevaHora) : reserva.precio;
+        var pagado = (reserva.monto_pagado || 0) + (reserva.monto_pagado_2 || 0);
+
+        sb.from('reservas').update({
+            fecha: nuevaFecha,
+            hora: nuevaHora,
+            precio: nuevoPrecio,
+            tipo_pago: pagado >= nuevoPrecio ? 'completo' : 'abono'
+        }).eq('id', reservaId).select().then(function (result) {
+            if (result.error) {
+                el.editReservaError.textContent = result.error.code === '23505'
+                    ? 'Ese horario ya está ocupado. Elige otro.'
+                    : 'No pudimos guardar los cambios: ' + result.error.message;
+                el.editReservaError.className = 'auth-alert';
+                el.editReservaError.hidden = false;
+                return;
+            }
+            if (!result.data || !result.data.length) {
+                el.editReservaError.textContent = 'No se pudo modificar (no se actualizó ninguna fila). Puede ser un problema de permisos.';
+                el.editReservaError.className = 'auth-alert';
+                el.editReservaError.hidden = false;
+                return;
+            }
+            cerrarModalEditarReserva();
             cargarReservas();
         });
     });
@@ -1155,7 +1321,7 @@
             .then(function (result) {
                 var ocupadas = (result.data || []).map(function (r) { return r.hora; });
                 var opciones = '<option value="">Selecciona un horario</option>';
-                for (var hora = 12; hora < 23; hora++) {
+                for (var hora = 12; hora <= 23; hora++) {
                     if (ocupadas.indexOf(hora) !== -1) continue;
                     opciones += '<option value="' + hora + '">' + String(hora).padStart(2, '0') + ':00</option>';
                 }
@@ -1719,7 +1885,7 @@
             row.innerHTML =
                 '<span class="tarifa-editor-deporte">' + (SPORT_LABELS[t.deporte] || t.deporte) + '</span>' +
                 '<label>Desde <input type="number" class="tarifa-desde" min="0" max="23" value="' + t.hora_desde + '"></label>' +
-                '<label>Hasta <input type="number" class="tarifa-hasta" min="0" max="23" value="' + t.hora_hasta + '"></label>' +
+                '<label>Hasta <input type="number" class="tarifa-hasta" min="0" max="24" value="' + t.hora_hasta + '"></label>' +
                 '<label>Precio <input type="number" class="tarifa-precio" min="0" step="1" value="' + t.precio + '"></label>' +
                 '<label>Abono <input type="number" class="tarifa-abono" min="0" step="1" value="' + (t.abono != null ? t.abono : 10000) + '"></label>';
             el.tarifasGrid.appendChild(row);

@@ -699,6 +699,33 @@
         </div>
     </div>
 
+    <!-- MODAL: EDITAR HORARIO/DÍA DE UNA RESERVA -->
+    <div class="admin-modal-overlay" id="editReservaModalOverlay" hidden>
+        <div class="admin-modal">
+            <div class="admin-modal-header">
+                <h2>Modificar Reserva</h2>
+                <button type="button" class="admin-modal-close" id="btnCerrarEditReservaModal" aria-label="Cerrar">&times;</button>
+            </div>
+            <form id="editReservaForm" novalidate>
+                <p id="editReservaFormInfo" class="admin-modal-subtitle"></p>
+                <div class="form-group">
+                    <label for="editReservaFecha">Nueva fecha</label>
+                    <input type="date" id="editReservaFecha" required>
+                </div>
+                <div class="form-group">
+                    <label for="editReservaHora">Nuevo horario</label>
+                    <select id="editReservaHora" required disabled>
+                        <option value="">Elige una fecha primero</option>
+                    </select>
+                </div>
+
+                <div class="auth-alert" id="editReservaError" hidden></div>
+
+                <button type="submit" class="btn btn-primary btn-block">Guardar Cambios</button>
+            </form>
+        </div>
+    </div>
+
     <!-- FOOTER -->
     <footer class="footer" id="contacto">
         <div class="footer-container">

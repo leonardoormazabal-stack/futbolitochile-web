@@ -104,6 +104,19 @@
     /* ======================================================================
        PRECIOS (a partir de las tarifas cargadas desde Supabase)
        ====================================================================== */
+    // Si ninguna tarifa configurada cubre exactamente la hora pedida (ej. las
+    // 23:00 cuando el último bloque guardado todavía dice "hasta las 23"),
+    // usa el bloque de horario más tardío en vez del primero: es la
+    // aproximación correcta para un horario nocturno faltante, y evita
+    // cobrar por error la tarifa más barata del mediodía.
+    function bloqueMasTardio(tabla) {
+        var masTardio = null;
+        for (var i = 0; i < tabla.length; i++) {
+            if (!masTardio || tabla[i].hora_desde > masTardio.hora_desde) masTardio = tabla[i];
+        }
+        return masTardio;
+    }
+
     function getPrecioPorHora(sport, horaInicio) {
         var tabla = state.tarifas.filter(function (t) { return t.deporte === sport; });
         for (var i = 0; i < tabla.length; i++) {
@@ -111,7 +124,8 @@
                 return tabla[i].precio;
             }
         }
-        return tabla.length ? tabla[0].precio : 0;
+        var masTardio = bloqueMasTardio(tabla);
+        return masTardio ? masTardio.precio : 0;
     }
 
     function getAbonoPorHora(sport, horaInicio) {
@@ -121,7 +135,8 @@
                 return tabla[i].abono != null ? tabla[i].abono : 10000;
             }
         }
-        return tabla.length && tabla[0].abono != null ? tabla[0].abono : 10000;
+        var masTardio = bloqueMasTardio(tabla);
+        return masTardio && masTardio.abono != null ? masTardio.abono : 10000;
     }
 
     /* ======================================================================
@@ -464,7 +479,7 @@
     function renderHorarios() {
         el.horarioGrid.innerHTML = '';
 
-        for (var hora = 12; hora < 23; hora++) {
+        for (var hora = 12; hora <= 23; hora++) {
             var ocupadas = state.ocupadosPorHora[hora] || 0;
             var ocupado = ocupadas >= state.totalCanchasDeporte;
             var btn = document.createElement('button');
@@ -571,7 +586,7 @@
         el.summarySport.textContent = state.sport ? SPORT_LABELS[state.sport] : '—';
         el.summaryFecha.textContent = state.selectedDate ? formatFechaLarga(state.selectedDate) : '—';
         el.summaryHora.textContent = (state.selectedHour !== null && state.selectedHour !== undefined)
-            ? String(state.selectedHour).padStart(2, '0') + ':00 - ' + String(state.selectedHour + 1).padStart(2, '0') + ':00'
+            ? String(state.selectedHour).padStart(2, '0') + ':00 - ' + String((state.selectedHour + 1) % 24).padStart(2, '0') + ':00'
             : '—';
         el.summaryCancha.textContent = state.canchaNombre || '—';
         el.summaryTotal.textContent = formatCLP(state.precio || 0);
