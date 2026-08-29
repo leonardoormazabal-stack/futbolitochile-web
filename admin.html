@@ -31,12 +31,12 @@
 
             <div class="nav-menu">
                 <ul class="nav-links">
-                    <li><a href="reservas.html">Reservas</a></li>
-                    <li><a href="index.html#tarifas">Tarifas y Planes</a></li>
-                    <li><a href="index.html#eventos">Eventos</a></li>
-                    <li><a href="index.html#escuelas">Escuelas y Ligas</a></li>
-                    <li><a href="index.html#nosotros">Quiénes Somos</a></li>
-                    <li><a href="contacto.html">Contacto</a></li>
+                    <li><a href="reservas.html" data-content-text="menu_reservas">Reservas</a></li>
+                    <li><a href="index.html#tarifas" data-content-text="menu_tarifas">Tarifas y Planes</a></li>
+                    <li><a href="index.html#eventos" data-content-text="menu_eventos">Eventos</a></li>
+                    <li><a href="index.html#escuelas" data-content-text="menu_escuelas">Escuelas y Ligas</a></li>
+                    <li><a href="index.html#nosotros" data-content-text="menu_nosotros">Quiénes Somos</a></li>
+                    <li><a href="contacto.html" data-content-text="menu_contacto">Contacto</a></li>
                 </ul>
                 <ul class="nav-actions">
                     <li class="nav-auth-item" id="navAuthItem"><a href="login.html" class="nav-login-btn">Iniciar Sesión</a></li>
@@ -286,6 +286,78 @@
 
         <!-- VISTA CONTENIDO (solo superadministrador) -->
         <section class="admin-view" id="view-contenido">
+            <div class="contenido-bloque">
+                <h3>Menú y Títulos de Sección</h3>
+                <p class="admin-note">Textos del menú de navegación (aparece en todas las páginas) y los títulos de cada sección del sitio.</p>
+
+                <form id="formMenuSecciones" class="contenido-form">
+                    <h4 class="contenido-subtitulo">Menú de Navegación</h4>
+                    <div class="contenido-feature-grid">
+                        <div class="form-group">
+                            <label for="cMenuReservas">Reservas</label>
+                            <input type="text" id="cMenuReservas">
+                        </div>
+                        <div class="form-group">
+                            <label for="cMenuTarifas">Tarifas y Planes</label>
+                            <input type="text" id="cMenuTarifas">
+                        </div>
+                        <div class="form-group">
+                            <label for="cMenuEventos">Eventos</label>
+                            <input type="text" id="cMenuEventos">
+                        </div>
+                        <div class="form-group">
+                            <label for="cMenuEscuelas">Escuelas y Ligas</label>
+                            <input type="text" id="cMenuEscuelas">
+                        </div>
+                        <div class="form-group">
+                            <label for="cMenuNosotros">Quiénes Somos</label>
+                            <input type="text" id="cMenuNosotros">
+                        </div>
+                        <div class="form-group">
+                            <label for="cMenuContacto">Contacto</label>
+                            <input type="text" id="cMenuContacto">
+                        </div>
+                    </div>
+
+                    <h4 class="contenido-subtitulo">Títulos de Sección</h4>
+                    <div class="contenido-feature-grid">
+                        <div class="form-group">
+                            <label for="cTituloInstalaciones">Instalaciones</label>
+                            <input type="text" id="cTituloInstalaciones">
+                        </div>
+                        <div class="form-group">
+                            <label for="cTituloTarifas">Tarifas y Planes</label>
+                            <input type="text" id="cTituloTarifas">
+                        </div>
+                        <div class="form-group">
+                            <label for="cTituloEventos">Eventos y Cumpleaños</label>
+                            <input type="text" id="cTituloEventos">
+                        </div>
+                        <div class="form-group">
+                            <label for="cTituloEscuelas">Escuelas y Ligas</label>
+                            <input type="text" id="cTituloEscuelas">
+                        </div>
+                        <div class="form-group">
+                            <label for="cTituloPublicidad">Publicidad y Convenios</label>
+                            <input type="text" id="cTituloPublicidad">
+                        </div>
+                        <div class="form-group">
+                            <label for="cTituloReserva">Llamada a Reservar</label>
+                            <input type="text" id="cTituloReserva">
+                        </div>
+                        <div class="form-group">
+                            <label for="cTituloNosotros">Quiénes Somos (encabezado)</label>
+                            <input type="text" id="cTituloNosotros">
+                        </div>
+                    </div>
+
+                    <div class="contenido-form-actions">
+                        <button type="submit" class="btn btn-primary">Guardar Menú y Títulos</button>
+                        <span class="contenido-guardado" id="guardadoMenuSecciones" hidden>Guardado ✓</span>
+                    </div>
+                </form>
+            </div>
+
             <div class="contenido-bloque">
                 <h3>Quiénes Somos</h3>
 
@@ -770,6 +842,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-client.js"></script>
     <script src="auth.js"></script>
+    <script src="content.js"></script>
     <script src="admin.js"></script>
 </body>
 </html>

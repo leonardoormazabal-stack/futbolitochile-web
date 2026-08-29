@@ -248,6 +248,22 @@
         tabContenido: document.getElementById('tabContenido'),
         tabTarifas: document.getElementById('tabTarifas'),
 
+        formMenuSecciones: document.getElementById('formMenuSecciones'),
+        guardadoMenuSecciones: document.getElementById('guardadoMenuSecciones'),
+        cMenuReservas: document.getElementById('cMenuReservas'),
+        cMenuTarifas: document.getElementById('cMenuTarifas'),
+        cMenuEventos: document.getElementById('cMenuEventos'),
+        cMenuEscuelas: document.getElementById('cMenuEscuelas'),
+        cMenuNosotros: document.getElementById('cMenuNosotros'),
+        cMenuContacto: document.getElementById('cMenuContacto'),
+        cTituloInstalaciones: document.getElementById('cTituloInstalaciones'),
+        cTituloTarifas: document.getElementById('cTituloTarifas'),
+        cTituloEventos: document.getElementById('cTituloEventos'),
+        cTituloEscuelas: document.getElementById('cTituloEscuelas'),
+        cTituloPublicidad: document.getElementById('cTituloPublicidad'),
+        cTituloReserva: document.getElementById('cTituloReserva'),
+        cTituloNosotros: document.getElementById('cTituloNosotros'),
+
         cNosotrosImgPreview: document.getElementById('cNosotrosImgPreview'),
         cNosotrosImgInput: document.getElementById('cNosotrosImgInput'),
         guardadoNosotrosImg: document.getElementById('guardadoNosotrosImg'),
@@ -1847,6 +1863,20 @@
             var c = {};
             (contenidoRes.data || []).forEach(function (fila) { c[fila.key] = fila.value; });
 
+            el.cMenuReservas.value = c.menu_reservas || 'Reservas';
+            el.cMenuTarifas.value = c.menu_tarifas || 'Tarifas y Planes';
+            el.cMenuEventos.value = c.menu_eventos || 'Eventos';
+            el.cMenuEscuelas.value = c.menu_escuelas || 'Escuelas y Ligas';
+            el.cMenuNosotros.value = c.menu_nosotros || 'Quiénes Somos';
+            el.cMenuContacto.value = c.menu_contacto || 'Contacto';
+            el.cTituloInstalaciones.value = c.section_instalaciones_titulo || 'Nuestras Instalaciones';
+            el.cTituloTarifas.value = c.section_tarifas_titulo || 'Tarifas y Planes';
+            el.cTituloEventos.value = c.section_eventos_titulo || 'Eventos y Cumpleaños';
+            el.cTituloEscuelas.value = c.section_escuelas_titulo || 'Escuelas y Ligas';
+            el.cTituloPublicidad.value = c.section_publicidad_titulo || 'Publicidad y Convenios';
+            el.cTituloReserva.value = c.section_reserva_titulo || '¿Listo para jugar?';
+            el.cTituloNosotros.value = c.nosotros_titulo || '¿Quiénes Somos?';
+
             el.cNosotrosImgPreview.src = c.nosotros_imagen_url || '';
             el.cNosotrosTagline.value = c.nosotros_tagline || '';
             el.cNosotrosParrafo1.value = c.nosotros_parrafo1 || '';
@@ -2109,6 +2139,31 @@
             el.contenidoCardsGrid.appendChild(bloque);
         });
     }
+
+    el.formMenuSecciones.addEventListener('submit', function (e) {
+        e.preventDefault();
+        guardarSiteContent({
+            menu_reservas: el.cMenuReservas.value.trim(),
+            menu_tarifas: el.cMenuTarifas.value.trim(),
+            menu_eventos: el.cMenuEventos.value.trim(),
+            menu_escuelas: el.cMenuEscuelas.value.trim(),
+            menu_nosotros: el.cMenuNosotros.value.trim(),
+            menu_contacto: el.cMenuContacto.value.trim(),
+            section_instalaciones_titulo: el.cTituloInstalaciones.value.trim(),
+            section_tarifas_titulo: el.cTituloTarifas.value.trim(),
+            section_eventos_titulo: el.cTituloEventos.value.trim(),
+            section_escuelas_titulo: el.cTituloEscuelas.value.trim(),
+            section_publicidad_titulo: el.cTituloPublicidad.value.trim(),
+            section_reserva_titulo: el.cTituloReserva.value.trim(),
+            nosotros_titulo: el.cTituloNosotros.value.trim()
+        }).then(function (result) {
+            if (result.error) {
+                window.alert('No pudimos guardar: ' + result.error.message);
+                return;
+            }
+            mostrarGuardado(el.guardadoMenuSecciones);
+        });
+    });
 
     el.formNosotros.addEventListener('submit', function (e) {
         e.preventDefault();
