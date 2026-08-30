@@ -68,6 +68,7 @@
                 <button type="button" class="admin-tab" data-tab="pagos">Pagos</button>
                 <button type="button" class="admin-tab" data-tab="cuadratura">Cuadratura Diaria</button>
                 <button type="button" class="admin-tab" data-tab="cancelaciones">Cancelaciones</button>
+                <button type="button" class="admin-tab" data-tab="clientes">Clientes</button>
                 <button type="button" class="admin-tab" data-tab="usuarios" id="tabUsuarios" hidden>Usuarios</button>
                 <button type="button" class="admin-tab" data-tab="contenido" id="tabContenido" hidden>Contenido</button>
                 <button type="button" class="admin-tab" data-tab="tarifas" id="tabTarifas" hidden>Tarifas</button>
@@ -515,6 +516,35 @@
                     <tbody id="cancelacionesTableBody"></tbody>
                 </table>
                 <p class="admin-empty" id="cancelacionesEmptyMsg" hidden>No hay reservas canceladas.</p>
+            </div>
+        </section>
+
+        <!-- VISTA CLIENTES -->
+        <section class="admin-view" id="view-clientes">
+            <div class="admin-filters">
+                <div class="form-group">
+                    <label for="clientesBuscar">Buscar por nombre, RUT, teléfono o email</label>
+                    <input type="text" id="clientesBuscar" placeholder="Ej: Juan Pérez o 12.345.678-9">
+                </div>
+                <button type="button" class="btn btn-outline" id="btnLimpiarBusquedaClientes">Quitar filtro</button>
+                <button type="button" class="btn btn-primary" id="btnDescargarClientesCsv">⬇ Descargar CSV</button>
+            </div>
+
+            <div class="admin-table-wrapper">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>RUT</th>
+                            <th>Reservas acumuladas</th>
+                            <th>Teléfono</th>
+                            <th>Email</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="clientesTableBody"></tbody>
+                </table>
+                <p class="admin-empty" id="clientesEmptyMsg" hidden>No hay clientes para mostrar.</p>
             </div>
         </section>
     </main>

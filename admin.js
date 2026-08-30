@@ -270,6 +270,12 @@
         cancelacionesTbody: document.getElementById('cancelacionesTableBody'),
         cancelacionesEmptyMsg: document.getElementById('cancelacionesEmptyMsg'),
 
+        clientesBuscar: document.getElementById('clientesBuscar'),
+        btnLimpiarBusquedaClientes: document.getElementById('btnLimpiarBusquedaClientes'),
+        btnDescargarClientesCsv: document.getElementById('btnDescargarClientesCsv'),
+        clientesTbody: document.getElementById('clientesTableBody'),
+        clientesEmptyMsg: document.getElementById('clientesEmptyMsg'),
+
         tabContenido: document.getElementById('tabContenido'),
         tabTarifas: document.getElementById('tabTarifas'),
 
@@ -385,6 +391,7 @@
             renderPagos();
             renderCuadratura();
             renderCancelaciones();
+            renderClientes();
         });
     }
 
@@ -1274,26 +1281,126 @@
         ordenadas.forEach(function (r) {
             if (!r.nombre_contacto) return;
             var clave = normalizarBusqueda(r.documento_contacto) || normalizarBusqueda(r.nombre_contacto);
-            if (porClave[clave]) return;
-            porClave[clave] = {
-                nombre: r.nombre_contacto,
-                documento: r.documento_contacto || '',
-                telefono: r.telefono_contacto || '',
-                email: r.email_contacto || ''
-            };
+            if (!porClave[clave]) {
+                porClave[clave] = {
+                    nombre: r.nombre_contacto,
+                    documento: r.documento_contacto || '',
+                    telefono: r.telefono_contacto || '',
+                    email: r.email_contacto || '',
+                    reservas: 0
+                };
+            }
+            porClave[clave].reservas += 1;
         });
         return Object.keys(porClave).map(function (k) { return porClave[k]; });
     }
 
-    function clientesFiltrados(termino) {
+    function clientesFiltrados(termino, limite) {
         var t = normalizarBusqueda(termino);
         if (!t) return [];
-        return clientesUnicos().filter(function (c) {
+        var resultados = clientesUnicos().filter(function (c) {
             return normalizarBusqueda(c.nombre).indexOf(t) !== -1 ||
                 normalizarBusqueda(c.documento).indexOf(t) !== -1 ||
                 normalizarBusqueda(c.telefono).indexOf(t) !== -1 ||
                 normalizarBusqueda(c.email).indexOf(t) !== -1;
-        }).slice(0, 8);
+        });
+        return limite ? resultados.slice(0, limite) : resultados;
+    }
+
+    /* ======================================================================
+       VISTA CLIENTES
+       ====================================================================== */
+    function clientesOrdenados(lista) {
+        return lista.slice().sort(function (a, b) {
+            if (b.reservas !== a.reservas) return b.reservas - a.reservas;
+            return (a.nombre || '').localeCompare(b.nombre || '');
+        });
+    }
+
+    function clientesParaTabla() {
+        var termino = el.clientesBuscar.value;
+        var lista = termino.trim() ? clientesFiltrados(termino) : clientesUnicos();
+        return clientesOrdenados(lista);
+    }
+
+    function botonWhatsappCliente(c) {
+        var numero = telefonoParaWhatsapp(c.telefono);
+        if (!numero) return '';
+        var mensaje = 'Hola ' + (c.nombre || '') + ', te escribimos de Futbolito Chile.';
+        return '<a class="btn-whatsapp-mini" href="https://wa.me/' + numero + '?text=' + encodeURIComponent(mensaje) + '" target="_blank" rel="noopener">Enviar WhatsApp</a>';
+    }
+
+    function botonCorreoCliente(c) {
+        if (!c.email) return '';
+        return '<a class="btn-secundario" href="mailto:' + escapeHtml(c.email) + '?subject=' + encodeURIComponent('Futbolito Chile') + '">Enviar correo</a>';
+    }
+
+    function renderClientes() {
+        if (!el.clientesTbody) return;
+
+        var clientes = clientesParaTabla();
+
+        el.clientesTbody.innerHTML = '';
+        el.clientesEmptyMsg.hidden = clientes.length > 0;
+        el.clientesEmptyMsg.textContent = clientesUnicos().length === 0
+            ? 'Todavía no hay clientes con reservas.'
+            : 'No encontramos clientes que coincidan con la búsqueda.';
+
+        clientes.forEach(function (c) {
+            var tr = document.createElement('tr');
+
+            var acciones = '<div class="admin-table-actions">' +
+                botonWhatsappCliente(c) +
+                botonCorreoCliente(c) +
+                '</div>';
+
+            tr.innerHTML =
+                '<td data-label="Nombre">' + (c.nombre || '—') + '</td>' +
+                '<td data-label="RUT">' + (c.documento || '—') + '</td>' +
+                '<td data-label="Reservas acumuladas">' + c.reservas + '</td>' +
+                '<td data-label="Teléfono">' + (c.telefono || '—') + '</td>' +
+                '<td data-label="Email">' + (c.email || '—') + '</td>' +
+                '<td data-label="Acciones" class="celda-accion">' + acciones + '</td>';
+
+            el.clientesTbody.appendChild(tr);
+        });
+    }
+
+    if (el.clientesBuscar) {
+        el.clientesBuscar.addEventListener('input', renderClientes);
+    }
+
+    if (el.btnLimpiarBusquedaClientes) {
+        el.btnLimpiarBusquedaClientes.addEventListener('click', function () {
+            el.clientesBuscar.value = '';
+            renderClientes();
+        });
+    }
+
+    // Arma el CSV (con BOM para que Excel abra bien los acentos) del directorio de clientes.
+    function clientesCsv() {
+        function escapeCsv(v) {
+            return '"' + String(v === null || v === undefined ? '' : v).replace(/"/g, '""') + '"';
+        }
+        var encabezado = ['Nombre', 'RUT', 'Reservas acumuladas', 'Teléfono', 'Email'];
+        var filas = clientesParaTabla().map(function (c) {
+            return [c.nombre, c.documento, c.reservas, c.telefono, c.email].map(escapeCsv).join(',');
+        });
+        return [encabezado.map(escapeCsv).join(',')].concat(filas).join('\r\n');
+    }
+
+    if (el.btnDescargarClientesCsv) {
+        el.btnDescargarClientesCsv.addEventListener('click', function () {
+            var blob = new Blob(['﻿', clientesCsv()], { type: 'text/csv;charset=utf-8;' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'clientes-futbolito-chile-' + toISODate(new Date()) + '.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
     }
 
     function ocultarClienteResultados() {
@@ -1308,7 +1415,7 @@
             return;
         }
 
-        var resultados = clientesFiltrados(termino);
+        var resultados = clientesFiltrados(termino, 8);
 
         if (resultados.length === 0) {
             el.admClienteResultados.innerHTML = '<li class="cliente-resultado-vacio">Sin coincidencias</li>';
