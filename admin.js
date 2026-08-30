@@ -63,6 +63,22 @@
         return digitos;
     }
 
+    // Botón "Enviar WhatsApp" para la lista de reservas: solo aparece si hay
+    // teléfono cargado, y abre wa.me con la sesión de WhatsApp de quien haga
+    // clic (no hay forma de fijar un número remitente desde un link wa.me).
+    function botonWhatsappReserva(r) {
+        var numero = telefonoParaWhatsapp(r.telefono_contacto);
+        if (!numero) return '';
+
+        var canchaNombre = r.canchas ? r.canchas.nombre : r.cancha_id;
+        var deporte = r.canchas ? (SPORT_LABELS[r.canchas.deporte] || r.canchas.deporte) : '';
+        var mensaje = 'Hola ' + (r.nombre_contacto || '') + ', te escribimos de Futbolito Chile por tu reserva de ' +
+            deporte + ' en ' + canchaNombre + ' el ' + formatFechaCorta(r.fecha) + ' a las ' +
+            String(r.hora).padStart(2, '0') + ':00 hrs.';
+
+        return '<a class="btn-whatsapp-mini" href="https://wa.me/' + numero + '?text=' + encodeURIComponent(mensaje) + '" target="_blank" rel="noopener">Enviar WhatsApp</a>';
+    }
+
     function startOfMonth(d) {
         return new Date(d.getFullYear(), d.getMonth(), 1);
     }
@@ -521,14 +537,27 @@
                 '<td data-label="Fecha">' + formatFechaCorta(r.fecha) + '</td>' +
                 '<td data-label="Hora">' + String(r.hora).padStart(2, '0') + ':00</td>' +
                 '<td data-label="Cancha">' + canchaNombre + ' <small>(' + deporte + ')</small></td>' +
-                '<td data-label="Contacto">' + (r.nombre_contacto || '') + '</td>' +
-                '<td data-label="RUT">' + (r.documento_contacto || '—') + '</td>' +
-                '<td data-label="Teléfono">' + (r.telefono_contacto || '—') + '</td>' +
+                '<td data-label="Contacto">' +
+                    '<div class="celda-stack">' +
+                        '<span>' + (r.nombre_contacto || '—') + '</span>' +
+                        '<small>' + (r.documento_contacto || '—') + '</small>' +
+                    '</div>' +
+                '</td>' +
+                '<td data-label="Teléfono">' +
+                    '<div class="celda-stack">' +
+                        '<span>' + (r.telefono_contacto || '—') + '</span>' +
+                        botonWhatsappReserva(r) +
+                    '</div>' +
+                '</td>' +
                 '<td data-label="Email">' + (r.email_contacto || '—') + '</td>' +
                 '<td data-label="Precio">' + formatCLP(r.precio) + '</td>' +
-                '<td data-label="Pago">' + (r.metodo_pago || '—') + '</td>' +
-                '<td data-label="Estado de Pago">' + estadoPagoBadge + '</td>' +
-                '<td data-label="Origen">' + origenBadge + '</td>' +
+                '<td data-label="Pago">' +
+                    '<div class="celda-stack">' +
+                        '<span>' + (r.metodo_pago || '—') + '</span>' +
+                        estadoPagoBadge +
+                        origenBadge +
+                    '</div>' +
+                '</td>' +
                 '<td data-label="Estado">' + estadoBadge + '</td>' +
                 '<td data-label="Acción" class="celda-accion">' + accion + '</td>';
 

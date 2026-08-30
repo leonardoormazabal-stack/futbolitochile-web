@@ -197,17 +197,16 @@
     padding-right: 10px;
 }
 
-#reservasTable th:nth-child(1) { width: 7%; }  /* Fecha */
+#reservasTable th:nth-child(1) { width: 8%; }  /* Fecha */
 #reservasTable th:nth-child(2) { width: 6%; }  /* Hora */
 #reservasTable th:nth-child(3) { width: 11%; } /* Cancha */
-#reservasTable th:nth-child(4) { width: 12%; } /* Contacto */
-#reservasTable th:nth-child(5) { width: 9%; }  /* Teléfono */
-#reservasTable th:nth-child(6) { width: 7%; }  /* Precio */
-#reservasTable th:nth-child(7) { width: 9%; }  /* Pago */
-#reservasTable th:nth-child(8) { width: 9%; }  /* Estado de Pago */
-#reservasTable th:nth-child(9) { width: 9%; }  /* Origen */
-#reservasTable th:nth-child(10) { width: 10%; } /* Estado */
-#reservasTable th:nth-child(11) { width: 11%; } /* Acción */
+#reservasTable th:nth-child(4) { width: 13%; } /* Contacto (nombre + RUT) */
+#reservasTable th:nth-child(5) { width: 12%; } /* Teléfono (+ botón WhatsApp) */
+#reservasTable th:nth-child(6) { width: 12%; } /* Email */
+#reservasTable th:nth-child(7) { width: 8%; }  /* Precio */
+#reservasTable th:nth-child(8) { width: 11%; } /* Pago (método + estado + origen) */
+#reservasTable th:nth-child(9) { width: 10%; } /* Estado */
+#reservasTable th:nth-child(10) { width: 9%; } /* Acción */
 
 /* La insignia de estado y el botón Cancelar no deben partirse a media
    palabra aunque el resto de la celda sí haga salto de línea. */
@@ -262,6 +261,10 @@
         color: var(--azul-oscuro);
         text-align: left;
         margin-right: 12px;
+    }
+
+    #reservasTable .celda-stack {
+        align-items: flex-end;
     }
 
     #reservasTable td.celda-accion {
@@ -358,6 +361,38 @@
 .estado-pago-badge.al-dia {
     background-color: #eafaf0;
     color: #1f7a3d;
+}
+
+/* Celdas que agrupan varios datos relacionados (nombre+RUT, teléfono+botón
+   WhatsApp, método+estado+origen de pago) para no multiplicar columnas. */
+.celda-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    white-space: normal;
+}
+
+.celda-stack small {
+    color: var(--gris-texto);
+    font-size: 12px;
+}
+
+.btn-whatsapp-mini {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    background-color: #25d366;
+    color: var(--blanco);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color 0.2s ease;
+}
+
+.btn-whatsapp-mini:hover {
+    background-color: #1ebe5a;
 }
 
 .btn-saldar {
