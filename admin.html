@@ -116,7 +116,9 @@
                             <th>Hora</th>
                             <th>Cancha</th>
                             <th>Contacto</th>
+                            <th>RUT</th>
                             <th>Teléfono</th>
+                            <th>Email</th>
                             <th>Precio</th>
                             <th>Pago</th>
                             <th>Estado de Pago</th>
@@ -551,6 +553,11 @@
                     <select id="admHora" required disabled>
                         <option value="">Elige cancha y fecha primero</option>
                     </select>
+                </div>
+                <div class="form-group cliente-buscador">
+                    <label for="admBuscarCliente">Buscar cliente existente</label>
+                    <input type="text" id="admBuscarCliente" autocomplete="off" placeholder="Nombre, RUT, teléfono o email...">
+                    <ul class="cliente-resultados" id="admClienteResultados" hidden></ul>
                 </div>
                 <div class="form-group">
                     <label for="admNombre">Nombre de contacto</label>

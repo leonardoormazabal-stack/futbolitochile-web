@@ -41,6 +41,13 @@
         );
     }
 
+    function escapeHtml(str) {
+        return (str || '').toString()
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
     function formatFechaCorta(iso) {
         var parts = iso.split('-');
         return parts[2] + '-' + parts[1] + '-' + parts[0];
@@ -166,6 +173,8 @@
         admCancha: document.getElementById('admCancha'),
         admFecha: document.getElementById('admFecha'),
         admHora: document.getElementById('admHora'),
+        admBuscarCliente: document.getElementById('admBuscarCliente'),
+        admClienteResultados: document.getElementById('admClienteResultados'),
         admNombre: document.getElementById('admNombre'),
         admDocumento: document.getElementById('admDocumento'),
         admTelefono: document.getElementById('admTelefono'),
@@ -513,7 +522,9 @@
                 '<td data-label="Hora">' + String(r.hora).padStart(2, '0') + ':00</td>' +
                 '<td data-label="Cancha">' + canchaNombre + ' <small>(' + deporte + ')</small></td>' +
                 '<td data-label="Contacto">' + (r.nombre_contacto || '') + '</td>' +
+                '<td data-label="RUT">' + (r.documento_contacto || '—') + '</td>' +
                 '<td data-label="Teléfono">' + (r.telefono_contacto || '—') + '</td>' +
+                '<td data-label="Email">' + (r.email_contacto || '—') + '</td>' +
                 '<td data-label="Precio">' + formatCLP(r.precio) + '</td>' +
                 '<td data-label="Pago">' + (r.metodo_pago || '—') + '</td>' +
                 '<td data-label="Estado de Pago">' + estadoPagoBadge + '</td>' +
@@ -1219,6 +1230,97 @@
     /* ======================================================================
        MODAL: NUEVA RESERVA
        ====================================================================== */
+
+    // No existe una tabla de clientes aparte: el directorio de clientes ya
+    // atendidos se arma en el navegador a partir del historial de reservas
+    // (nombre/documento/teléfono/email quedan guardados en cada reserva),
+    // para poder autocompletar los datos de alguien que ya reservó antes sin
+    // tener que volver a escribirlos. Se queda con el dato más reciente de
+    // cada cliente (por si el teléfono o el email cambiaron con el tiempo).
+    function clientesUnicos() {
+        var porClave = {};
+        var ordenadas = state.reservas.slice().sort(function (a, b) {
+            return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+        });
+        ordenadas.forEach(function (r) {
+            if (!r.nombre_contacto) return;
+            var clave = normalizarBusqueda(r.documento_contacto) || normalizarBusqueda(r.nombre_contacto);
+            if (porClave[clave]) return;
+            porClave[clave] = {
+                nombre: r.nombre_contacto,
+                documento: r.documento_contacto || '',
+                telefono: r.telefono_contacto || '',
+                email: r.email_contacto || ''
+            };
+        });
+        return Object.keys(porClave).map(function (k) { return porClave[k]; });
+    }
+
+    function clientesFiltrados(termino) {
+        var t = normalizarBusqueda(termino);
+        if (!t) return [];
+        return clientesUnicos().filter(function (c) {
+            return normalizarBusqueda(c.nombre).indexOf(t) !== -1 ||
+                normalizarBusqueda(c.documento).indexOf(t) !== -1 ||
+                normalizarBusqueda(c.telefono).indexOf(t) !== -1 ||
+                normalizarBusqueda(c.email).indexOf(t) !== -1;
+        }).slice(0, 8);
+    }
+
+    function ocultarClienteResultados() {
+        el.admClienteResultados.hidden = true;
+        el.admClienteResultados.innerHTML = '';
+    }
+
+    function renderClienteResultados() {
+        var termino = el.admBuscarCliente.value;
+        if (!termino.trim()) {
+            ocultarClienteResultados();
+            return;
+        }
+
+        var resultados = clientesFiltrados(termino);
+
+        if (resultados.length === 0) {
+            el.admClienteResultados.innerHTML = '<li class="cliente-resultado-vacio">Sin coincidencias</li>';
+            el.admClienteResultados.hidden = false;
+            return;
+        }
+
+        el.admClienteResultados.innerHTML = resultados.map(function (c, i) {
+            var detalle = [c.documento, c.telefono, c.email].filter(Boolean).map(escapeHtml).join(' · ');
+            return '<li class="cliente-resultado-item" data-index="' + i + '">' +
+                '<strong>' + escapeHtml(c.nombre) + '</strong>' +
+                (detalle ? '<small>' + detalle + '</small>' : '') +
+                '</li>';
+        }).join('');
+        el.admClienteResultados.hidden = false;
+
+        el.admClienteResultados.querySelectorAll('.cliente-resultado-item').forEach(function (li) {
+            li.addEventListener('click', function () {
+                var c = resultados[parseInt(li.getAttribute('data-index'), 10)];
+                el.admNombre.value = c.nombre || '';
+                el.admDocumento.value = c.documento || '';
+                el.admTelefono.value = c.telefono || '';
+                el.admEmail.value = c.email || '';
+                el.admBuscarCliente.value = c.nombre || '';
+                ocultarClienteResultados();
+            });
+        });
+    }
+
+    el.admBuscarCliente.addEventListener('input', renderClienteResultados);
+    el.admBuscarCliente.addEventListener('keydown', function (e) {
+        // El buscador vive dentro del <form>: sin esto, Enter mandaría a
+        // crear la reserva a medio escribir en vez de solo filtrar.
+        if (e.key === 'Enter') e.preventDefault();
+    });
+    document.addEventListener('click', function (e) {
+        if (!el.admClienteResultados.hidden && e.target !== el.admBuscarCliente) {
+            ocultarClienteResultados();
+        }
+    });
+
     function abrirModal() {
         el.form.reset();
         el.admReservaError.hidden = true;
@@ -1227,6 +1329,7 @@
         el.admHora.innerHTML = '<option value="">Elige cancha y fecha primero</option>';
         el.admHora.disabled = true;
         el.admFecha.min = toISODate(new Date());
+        ocultarClienteResultados();
         aplicarEstadoPagoPresencial();
         el.modalOverlay.hidden = false;
     }
