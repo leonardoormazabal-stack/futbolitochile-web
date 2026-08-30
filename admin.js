@@ -103,6 +103,7 @@
         canchas: [],
         tarifas: [],
         usuarios: [],
+        clientesRenderizados: [],
         filtroFecha: '',
         mostrarCanceladas: false,
         viewMonth: startOfMonth(new Date()),
@@ -275,6 +276,16 @@
         btnDescargarClientesCsv: document.getElementById('btnDescargarClientesCsv'),
         clientesTbody: document.getElementById('clientesTableBody'),
         clientesEmptyMsg: document.getElementById('clientesEmptyMsg'),
+
+        editClienteModalOverlay: document.getElementById('editClienteModalOverlay'),
+        btnCerrarEditClienteModal: document.getElementById('btnCerrarEditClienteModal'),
+        editClienteForm: document.getElementById('editClienteForm'),
+        editClienteFormInfo: document.getElementById('editClienteFormInfo'),
+        editClienteNombre: document.getElementById('editClienteNombre'),
+        editClienteDocumento: document.getElementById('editClienteDocumento'),
+        editClienteTelefono: document.getElementById('editClienteTelefono'),
+        editClienteEmail: document.getElementById('editClienteEmail'),
+        editClienteError: document.getElementById('editClienteError'),
 
         tabContenido: document.getElementById('tabContenido'),
         tabTarifas: document.getElementById('tabTarifas'),
@@ -1287,10 +1298,16 @@
                     documento: r.documento_contacto || '',
                     telefono: r.telefono_contacto || '',
                     email: r.email_contacto || '',
-                    reservas: 0
+                    reservas: 0,
+                    // IDs de TODAS las filas de reservas agrupadas en este cliente
+                    // (aunque su RUT haya quedado con formato distinto entre una
+                    // reserva y otra): permite modificar/eliminar exactamente esas
+                    // filas sin depender de que el texto coincida letra por letra.
+                    ids: []
                 };
             }
             porClave[clave].reservas += 1;
+            porClave[clave].ids.push(r.id);
         });
         return Object.keys(porClave).map(function (k) { return porClave[k]; });
     }
@@ -1339,6 +1356,10 @@
         if (!el.clientesTbody) return;
 
         var clientes = clientesParaTabla();
+        // Se guarda la lista tal como quedó renderizada para poder ubicar,
+        // por índice, el cliente exacto (con sus IDs de reserva) al modificar
+        // o eliminar, sin tener que volver a normalizar nombre/RUT.
+        state.clientesRenderizados = clientes;
 
         el.clientesTbody.innerHTML = '';
         el.clientesEmptyMsg.hidden = clientes.length > 0;
@@ -1346,23 +1367,138 @@
             ? 'Todavía no hay clientes con reservas.'
             : 'No encontramos clientes que coincidan con la búsqueda.';
 
-        clientes.forEach(function (c) {
+        clientes.forEach(function (c, index) {
             var tr = document.createElement('tr');
 
             var acciones = '<div class="admin-table-actions">' +
-                botonWhatsappCliente(c) +
-                botonCorreoCliente(c) +
+                '<button type="button" class="btn-secundario btn-editar-cliente" data-index="' + index + '">Modificar</button>' +
+                (state.esSuperadmin ? '<button type="button" class="btn-cancelar btn-eliminar-cliente" data-index="' + index + '">Eliminar</button>' : '') +
                 '</div>';
 
             tr.innerHTML =
                 '<td data-label="Nombre">' + (c.nombre || '—') + '</td>' +
                 '<td data-label="RUT">' + (c.documento || '—') + '</td>' +
                 '<td data-label="Reservas acumuladas">' + c.reservas + '</td>' +
-                '<td data-label="Teléfono">' + (c.telefono || '—') + '</td>' +
-                '<td data-label="Email">' + (c.email || '—') + '</td>' +
+                '<td data-label="Teléfono">' +
+                    '<div class="celda-stack">' +
+                        '<span>' + (c.telefono || '—') + '</span>' +
+                        botonWhatsappCliente(c) +
+                    '</div>' +
+                '</td>' +
+                '<td data-label="Email">' +
+                    '<div class="celda-stack">' +
+                        '<span>' + (c.email || '—') + '</span>' +
+                        botonCorreoCliente(c) +
+                    '</div>' +
+                '</td>' +
                 '<td data-label="Acciones" class="celda-accion">' + acciones + '</td>';
 
             el.clientesTbody.appendChild(tr);
+        });
+
+        el.clientesTbody.querySelectorAll('.btn-editar-cliente').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                abrirModalEditarCliente(parseInt(btn.getAttribute('data-index'), 10));
+            });
+        });
+        el.clientesTbody.querySelectorAll('.btn-eliminar-cliente').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                eliminarCliente(parseInt(btn.getAttribute('data-index'), 10));
+            });
+        });
+    }
+
+    /* ---- Modificar cliente: actualiza nombre/RUT/teléfono/email en TODAS
+       las reservas agrupadas bajo ese cliente (misma tabla, sin entidad de
+       cliente aparte). Permitido para administrador y superadministrador,
+       igual que anular/editar una reserva individual. ---- */
+    function abrirModalEditarCliente(index) {
+        var c = state.clientesRenderizados[index];
+        if (!c) return;
+
+        el.editClienteForm.reset();
+        el.editClienteError.hidden = true;
+        el.editClienteForm.setAttribute('data-index', String(index));
+        el.editClienteNombre.value = c.nombre || '';
+        el.editClienteDocumento.value = c.documento || '';
+        el.editClienteTelefono.value = c.telefono || '';
+        el.editClienteEmail.value = c.email || '';
+        el.editClienteFormInfo.textContent = 'Se actualizarán ' + c.reservas + ' reserva(s) de este cliente.';
+        el.editClienteModalOverlay.hidden = false;
+    }
+
+    function cerrarModalEditarCliente() {
+        el.editClienteModalOverlay.hidden = true;
+    }
+
+    el.btnCerrarEditClienteModal.addEventListener('click', cerrarModalEditarCliente);
+    el.editClienteModalOverlay.addEventListener('click', function (e) {
+        if (e.target === el.editClienteModalOverlay) cerrarModalEditarCliente();
+    });
+
+    el.editClienteForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        var index = parseInt(el.editClienteForm.getAttribute('data-index'), 10);
+        var c = state.clientesRenderizados[index];
+        el.editClienteError.hidden = true;
+
+        if (!c) {
+            el.editClienteError.textContent = 'No pudimos ubicar a este cliente, cierra y vuelve a intentar.';
+            el.editClienteError.hidden = false;
+            return;
+        }
+
+        var nombre = el.editClienteNombre.value.trim();
+        if (!nombre) {
+            el.editClienteError.textContent = 'El nombre es obligatorio.';
+            el.editClienteError.hidden = false;
+            return;
+        }
+
+        var cambios = {
+            nombre_contacto: nombre,
+            documento_contacto: el.editClienteDocumento.value.trim() || null,
+            telefono_contacto: el.editClienteTelefono.value.trim() || null,
+            email_contacto: el.editClienteEmail.value.trim() || null
+        };
+
+        var btnGuardar = el.editClienteForm.querySelector('button[type="submit"]');
+        btnGuardar.disabled = true;
+
+        sb.from('reservas').update(cambios).in('id', c.ids).then(function (result) {
+            btnGuardar.disabled = false;
+            if (result.error) {
+                el.editClienteError.textContent = 'No pudimos guardar los cambios: ' + result.error.message;
+                el.editClienteError.hidden = false;
+                return;
+            }
+            cerrarModalEditarCliente();
+            cargarReservas();
+        });
+    });
+
+    /* ---- Eliminar cliente: borra de Supabase TODAS sus reservas (pagadas o
+       no). Es irreversible y solo lo puede hacer el superadministrador (ver
+       política "superadmin_elimina_reservas" en
+       supabase/add_reservas_delete_policy.sql). ---- */
+    function eliminarCliente(index) {
+        var c = state.clientesRenderizados[index];
+        if (!c) return;
+
+        var confirmado = window.confirm(
+            '¿Eliminar definitivamente a "' + (c.nombre || 'este cliente') + '"? ' +
+            'Se borrarán sus ' + c.reservas + ' reserva(s) de Supabase, incluidas las pagadas o confirmadas. ' +
+            'Esta acción no se puede deshacer.'
+        );
+        if (!confirmado) return;
+
+        sb.from('reservas').delete().in('id', c.ids).then(function (result) {
+            if (result.error) {
+                window.alert('No pudimos eliminar al cliente: ' + result.error.message);
+                return;
+            }
+            cargarReservas();
         });
     }
 

@@ -832,6 +832,39 @@
         </div>
     </div>
 
+    <!-- MODAL: MODIFICAR CLIENTE -->
+    <div class="admin-modal-overlay" id="editClienteModalOverlay" hidden>
+        <div class="admin-modal">
+            <div class="admin-modal-header">
+                <h2>Modificar Cliente</h2>
+                <button type="button" class="admin-modal-close" id="btnCerrarEditClienteModal" aria-label="Cerrar">&times;</button>
+            </div>
+            <form id="editClienteForm" novalidate>
+                <p id="editClienteFormInfo" class="admin-modal-subtitle"></p>
+                <div class="form-group">
+                    <label for="editClienteNombre">Nombre</label>
+                    <input type="text" id="editClienteNombre" required>
+                </div>
+                <div class="form-group">
+                    <label for="editClienteDocumento">RUT / Pasaporte</label>
+                    <input type="text" id="editClienteDocumento">
+                </div>
+                <div class="form-group">
+                    <label for="editClienteTelefono">Teléfono</label>
+                    <input type="tel" id="editClienteTelefono">
+                </div>
+                <div class="form-group">
+                    <label for="editClienteEmail">Email</label>
+                    <input type="email" id="editClienteEmail">
+                </div>
+
+                <div class="auth-alert" id="editClienteError" hidden></div>
+
+                <button type="submit" class="btn btn-primary btn-block">Guardar Cambios</button>
+            </form>
+        </div>
+    </div>
+
     <!-- FOOTER -->
     <footer class="footer" id="contacto">
         <div class="footer-container">
