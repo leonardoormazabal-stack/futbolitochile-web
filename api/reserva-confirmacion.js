@@ -72,10 +72,17 @@ module.exports = async function handler(req, res) {
 
     const { data: admins } = await supabaseAdmin
         .from('profiles')
-        .select('email')
+        .select('email,notificar_nuevas_reservas')
         .in('rol', ['administrador', 'superadministrador']);
 
-    const adminEmails = (admins || []).map((a) => a.email).filter(Boolean);
+    // notificar_nuevas_reservas es aparte del correo resumen diario (que
+    // siempre va a todos los administradores): permite que alguien deje de
+    // recibir el aviso de cada reserva individual sin dejar de recibir el
+    // resumen del día.
+    const adminEmails = (admins || [])
+        .filter((a) => a.notificar_nuevas_reservas !== false)
+        .map((a) => a.email)
+        .filter(Boolean);
 
     const deporte = reserva.canchas ? (SPORT_LABELS[reserva.canchas.deporte] || reserva.canchas.deporte) : '';
     const canchaNombre = reserva.canchas ? reserva.canchas.nombre : reserva.cancha_id;
