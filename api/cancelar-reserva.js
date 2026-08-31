@@ -30,6 +30,18 @@ function reservaYaPaso(fecha, hora) {
     return inicioReserva.getTime() <= ahoraChile.getTime();
 }
 
+// Detecta que falta una columna nueva (falta correr el parche
+// supabase/add_motivo_cancelacion.sql). PostgREST no siempre devuelve el
+// código Postgres crudo "42703": si la columna ni siquiera está en su caché
+// de esquema, responde con su propio código "PGRST204".
+function esErrorColumnaFaltante(error) {
+    return !!error && (
+        error.code === '42703' ||
+        error.code === 'PGRST204' ||
+        (error.message && error.message.indexOf('schema cache') !== -1)
+    );
+}
+
 function datosPublicos(reserva) {
     return {
         id: reserva.id,
@@ -105,10 +117,21 @@ module.exports = async function handler(req, res) {
             return;
         }
 
-        const { error: updateError } = await supabaseAdmin
+        let { error: updateError } = await supabaseAdmin
             .from('reservas')
-            .update({ estado: 'cancelada' })
+            .update({
+                estado: 'cancelada',
+                motivo_cancelacion: 'Cancelada por el cliente desde el link de confirmación',
+                cancelado_en: new Date().toISOString()
+            })
             .eq('id', id);
+
+        if (updateError && esErrorColumnaFaltante(updateError)) {
+            ({ error: updateError } = await supabaseAdmin
+                .from('reservas')
+                .update({ estado: 'cancelada' })
+                .eq('id', id));
+        }
 
         if (updateError) {
             res.status(500).json({ error: 'No pudimos anular tu reserva: ' + updateError.message });

@@ -106,6 +106,9 @@ function extraerColumnaFaltante(error) {
 const COLUMNAS_RESERVAS_BASE = ['id', 'fecha', 'hora', 'precio', 'monto_pagado', 'tipo_pago', 'metodo_pago', 'nombre_contacto', 'created_at'];
 const COLUMNAS_RESERVAS_OPCIONALES = ['monto_pagado_2', 'pago2_fecha', 'metodo_pago_2'];
 
+const COLUMNAS_CANCELACIONES_BASE = ['id', 'fecha', 'hora', 'nombre_contacto'];
+const COLUMNAS_CANCELACIONES_OPCIONALES = ['motivo_cancelacion', 'cancelado_por', 'cancelado_en'];
+
 // Trae las reservas que hay que cuadrar del día del reporte: tanto las
 // canchas que se juegan ese día como cualquier reserva de otra fecha cuyo
 // pago se registró ese día (misma lógica que la pestaña Cuadratura Diaria
@@ -178,6 +181,37 @@ async function cargarReservasDelMes(supabaseAdmin, inicioMes, hastaFecha) {
     return res;
 }
 
+// Trae las reservas canceladas ese día (según "cancelado_en", no la fecha de
+// la cancha) para listarlas en el correo junto a su motivo. Si todavía no se
+// aplicó el parche supabase/add_motivo_cancelacion.sql (falta la columna
+// "cancelado_en"), devuelve la lista vacía con "migracionPendiente" en vez
+// de romper el resto del reporte.
+async function cargarCancelacionesDelDia(supabaseAdmin, diaReporte) {
+    const diaSiguiente = sumarDias(diaReporte, 1);
+    const columnas = COLUMNAS_CANCELACIONES_BASE.concat(COLUMNAS_CANCELACIONES_OPCIONALES);
+    const select = columnas.join(',') + ',canchas(nombre,deporte)';
+
+    const resultado = await supabaseAdmin
+        .from('reservas')
+        .select(select)
+        .eq('estado', 'cancelada')
+        .gte('cancelado_en', diaReporte + 'T00:00:00.000Z')
+        .lt('cancelado_en', diaSiguiente + 'T00:00:00.000Z');
+
+    if (resultado.error) {
+        if (esErrorColumnaFaltante(resultado.error)) {
+            return { data: [], error: null, migracionPendiente: true };
+        }
+        return { data: null, error: resultado.error };
+    }
+
+    const filtradas = (resultado.data || [])
+        .filter((r) => r.cancelado_en && fechaChile(new Date(r.cancelado_en)) === diaReporte)
+        .sort((a, b) => new Date(a.cancelado_en) - new Date(b.cancelado_en));
+
+    return { data: filtradas, error: null };
+}
+
 module.exports = async function handler(req, res) {
     const cronSecret = (process.env.CRON_SECRET || '').trim();
     if (!cronSecret) {
@@ -210,18 +244,33 @@ module.exports = async function handler(req, res) {
     const diaReporte = sumarDias(hoy, -1);
     const inicioMes = primerDiaDelMes(diaReporte);
 
-    const [{ data: filas, error: errorDia }, { data: reservasMes, error: errorMes }, { data: admins }] = await Promise.all([
+    const [
+        { data: filas, error: errorDia },
+        { data: reservasMes, error: errorMes },
+        { data: admins },
+        { data: cancelaciones, error: errorCancelaciones, migracionPendiente: cancelacionesMigracionPendiente }
+    ] = await Promise.all([
         cargarReservasDelDia(supabaseAdmin, diaReporte),
         cargarReservasDelMes(supabaseAdmin, inicioMes, diaReporte),
         supabaseAdmin
             .from('profiles')
             .select('email')
-            .in('rol', ['administrador', 'superadministrador'])
+            .in('rol', ['administrador', 'superadministrador']),
+        cargarCancelacionesDelDia(supabaseAdmin, diaReporte)
     ]);
 
     if (errorDia || errorMes) {
         res.status(200).json({ ok: false, motivo: 'No se pudieron leer las reservas.' });
         return;
+    }
+
+    const cancelacionesDia = errorCancelaciones ? [] : (cancelaciones || []);
+
+    const idsCancelador = Array.from(new Set(cancelacionesDia.map((r) => r.cancelado_por).filter(Boolean)));
+    let nombresCancelador = {};
+    if (idsCancelador.length) {
+        const { data: perfiles } = await supabaseAdmin.from('profiles').select('id,nombre').in('id', idsCancelador);
+        (perfiles || []).forEach((p) => { nombresCancelador[p.id] = p.nombre; });
     }
 
     const adminEmails = (admins || []).map((a) => a.email).filter(Boolean);
@@ -265,6 +314,53 @@ module.exports = async function handler(req, res) {
         }).join('')
         : '<tr><td colspan="10">Sin pagos registrados este día.</td></tr>';
 
+    const cancelacionesHtml = cancelacionesDia.length
+        ? cancelacionesDia.map((r) => {
+            const deporte = r.canchas ? (SPORT_LABELS[r.canchas.deporte] || r.canchas.deporte) : '';
+            const cancha = r.canchas ? r.canchas.nombre : '—';
+            const horaTexto = String(r.hora).padStart(2, '0') + ':00';
+            const canceladoPor = r.cancelado_por
+                ? (nombresCancelador[r.cancelado_por] || '—')
+                : 'Cliente (desde el link de su reserva)';
+            const canceladoElTexto = r.cancelado_en
+                ? new Date(r.cancelado_en).toLocaleTimeString('es-CL', { timeZone: ZONA_HORARIA, hour: '2-digit', minute: '2-digit' })
+                : '—';
+            return (
+                '<tr>' +
+                '<td>' + escapeHtml(formatFechaCorta(r.fecha)) + '</td>' +
+                '<td>' + horaTexto + ' hrs</td>' +
+                '<td>' + escapeHtml(deporte) + '</td>' +
+                '<td>' + escapeHtml(cancha) + '</td>' +
+                '<td>' + escapeHtml(r.nombre_contacto || '—') + '</td>' +
+                '<td>' + escapeHtml(r.motivo_cancelacion || '—') + '</td>' +
+                '<td>' + escapeHtml(canceladoPor) + '</td>' +
+                '<td>' + canceladoElTexto + '</td>' +
+                '</tr>'
+            );
+        }).join('')
+        : '<tr><td colspan="8">Sin cancelaciones este día.</td></tr>';
+
+    const notaCancelaciones = cancelacionesMigracionPendiente
+        ? '<p style="font-size:12px;color:#c0392b;">Falta aplicar el parche supabase/add_motivo_cancelacion.sql en Supabase para poder mostrar el motivo y quién canceló.</p>'
+        : (errorCancelaciones ? '<p style="font-size:12px;color:#c0392b;">No se pudieron cargar las cancelaciones de este día.</p>' : '');
+
+    const cancelacionesBloqueHtml =
+        '<p style="margin-top:24px;">Cancelaciones — ' + escapeHtml(formatFechaLarga(diaReporte)) + '</p>' +
+        notaCancelaciones +
+        '<table cellpadding="8" cellspacing="0" border="1" style="border-collapse:collapse;width:100%;font-family:sans-serif;font-size:13px;">' +
+        '<thead><tr>' +
+        '<th align="left">Cancha para</th>' +
+        '<th align="left">Hora</th>' +
+        '<th align="left">Deporte</th>' +
+        '<th align="left">Cancha</th>' +
+        '<th align="left">Cliente</th>' +
+        '<th align="left">Motivo</th>' +
+        '<th align="left">Cancelado por</th>' +
+        '<th align="left">Hora de cancelación</th>' +
+        '</tr></thead>' +
+        '<tbody>' + cancelacionesHtml + '</tbody>' +
+        '</table>';
+
     const html =
         '<p>Cuadratura — ' + escapeHtml(formatFechaLarga(diaReporte)) + '</p>' +
         '<p style="font-size:12px;color:#666;">Incluye las canchas usadas este día y cualquier pago que haya entrado este día para una reserva de otra fecha (columna "Cancha para").</p>' +
@@ -284,7 +380,8 @@ module.exports = async function handler(req, res) {
         '<tbody>' + filasHtml + '</tbody>' +
         '</table>' +
         '<p style="margin-top:16px;"><strong>Total recaudado este día:</strong> ' + formatCLP(totalDia) + '</p>' +
-        '<p><strong>Acumulado del mes hasta esta fecha:</strong> ' + formatCLP(totalMes) + '</p>';
+        '<p><strong>Acumulado del mes hasta esta fecha:</strong> ' + formatCLP(totalMes) + '</p>' +
+        cancelacionesBloqueHtml;
 
     try {
         await enviarCorreo({
@@ -297,5 +394,5 @@ module.exports = async function handler(req, res) {
         return;
     }
 
-    res.status(200).json({ ok: true, fecha: diaReporte, reservas: filasDia.length, totalDia, totalMes });
+    res.status(200).json({ ok: true, fecha: diaReporte, reservas: filasDia.length, totalDia, totalMes, cancelaciones: cancelacionesDia.length });
 };
