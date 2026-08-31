@@ -62,7 +62,8 @@
         ocupadosPorHora: {},    // { hora: cantidadDeCanchasOcupadas } para el deporte/fecha elegidos
         totalCanchasDeporte: 0, // cuántas canchas tiene el deporte elegido
         catalogoListo: false,
-        userId: null
+        userId: null,
+        rutMatchUserId: null // cuenta encontrada por RUT cuando no hay sesión activa (ver buscarClientePorRut)
     };
 
     /* ======================================================================
@@ -657,10 +658,33 @@
         return ok;
     }
 
+    // Si no hay sesión activa y el RUT escrito ya tiene una cuenta (o al
+    // menos una reserva anterior como invitado), autocompleta nombre/
+    // teléfono/email y recuerda el userId para asociar la reserva a esa
+    // cuenta sin pedir que inicie sesión.
+    function buscarClientePorRut() {
+        if (state.userId) return;
+        var valor = campos.rut.value.trim();
+        if (!valor || !validarRut(valor)) return;
+
+        fetch('/api/cliente-por-rut', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rut: valor })
+        }).then(function (r) { return r.json(); }).then(function (data) {
+            state.rutMatchUserId = (data && data.encontrado) ? (data.userId || null) : null;
+            if (!data || !data.encontrado) return;
+
+            if (data.nombre && !campos.nombre.value) campos.nombre.value = data.nombre;
+            if (data.telefono && !campos.telefono.value) campos.telefono.value = data.telefono;
+            if (data.email && !campos.email.value) campos.email.value = data.email;
+        }).catch(function () { state.rutMatchUserId = null; });
+    }
+
     campos.nombre.addEventListener('blur', validarNombre);
     campos.rut.addEventListener('blur', function () {
         campos.rut.value = formatearRut(campos.rut.value);
-        validarRutCampo();
+        if (validarRutCampo()) buscarClientePorRut();
     });
     campos.telefono.addEventListener('blur', validarTelefono);
     campos.email.addEventListener('blur', validarEmail);
@@ -807,79 +831,105 @@
         cargarCanchasDisponiblesYRenderizar();
     }
 
+    // Decide a qué cuenta queda asociada la reserva: la de la sesión activa,
+    // la que ya se encontró por RUT al escribirlo (buscarClientePorRut), o
+    // si no existe ninguna, crea la cuenta ahora mismo (correo de bienvenida
+    // con clave incluido) y usa la que recién se creó. Si la creación falla
+    // por lo que sea, sigue adelante como reserva de invitado (user_id null)
+    // en vez de bloquear la reserva.
+    function resolverUserIdParaReserva() {
+        if (state.userId) return Promise.resolve(state.userId);
+        if (state.rutMatchUserId) return Promise.resolve(state.rutMatchUserId);
+
+        return fetch('/api/registrar-cliente', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                nombre: campos.nombre.value.trim(),
+                rut: campos.rut.value.trim(),
+                telefono: campos.telefono.value.trim(),
+                email: campos.email.value.trim()
+            })
+        }).then(function (r) { return r.json(); }).then(function (data) {
+            return (data && data.ok) ? data.userId : null;
+        }).catch(function () { return null; });
+    }
+
     function crearReserva(metodo) {
-        var reservaId = generarId();
+        resolverUserIdParaReserva().then(function (userId) {
+            var reservaId = generarId();
 
-        // Transferencia no se cobra de forma instantánea: queda condicionada
-        // a verificar el comprobante. Por eso el monto queda en 0 (Pendiente)
-        // hasta que un administrador confirme el pago real, en vez de
-        // registrarlo como pagado apenas se reserva.
-        var montoPagadoConfirmado = METODOS_SIN_REDIRECCION.indexOf(metodo) === -1 ? state.montoAPagar : 0;
+            // Transferencia no se cobra de forma instantánea: queda condicionada
+            // a verificar el comprobante. Por eso el monto queda en 0 (Pendiente)
+            // hasta que un administrador confirme el pago real, en vez de
+            // registrarlo como pagado apenas se reserva.
+            var montoPagadoConfirmado = METODOS_SIN_REDIRECCION.indexOf(metodo) === -1 ? state.montoAPagar : 0;
 
-        var reserva = {
-            id: reservaId,
-            user_id: state.userId,
-            cancha_id: state.canchaId,
-            fecha: state.selectedDate,
-            hora: state.selectedHour,
-            precio: state.precio,
-            monto_pagado: montoPagadoConfirmado,
-            tipo_pago: state.tipoPago,
-            nombre_contacto: campos.nombre.value.trim(),
-            documento_contacto: campos.rut.value.trim(),
-            telefono_contacto: campos.telefono.value.trim(),
-            email_contacto: campos.email.value.trim(),
-            metodo_pago: metodo
-        };
+            var reserva = {
+                id: reservaId,
+                user_id: userId,
+                cancha_id: state.canchaId,
+                fecha: state.selectedDate,
+                hora: state.selectedHour,
+                precio: state.precio,
+                monto_pagado: montoPagadoConfirmado,
+                tipo_pago: state.tipoPago,
+                nombre_contacto: campos.nombre.value.trim(),
+                documento_contacto: campos.rut.value.trim(),
+                telefono_contacto: campos.telefono.value.trim(),
+                email_contacto: campos.email.value.trim(),
+                metodo_pago: metodo
+            };
 
-        sb.from('reservas').insert([reserva]).then(function (result) {
-            if (result.error) {
-                if (result.error.code === '23505') {
-                    mostrarCanchaOcupada();
+            sb.from('reservas').insert([reserva]).then(function (result) {
+                if (result.error) {
+                    if (result.error.code === '23505') {
+                        mostrarCanchaOcupada();
+                        return;
+                    }
+
+                    el.paymentStatus.hidden = false;
+                    el.paymentStatus.className = 'payment-status error';
+                    el.paymentStatus.textContent = 'No pudimos confirmar tu reserva. Intenta de nuevo.';
+                    aplicarEstadoMetodosPago();
                     return;
                 }
 
-                el.paymentStatus.hidden = false;
-                el.paymentStatus.className = 'payment-status error';
-                el.paymentStatus.textContent = 'No pudimos confirmar tu reserva. Intenta de nuevo.';
-                aplicarEstadoMetodosPago();
-                return;
-            }
+                enviarCorreosReserva(reservaId);
 
-            enviarCorreosReserva(reservaId);
+                completePanel('pago');
 
-            completePanel('pago');
+                var fechaLarga = formatFechaLarga(state.selectedDate);
+                var horaTexto = String(state.selectedHour).padStart(2, '0') + ':00';
 
-            var fechaLarga = formatFechaLarga(state.selectedDate);
-            var horaTexto = String(state.selectedHour).padStart(2, '0') + ':00';
+                var mensajePago;
+                if (metodo === 'Pago Presencial') {
+                    mensajePago = 'Pago pendiente: ' + formatCLP(state.precio) + ' a pagar en el recinto.';
+                } else {
+                    mensajePago = 'Total pagado: ' + formatCLP(state.montoAPagar) + ' vía ' + metodo + '.';
+                }
 
-            var mensajePago;
-            if (metodo === 'Pago Presencial') {
-                mensajePago = 'Pago pendiente: ' + formatCLP(state.precio) + ' a pagar en el recinto.';
-            } else {
-                mensajePago = 'Total pagado: ' + formatCLP(state.montoAPagar) + ' vía ' + metodo + '.';
-            }
+                el.paymentStatus.hidden = true;
+                el.paymentConfirmation.hidden = false;
+                el.paymentConfirmation.innerHTML =
+                    '<h3>¡Reserva confirmada!</h3>' +
+                    '<p>' + SPORT_LABELS[state.sport] + ' — ' + state.canchaNombre + '</p>' +
+                    '<p>' + fechaLarga + ', ' + horaTexto + ' hrs</p>' +
+                    '<p>' + mensajePago + '</p>' +
+                    '<p>Te enviamos la confirmación a ' + campos.email.value.trim() + '.</p>' +
+                    construirBotonCompartirHtml(state.canchaNombre, fechaLarga, horaTexto) +
+                    (metodo === 'Transferencia' ? construirDatosTransferenciaHtml(state.tipoPago, state.canchaNombre, fechaLarga, horaTexto) : '') +
+                    (metodo === 'Pago Presencial' ? construirCoordinacionPresencialHtml(state.canchaNombre, fechaLarga, horaTexto) : '');
 
-            el.paymentStatus.hidden = true;
-            el.paymentConfirmation.hidden = false;
-            el.paymentConfirmation.innerHTML =
-                '<h3>¡Reserva confirmada!</h3>' +
-                '<p>' + SPORT_LABELS[state.sport] + ' — ' + state.canchaNombre + '</p>' +
-                '<p>' + fechaLarga + ', ' + horaTexto + ' hrs</p>' +
-                '<p>' + mensajePago + '</p>' +
-                '<p>Te enviamos la confirmación a ' + campos.email.value.trim() + '.</p>' +
-                construirBotonCompartirHtml(state.canchaNombre, fechaLarga, horaTexto) +
-                (metodo === 'Transferencia' ? construirDatosTransferenciaHtml(state.tipoPago, state.canchaNombre, fechaLarga, horaTexto) : '') +
-                (metodo === 'Pago Presencial' ? construirCoordinacionPresencialHtml(state.canchaNombre, fechaLarga, horaTexto) : '');
-
-            if (metodo === 'Pago Presencial') {
-                // Pequeño margen para que el aviso al correo (fetch de
-                // enviarCorreosReserva) alcance a salir antes de que esta
-                // pestaña navegue a WhatsApp.
-                setTimeout(function () {
-                    window.location.href = construirLinkWhatsappPresencial(state.canchaNombre, fechaLarga, horaTexto);
-                }, 900);
-            }
+                if (metodo === 'Pago Presencial') {
+                    // Pequeño margen para que el aviso al correo (fetch de
+                    // enviarCorreosReserva) alcance a salir antes de que esta
+                    // pestaña navegue a WhatsApp.
+                    setTimeout(function () {
+                        window.location.href = construirLinkWhatsappPresencial(state.canchaNombre, fechaLarga, horaTexto);
+                    }, 900);
+                }
+            });
         });
     }
 

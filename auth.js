@@ -64,27 +64,32 @@
             var session = result.data.session;
 
             if (session) {
-                if (slot) {
-                    slot.innerHTML =
-                        '<a href="#" id="logoutLink" class="nav-login-btn nav-logged-in" title="Cerrar sesión">Cerrar Sesión</a>';
+                sb.from('profiles').select('rol').eq('id', session.user.id).single().then(function (res) {
+                    var rol = res.data && res.data.rol;
 
-                    var logoutLink = document.getElementById('logoutLink');
-                    if (logoutLink) {
-                        logoutLink.addEventListener('click', function (e) {
-                            e.preventDefault();
-                            sb.auth.signOut().then(function () {
-                                window.location.href = 'index.html';
+                    if (slot) {
+                        var misReservasLink = (rol === 'jugador')
+                            ? '<a href="mis-reservas.html" class="nav-login-btn">Mis Reservas</a>'
+                            : '';
+                        slot.innerHTML =
+                            misReservasLink +
+                            '<a href="#" id="logoutLink" class="nav-login-btn nav-logged-in" title="Cerrar sesión">Cerrar Sesión</a>';
+
+                        var logoutLink = document.getElementById('logoutLink');
+                        if (logoutLink) {
+                            logoutLink.addEventListener('click', function (e) {
+                                e.preventDefault();
+                                sb.auth.signOut().then(function () {
+                                    window.location.href = 'index.html';
+                                });
                             });
-                        });
+                        }
                     }
-                }
 
-                if (adminSlot) {
-                    sb.from('profiles').select('rol').eq('id', session.user.id).single().then(function (res) {
-                        var rol = res.data && res.data.rol;
+                    if (adminSlot) {
                         adminSlot.hidden = !(rol === 'administrador' || rol === 'superadministrador');
-                    });
-                }
+                    }
+                });
             } else {
                 if (slot) {
                     slot.innerHTML = '<a href="login.html" class="nav-login-btn">Iniciar Sesión</a>';
@@ -129,7 +134,7 @@
                     var rol = res.data && res.data.rol;
                     window.location.href = (rol === 'administrador' || rol === 'superadministrador')
                         ? 'admin.html'
-                        : 'reservas.html';
+                        : 'mis-reservas.html';
                 });
             });
         });
@@ -336,6 +341,25 @@
     }
 
     /* ======================================================================
+       CONTROL DE ACCESO PARA PÁGINAS QUE REQUIEREN LOGIN (mis-reservas.html)
+       Devuelve una Promise que resuelve con {session, nombre} si hay una
+       sesión activa, sin exigir ningún rol, o redirige a login.html y no
+       resuelve.
+       ====================================================================== */
+    function requireLogin() {
+        return sb.auth.getSession().then(function (result) {
+            var session = result.data.session;
+            if (!session) {
+                window.location.href = 'login.html';
+                return null;
+            }
+            return sb.from('profiles').select('nombre').eq('id', session.user.id).single().then(function (res) {
+                return { session: session, nombre: res.data && res.data.nombre };
+            });
+        });
+    }
+
+    /* ======================================================================
        MOSTRAR/OCULTAR CONTRASEÑA: agrega un botón con ícono de ojo dentro
        de cada campo de contraseña (login, registro y modales de admin)
        para alternar su visibilidad.
@@ -399,6 +423,7 @@
         validarRut: validarRut,
         validarPasaporte: validarPasaporte,
         formatearRut: formatearRut,
-        requireAdmin: requireAdmin
+        requireAdmin: requireAdmin,
+        requireLogin: requireLogin
     };
 })();

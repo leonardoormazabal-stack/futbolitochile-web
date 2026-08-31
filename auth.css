@@ -272,3 +272,104 @@
         font-size: 26px;
     }
 }
+
+/* ==========================================================================
+   MIS RESERVAS (mis-reservas.html)
+   ========================================================================== */
+.mis-reservas-page {
+    max-width: 680px;
+}
+
+.mis-reservas-subtitulo {
+    font-size: 18px;
+    color: var(--azul-oscuro);
+    margin: 0 0 14px;
+}
+
+.mis-reservas-subtitulo-historial {
+    margin-top: 36px;
+}
+
+.mis-reservas-vacio {
+    font-size: 14px;
+    color: var(--gris-texto);
+    margin-bottom: 16px;
+}
+
+.mis-reservas-btn-nueva {
+    display: inline-block;
+    width: auto;
+}
+
+.mis-reservas-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.reserva-card {
+    border: 1px solid var(--gris-claro);
+    border-radius: 12px;
+    padding: 16px 18px;
+}
+
+.reserva-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.reserva-card-header strong {
+    color: var(--azul-oscuro);
+}
+
+.reserva-card-estado {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 12px;
+    white-space: nowrap;
+}
+
+.reserva-card-estado-ok {
+    background-color: #eafaf0;
+    color: #1f7a3d;
+}
+
+.reserva-card-estado-cancelada {
+    background-color: #fdeceb;
+    color: var(--rojo-oscuro);
+}
+
+.reserva-card-fecha,
+.reserva-card-pago,
+.reserva-card-motivo {
+    font-size: 14px;
+    color: var(--gris-texto);
+    margin: 0 0 4px;
+}
+
+.reserva-card-acciones {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.btn-sm {
+    padding: 8px 16px;
+    font-size: 13px;
+    width: auto;
+}
+
+.reserva-card-editar {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--gris-claro);
+}
