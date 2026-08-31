@@ -1278,6 +1278,32 @@
        MODAL: NUEVA RESERVA
        ====================================================================== */
 
+    // Misma lógica que reservas.js: si el RUT que escribió el administrador
+    // ya tiene cuenta, la reserva queda asociada a ella; si no, se crea la
+    // cuenta automáticamente (correo de bienvenida con usuario/clave
+    // incluido), igual que si el cliente hubiera reservado solo desde la
+    // web. Sin RUT válido o sin email no hay cómo crear la cuenta, así que
+    // la reserva sigue quedando como invitado, tal como antes.
+    function resolverUserIdParaReservaAdmin(rut, nombre, telefono, email) {
+        if (!rut || !window.FutbolitoAuth.validarRut(rut) || !email) return Promise.resolve(null);
+
+        return fetch('/api/cliente-por-rut', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rut: rut })
+        }).then(function (r) { return r.json(); }).then(function (data) {
+            if (data && data.encontrado && data.userId) return data.userId;
+
+            return fetch('/api/registrar-cliente', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nombre: nombre, rut: rut, telefono: telefono || '', email: email })
+            }).then(function (r2) { return r2.json(); }).then(function (data2) {
+                return (data2 && data2.ok) ? data2.userId : null;
+            });
+        }).catch(function () { return null; });
+    }
+
     // No existe una tabla de clientes aparte: el directorio de clientes ya
     // atendidos se arma en el navegador a partir del historial de reservas
     // (nombre/documento/teléfono/email quedan guardados en cada reserva),
@@ -1775,70 +1801,77 @@
             montoPagado2 = 0;
         }
 
-        var reservaId = generarId();
-        var reserva = {
-            id: reservaId,
-            cancha_id: canchaId,
-            fecha: fecha,
-            hora: parseInt(hora, 10),
-            precio: precio,
-            nombre_contacto: nombre,
-            documento_contacto: el.admDocumento.value.trim() || null,
-            telefono_contacto: el.admTelefono.value.trim() || null,
-            email_contacto: el.admEmail.value.trim() || null,
-            metodo_pago: metodoPago,
-            monto_pagado: montoPagado,
-            metodo_pago_2: metodoPago2 || null,
-            monto_pagado_2: montoPagado2,
-            tipo_pago: (montoPagado + montoPagado2) >= precio ? 'completo' : 'abono',
-            origen: 'admin'
-        };
+        var documento = el.admDocumento.value.trim();
+        var telefono = el.admTelefono.value.trim();
+        var email = el.admEmail.value.trim();
 
-        sb.from('reservas').insert([reserva]).then(function (result) {
-            // Si "origen" y/o "metodo_pago_2"/"monto_pagado_2" todavía no
-            // existen (falta correr add_origen_reservas.sql y/o
-            // add_cuadratura_reservas.sql), reintenta sin esas columnas en
-            // vez de bloquear la creación de la reserva.
-            if (esErrorColumnaFaltante(result.error)) {
-                delete reserva.origen;
-                delete reserva.metodo_pago_2;
-                delete reserva.monto_pagado_2;
-                return sb.from('reservas').insert([reserva]).then(manejarResultadoReservaAdmin);
-            }
-            return manejarResultadoReservaAdmin(result);
-        });
-
-        function manejarResultadoReservaAdmin(result) {
-            if (result.error) {
-                if (result.error.code === '23505') {
-                    el.admReservaError.textContent = 'Ese horario ya está ocupado. Elige otro.';
-                } else {
-                    el.admReservaError.textContent = 'No pudimos crear la reserva: ' + result.error.message;
-                }
-                el.admReservaError.className = 'auth-alert';
-                el.admReservaError.hidden = false;
-                return;
-            }
-
-            enviarCorreosReserva(reservaId);
-
-            var canchaOption = el.admCancha.options[el.admCancha.selectedIndex];
-
-            cerrarModal();
-            cargarReservas();
-            abrirModalReservaCreada({
-                telefono: el.admTelefono.value.trim(),
-                nombre: nombre,
-                deporte: deporte,
-                canchaNombre: canchaOption ? canchaOption.textContent : '',
+        resolverUserIdParaReservaAdmin(documento, nombre, telefono, email).then(function (userId) {
+            var reservaId = generarId();
+            var reserva = {
+                id: reservaId,
+                user_id: userId,
+                cancha_id: canchaId,
                 fecha: fecha,
                 hora: parseInt(hora, 10),
                 precio: precio,
-                montoPagado: montoPagado,
-                montoPagado2: montoPagado2,
-                metodoPago: metodoPago
+                nombre_contacto: nombre,
+                documento_contacto: documento || null,
+                telefono_contacto: telefono || null,
+                email_contacto: email || null,
+                metodo_pago: metodoPago,
+                monto_pagado: montoPagado,
+                metodo_pago_2: metodoPago2 || null,
+                monto_pagado_2: montoPagado2,
+                tipo_pago: (montoPagado + montoPagado2) >= precio ? 'completo' : 'abono',
+                origen: 'admin'
+            };
+
+            sb.from('reservas').insert([reserva]).then(function (result) {
+                // Si "origen" y/o "metodo_pago_2"/"monto_pagado_2" todavía no
+                // existen (falta correr add_origen_reservas.sql y/o
+                // add_cuadratura_reservas.sql), reintenta sin esas columnas en
+                // vez de bloquear la creación de la reserva.
+                if (esErrorColumnaFaltante(result.error)) {
+                    delete reserva.origen;
+                    delete reserva.metodo_pago_2;
+                    delete reserva.monto_pagado_2;
+                    return sb.from('reservas').insert([reserva]).then(manejarResultadoReservaAdmin);
+                }
+                return manejarResultadoReservaAdmin(result);
             });
-        }
+
+            function manejarResultadoReservaAdmin(result) {
+                if (result.error) {
+                    if (result.error.code === '23505') {
+                        el.admReservaError.textContent = 'Ese horario ya está ocupado. Elige otro.';
+                    } else {
+                        el.admReservaError.textContent = 'No pudimos crear la reserva: ' + result.error.message;
+                    }
+                    el.admReservaError.className = 'auth-alert';
+                    el.admReservaError.hidden = false;
+                    return;
+                }
+
+                enviarCorreosReserva(reservaId);
+
+                var canchaOption = el.admCancha.options[el.admCancha.selectedIndex];
+
+                cerrarModal();
+                cargarReservas();
+                abrirModalReservaCreada({
+                    telefono: telefono,
+                    nombre: nombre,
+                    deporte: deporte,
+                    canchaNombre: canchaOption ? canchaOption.textContent : '',
+                    fecha: fecha,
+                    hora: parseInt(hora, 10),
+                    precio: precio,
+                    montoPagado: montoPagado,
+                    montoPagado2: montoPagado2,
+                    metodoPago: metodoPago
+                });
+            }
+        });
     });
 
     /* ======================================================================
