@@ -361,7 +361,7 @@
     // esquema original: si a alguna todavía le falta su migración, se quita
     // SOLO ESA (no todas) del select y se reintenta, para que una columna
     // pendiente no oculte datos de otras que sí están al día.
-    var COLUMNAS_RESERVAS_OPCIONALES = ['origen', 'metodo_pago_2', 'monto_pagado_2', 'pago2_fecha', 'observacion', 'motivo_cancelacion', 'cancelado_por', 'cancelado_en'];
+    var COLUMNAS_RESERVAS_OPCIONALES = ['origen', 'metodo_pago_2', 'monto_pagado_2', 'pago2_fecha', 'metodo_pago_3', 'monto_pagado_3', 'pago3_fecha', 'observacion', 'motivo_cancelacion', 'cancelado_por', 'cancelado_en'];
     var COLUMNAS_RESERVAS_BASE = ['id', 'fecha', 'hora', 'precio', 'nombre_contacto', 'documento_contacto', 'telefono_contacto', 'email_contacto', 'metodo_pago', 'monto_pagado', 'tipo_pago', 'estado', 'created_at'];
 
     // PostgREST nombra la columna exacta que falta en su mensaje de error
@@ -539,7 +539,7 @@
             var origenBadge = '<span class="origen-badge ' + (r.origen || 'web') + '">' +
                 (r.origen === 'admin' ? 'Administrador' : 'Web') + '</span>';
 
-            var saldo = (r.precio || 0) - (r.monto_pagado != null ? r.monto_pagado : 0) - (r.monto_pagado_2 != null ? r.monto_pagado_2 : 0);
+            var saldo = (r.precio || 0) - (r.monto_pagado != null ? r.monto_pagado : 0) - (r.monto_pagado_2 != null ? r.monto_pagado_2 : 0) - (r.monto_pagado_3 != null ? r.monto_pagado_3 : 0);
             var estadoPagoBadge = saldo > 0
                 ? '<span class="estado-pago-badge abonado">Abonado</span>'
                 : '<span class="estado-pago-badge al-dia">Al día</span>';
@@ -964,7 +964,8 @@
         lista.forEach(function (r) {
             var montoPagado1 = r.monto_pagado != null ? r.monto_pagado : 0;
             var montoPagado2 = r.monto_pagado_2 != null ? r.monto_pagado_2 : 0;
-            var montoTotalPagado = montoPagado1 + montoPagado2;
+            var montoPagado3 = r.monto_pagado_3 != null ? r.monto_pagado_3 : 0;
+            var montoTotalPagado = montoPagado1 + montoPagado2 + montoPagado3;
             totalMonto += montoTotalPagado;
 
             var canchaNombre = r.canchas ? r.canchas.nombre : r.cancha_id;
@@ -1115,7 +1116,8 @@
             var canchaNombre = r.canchas ? r.canchas.nombre : r.cancha_id;
             var montoPagado1 = r.monto_pagado != null ? r.monto_pagado : 0;
             var montoPagado2 = r.monto_pagado_2 != null ? r.monto_pagado_2 : 0;
-            var saldo = (r.precio || 0) - montoPagado1 - montoPagado2;
+            var montoPagado3 = r.monto_pagado_3 != null ? r.monto_pagado_3 : 0;
+            var saldo = (r.precio || 0) - montoPagado1 - montoPagado2 - montoPagado3;
 
             var pago2Html =
                 '<input type="number" class="cuadratura-pago2" min="0" step="1" value="' + montoPagado2 + '">' +
@@ -1128,16 +1130,31 @@
                 '<td>' + String(r.hora).padStart(2, '0') + ':00</td>' +
                 '<td>' + canchaNombre + '</td>' +
                 '<td><input type="number" class="cuadratura-abono" min="0" step="1" value="' + montoPagado1 + '"></td>' +
-                '<td>' + pago2Html + '</td>' +
-                '<td><input type="number" class="cuadratura-total" min="0" step="1" value="' + (r.precio != null ? r.precio : 0) + '"></td>' +
                 '<td><select class="cuadratura-metodo1">' + opcionesMetodoPago(r.metodo_pago, false) + '</select></td>' +
+                '<td>' + pago2Html + '</td>' +
                 '<td><select class="cuadratura-metodo2">' + opcionesMetodoPago(r.metodo_pago_2, true) + '</select></td>' +
+                '<td><input type="number" class="cuadratura-pago3" min="0" step="1" value="' + montoPagado3 + '"></td>' +
+                '<td><select class="cuadratura-metodo3">' + opcionesMetodoPago(r.metodo_pago_3, true) + '</select></td>' +
+                '<td><strong class="cuadratura-total-valor">' + formatCLP(montoPagado1 + montoPagado2 + montoPagado3) + '</strong></td>' +
                 '<td><input type="text" class="cuadratura-observacion" value="' + (r.observacion || '').replace(/"/g, '&quot;') + '"></td>' +
                 '<td class="celda-accion cuadratura-celda-guardar">' +
                 '<button type="button" class="btn-guardar-cuadratura cuadratura-guardar">Guardar</button>' +
                 '<span class="contenido-guardado cuadratura-guardado" hidden>Guardado ✓</span>' +
                 '</td>';
             el.cuadraturaTbody.appendChild(row);
+        });
+
+        function recalcularTotalFila(row) {
+            var abono = parseInt(row.querySelector('.cuadratura-abono').value, 10) || 0;
+            var pago2 = parseInt(row.querySelector('.cuadratura-pago2').value, 10) || 0;
+            var pago3 = parseInt(row.querySelector('.cuadratura-pago3').value, 10) || 0;
+            row.querySelector('.cuadratura-total-valor').textContent = formatCLP(abono + pago2 + pago3);
+        }
+
+        el.cuadraturaTbody.querySelectorAll('.cuadratura-abono, .cuadratura-pago2, .cuadratura-pago3').forEach(function (input) {
+            input.addEventListener('input', function () {
+                recalcularTotalFila(input.closest('tr'));
+            });
         });
 
         el.cuadraturaTbody.querySelectorAll('.cuadratura-guardar').forEach(function (btn) {
@@ -1160,15 +1177,16 @@
         var id = row.getAttribute('data-id');
         var abono = parseInt(row.querySelector('.cuadratura-abono').value, 10);
         var montoPagado2 = parseInt(row.querySelector('.cuadratura-pago2').value, 10);
-        var total = parseInt(row.querySelector('.cuadratura-total').value, 10);
+        var montoPagado3 = parseInt(row.querySelector('.cuadratura-pago3').value, 10);
         var metodo1 = row.querySelector('.cuadratura-metodo1').value;
         var metodo2 = row.querySelector('.cuadratura-metodo2').value;
+        var metodo3 = row.querySelector('.cuadratura-metodo3').value;
         var observacion = row.querySelector('.cuadratura-observacion').value.trim();
         var guardadoSpan = row.querySelector('.cuadratura-guardado');
         var boton = row.querySelector('.cuadratura-guardar');
 
-        if (isNaN(abono) || isNaN(montoPagado2) || isNaN(total) || abono < 0 || montoPagado2 < 0 || total < 0) {
-            window.alert('El abono, el pago 2 y el pago total deben ser números válidos.');
+        if (isNaN(abono) || isNaN(montoPagado2) || isNaN(montoPagado3) || abono < 0 || montoPagado2 < 0 || montoPagado3 < 0) {
+            window.alert('El abono, el pago 2 y el pago 3 deben ser números válidos.');
             return;
         }
 
@@ -1177,8 +1195,13 @@
             return;
         }
 
-        // Conserva la fecha original del Pago 2 si el monto no cambió; si es
-        // nuevo o se modificó, queda registrado con la fecha de hoy.
+        if (montoPagado3 > 0 && !metodo3) {
+            window.alert('Indicaste un monto en Pago 3, pero falta elegir su medio de pago.');
+            return;
+        }
+
+        // Conserva la fecha original del Pago 2/Pago 3 si el monto no cambió;
+        // si es nuevo o se modificó, queda registrado con la fecha de hoy.
         var original = state.reservas.find(function (r) { return r.id === id; });
         var pago2Fecha;
         if (montoPagado2 <= 0) {
@@ -1189,22 +1212,33 @@
             pago2Fecha = toISODate(new Date());
         }
 
+        var pago3Fecha;
+        if (montoPagado3 <= 0) {
+            pago3Fecha = null;
+        } else if (original && original.monto_pagado_3 === montoPagado3 && original.pago3_fecha) {
+            pago3Fecha = original.pago3_fecha;
+        } else {
+            pago3Fecha = toISODate(new Date());
+        }
+
         guardadoSpan.hidden = true;
         boton.disabled = true;
 
         sb.from('reservas').update({
             monto_pagado: abono,
-            precio: total,
             metodo_pago: metodo1,
             metodo_pago_2: metodo2 || null,
             monto_pagado_2: montoPagado2,
             pago2_fecha: pago2Fecha,
+            metodo_pago_3: metodo3 || null,
+            monto_pagado_3: montoPagado3,
+            pago3_fecha: pago3Fecha,
             observacion: observacion || null
         }).eq('id', id).select().then(function (result) {
             boton.disabled = false;
             if (result.error) {
                 window.alert(esErrorColumnaFaltante(result.error)
-                    ? 'Falta aplicar algún parche pendiente en Supabase (add_cuadratura_reservas.sql y/o add_pago2_fecha.sql) antes de poder guardar estos campos.'
+                    ? 'Falta aplicar algún parche pendiente en Supabase (add_cuadratura_reservas.sql, add_pago2_fecha.sql y/o add_pago3_reservas.sql) antes de poder guardar estos campos.'
                     : 'No pudimos guardar los cambios: ' + result.error.message);
                 return;
             }
@@ -1233,6 +1267,7 @@
         lista.forEach(function (r) {
             sumar(r.metodo_pago, r.monto_pagado != null ? r.monto_pagado : 0);
             sumar(r.metodo_pago_2, r.monto_pagado_2 != null ? r.monto_pagado_2 : 0);
+            sumar(r.metodo_pago_3, r.monto_pagado_3 != null ? r.monto_pagado_3 : 0);
         });
 
         var html =

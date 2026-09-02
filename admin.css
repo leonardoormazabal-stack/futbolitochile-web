@@ -460,6 +460,12 @@
     cursor: pointer;
 }
 
+.cuadratura-total-valor {
+    display: inline-block;
+    padding: 6px 8px;
+    white-space: nowrap;
+}
+
 .cuadratura-saldo-hint {
     margin-top: 4px;
     font-size: 11px;

@@ -75,7 +75,7 @@ function formatFechaCorta(fechaISO) {
 }
 
 function sumaMontoPagado(filas) {
-    return filas.reduce((acc, r) => acc + Number(r.monto_pagado || 0) + Number(r.monto_pagado_2 || 0), 0);
+    return filas.reduce((acc, r) => acc + Number(r.monto_pagado || 0) + Number(r.monto_pagado_2 || 0) + Number(r.monto_pagado_3 || 0), 0);
 }
 
 // Detecta que falta una columna nueva (falta correr un parche SQL en
@@ -104,7 +104,7 @@ function extraerColumnaFaltante(error) {
 }
 
 const COLUMNAS_RESERVAS_BASE = ['id', 'fecha', 'hora', 'precio', 'monto_pagado', 'tipo_pago', 'metodo_pago', 'nombre_contacto', 'created_at'];
-const COLUMNAS_RESERVAS_OPCIONALES = ['monto_pagado_2', 'pago2_fecha', 'metodo_pago_2'];
+const COLUMNAS_RESERVAS_OPCIONALES = ['monto_pagado_2', 'pago2_fecha', 'metodo_pago_2', 'monto_pagado_3', 'pago3_fecha', 'metodo_pago_3'];
 
 const COLUMNAS_CANCELACIONES_BASE = ['id', 'fecha', 'hora', 'nombre_contacto'];
 const COLUMNAS_CANCELACIONES_OPCIONALES = ['motivo_cancelacion', 'cancelado_por', 'cancelado_en'];
@@ -164,18 +164,29 @@ async function cargarReservasDelDia(supabaseAdmin, diaReporte) {
 async function cargarReservasDelMes(supabaseAdmin, inicioMes, hastaFecha) {
     const res = await supabaseAdmin
         .from('reservas')
-        .select('monto_pagado,monto_pagado_2')
+        .select('monto_pagado,monto_pagado_2,monto_pagado_3')
         .gte('fecha', inicioMes)
         .lte('fecha', hastaFecha)
         .eq('estado', 'confirmada');
 
     if (esErrorColumnaFaltante(res.error)) {
-        return supabaseAdmin
+        const res2 = await supabaseAdmin
             .from('reservas')
-            .select('monto_pagado')
+            .select('monto_pagado,monto_pagado_2')
             .gte('fecha', inicioMes)
             .lte('fecha', hastaFecha)
             .eq('estado', 'confirmada');
+
+        if (esErrorColumnaFaltante(res2.error)) {
+            return supabaseAdmin
+                .from('reservas')
+                .select('monto_pagado')
+                .gte('fecha', inicioMes)
+                .lte('fecha', hastaFecha)
+                .eq('estado', 'confirmada');
+        }
+
+        return res2;
     }
 
     return res;
@@ -290,7 +301,8 @@ module.exports = async function handler(req, res) {
             const horaTexto = String(r.hora).padStart(2, '0') + ':00';
             const montoPagado1 = r.monto_pagado != null ? r.monto_pagado : 0;
             const montoPagado2 = r.monto_pagado_2 != null ? r.monto_pagado_2 : 0;
-            const montoTotalPagado = montoPagado1 + montoPagado2;
+            const montoPagado3 = r.monto_pagado_3 != null ? r.monto_pagado_3 : 0;
+            const montoTotalPagado = montoPagado1 + montoPagado2 + montoPagado3;
             const tipoPagoTexto = r.tipo_pago === 'abono' ? 'Abono' : 'Pago total';
             const saldo = (r.precio || 0) - montoTotalPagado;
             const estadoHtml = saldo > 0
