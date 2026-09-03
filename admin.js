@@ -178,6 +178,9 @@
         cuadraturaFechaInput: document.getElementById('cuadraturaFechaInput'),
         btnCuadraturaHoy: document.getElementById('btnCuadraturaHoy'),
         cuadraturaNotaAnterior: document.getElementById('cuadraturaNotaAnterior'),
+        cuadraturaGuardarTodoWrap: document.getElementById('cuadraturaGuardarTodoWrap'),
+        btnCuadraturaGuardarTodo: document.getElementById('btnCuadraturaGuardarTodo'),
+        cuadraturaGuardadoTodo: document.getElementById('cuadraturaGuardadoTodo'),
         cuadraturaFecha: document.getElementById('cuadraturaFecha'),
         cuadraturaTbody: document.getElementById('cuadraturaTableBody'),
         cuadraturaEmptyMsg: document.getElementById('cuadraturaEmptyMsg'),
@@ -1151,6 +1154,17 @@
                 '<input type="number" class="cuadratura-pago2" min="0" step="1" value="' + montoPagado2 + '">' +
                 (saldo > 0 ? '<div class="cuadratura-saldo-hint">Pendiente: -' + formatCLP(saldo) + '</div>' : '');
 
+            // Un día anterior ya cerrado no se guarda fila por fila: hay un
+            // único botón al final de la tabla que guarda todo el día junto
+            // y dispara un solo correo con la cuadratura corregida (en vez
+            // de un correo por cada fila que se edite).
+            var accionCellHtml = esDiaAnterior
+                ? '<td></td>'
+                : '<td class="celda-accion cuadratura-celda-guardar">' +
+                  '<button type="button" class="btn-guardar-cuadratura cuadratura-guardar">Guardar</button>' +
+                  '<span class="contenido-guardado cuadratura-guardado" hidden>Guardado ✓</span>' +
+                  '</td>';
+
             var row = document.createElement('tr');
             row.setAttribute('data-id', r.id);
             row.innerHTML =
@@ -1165,10 +1179,7 @@
                 '<td><select class="cuadratura-metodo3">' + opcionesMetodoPago(r.metodo_pago_3, true) + '</select></td>' +
                 '<td><strong class="cuadratura-total-valor">' + formatCLP(montoPagado1 + montoPagado2 + montoPagado3) + '</strong></td>' +
                 '<td><input type="text" class="cuadratura-observacion" value="' + (r.observacion || '').replace(/"/g, '&quot;') + '"></td>' +
-                '<td class="celda-accion cuadratura-celda-guardar">' +
-                '<button type="button" class="btn-guardar-cuadratura cuadratura-guardar">' + (esDiaAnterior ? 'Guardar y enviar' : 'Guardar') + '</button>' +
-                '<span class="contenido-guardado cuadratura-guardado" hidden>Guardado ✓</span>' +
-                '</td>';
+                accionCellHtml;
             el.cuadraturaTbody.appendChild(row);
         });
 
@@ -1185,11 +1196,26 @@
             });
         });
 
-        el.cuadraturaTbody.querySelectorAll('.cuadratura-guardar').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                guardarFilaCuadratura(btn.closest('tr'), fechaCuadratura, esDiaAnterior);
+        if (!esDiaAnterior) {
+            el.cuadraturaTbody.querySelectorAll('.cuadratura-guardar').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    guardarFilaCuadratura(btn.closest('tr'));
+                });
             });
-        });
+        }
+
+        if (el.cuadraturaGuardarTodoWrap) {
+            el.cuadraturaGuardarTodoWrap.hidden = !(esDiaAnterior && lista.length > 0);
+        }
+        if (el.cuadraturaGuardadoTodo) {
+            el.cuadraturaGuardadoTodo.hidden = true;
+        }
+        if (el.btnCuadraturaGuardarTodo) {
+            el.btnCuadraturaGuardarTodo.disabled = false;
+            el.btnCuadraturaGuardarTodo.onclick = function () {
+                guardarTodaLaCuadratura(fechaCuadratura);
+            };
+        }
 
         // El resumen de pagos cuadra todo el dinero que entró ese día (lista
         // completa), pero el % de arriendo por bloque horario es sobre el
@@ -1202,7 +1228,11 @@
         renderOcupacionCuadratura(listaCanchasHoy);
     }
 
-    function guardarFilaCuadratura(row, fechaCuadratura, esDiaAnterior) {
+    // Lee y valida los campos editables de una fila de Cuadratura Diaria.
+    // La usan tanto el guardado de una sola fila (día de hoy) como el
+    // guardado masivo de todas las filas (día anterior), para no duplicar
+    // la lectura del formulario ni las reglas de validación entre ambos.
+    function leerDatosFilaCuadratura(row) {
         var id = row.getAttribute('data-id');
         var abono = parseInt(row.querySelector('.cuadratura-abono').value, 10);
         var montoPagado2 = parseInt(row.querySelector('.cuadratura-pago2').value, 10);
@@ -1211,34 +1241,15 @@
         var metodo2 = row.querySelector('.cuadratura-metodo2').value;
         var metodo3 = row.querySelector('.cuadratura-metodo3').value;
         var observacion = row.querySelector('.cuadratura-observacion').value.trim();
-        var guardadoSpan = row.querySelector('.cuadratura-guardado');
-        var boton = row.querySelector('.cuadratura-guardar');
 
         if (isNaN(abono) || isNaN(montoPagado2) || isNaN(montoPagado3) || abono < 0 || montoPagado2 < 0 || montoPagado3 < 0) {
-            window.alert('El abono, el pago 2 y el pago 3 deben ser números válidos.');
-            return;
+            return { error: 'el abono, el pago 2 y el pago 3 deben ser números válidos.' };
         }
-
         if (montoPagado2 > 0 && !metodo2) {
-            window.alert('Indicaste un monto en Pago 2, pero falta elegir su medio de pago.');
-            return;
+            return { error: 'indicaste un monto en Pago 2, pero falta elegir su medio de pago.' };
         }
-
         if (montoPagado3 > 0 && !metodo3) {
-            window.alert('Indicaste un monto en Pago 3, pero falta elegir su medio de pago.');
-            return;
-        }
-
-        // Editar la cuadratura de un día ya cerrado exige avisarle a los
-        // administradores: no es una opción, así que si cancela acá no se
-        // guarda nada.
-        if (esDiaAnterior) {
-            var confirmado = window.confirm(
-                'Estás editando la cuadratura del ' + formatFechaCorta(fechaCuadratura) + ', un día anterior ya cerrado.\n\n' +
-                'Al guardar, se va a enviar automáticamente la cuadratura corregida de ese día por correo a los administradores. Esto es obligatorio para poder guardar.\n\n' +
-                '¿Guardar y enviar la cuadratura corregida?'
-            );
-            if (!confirmado) return;
+            return { error: 'indicaste un monto en Pago 3, pero falta elegir su medio de pago.' };
         }
 
         // Conserva la fecha original del Pago 2/Pago 3 si el monto no cambió;
@@ -1262,20 +1273,44 @@
             pago3Fecha = toISODate(new Date());
         }
 
+        return {
+            id: id,
+            payload: {
+                monto_pagado: abono,
+                metodo_pago: metodo1,
+                metodo_pago_2: metodo2 || null,
+                monto_pagado_2: montoPagado2,
+                pago2_fecha: pago2Fecha,
+                metodo_pago_3: metodo3 || null,
+                monto_pagado_3: montoPagado3,
+                pago3_fecha: pago3Fecha,
+                observacion: observacion || null
+            }
+        };
+    }
+
+    function etiquetaFilaCuadratura(row) {
+        var celdas = row.querySelectorAll('td');
+        return (celdas[2] ? celdas[2].textContent : '') + ' ' + (celdas[1] ? celdas[1].textContent : '');
+    }
+
+    // Guarda una sola fila: solo se usa para el día de hoy, que no exige
+    // avisar a nadie por correo (ver guardarTodaLaCuadratura para días
+    // anteriores, que sí lo exige y junta todas las filas en un solo envío).
+    function guardarFilaCuadratura(row) {
+        var guardadoSpan = row.querySelector('.cuadratura-guardado');
+        var boton = row.querySelector('.cuadratura-guardar');
+        var datos = leerDatosFilaCuadratura(row);
+
+        if (datos.error) {
+            window.alert('No se pudo guardar: ' + datos.error);
+            return;
+        }
+
         guardadoSpan.hidden = true;
         boton.disabled = true;
 
-        sb.from('reservas').update({
-            monto_pagado: abono,
-            metodo_pago: metodo1,
-            metodo_pago_2: metodo2 || null,
-            monto_pagado_2: montoPagado2,
-            pago2_fecha: pago2Fecha,
-            metodo_pago_3: metodo3 || null,
-            monto_pagado_3: montoPagado3,
-            pago3_fecha: pago3Fecha,
-            observacion: observacion || null
-        }).eq('id', id).select().then(function (result) {
+        sb.from('reservas').update(datos.payload).eq('id', datos.id).select().then(function (result) {
             boton.disabled = false;
             if (result.error) {
                 window.alert(esErrorColumnaFaltante(result.error)
@@ -1289,21 +1324,73 @@
             }
             guardadoSpan.hidden = false;
             cargarReservas();
+        });
+    }
 
-            if (!esDiaAnterior) return;
+    // Guarda TODAS las filas de la cuadratura de un día anterior de una sola
+    // vez y, si se guardan bien, envía un único correo con la cuadratura
+    // corregida completa (en vez de un correo por cada fila que se edite).
+    // Es obligatorio: si se cancela la confirmación, no se guarda nada.
+    function guardarTodaLaCuadratura(fechaCuadratura) {
+        var filas = Array.prototype.slice.call(el.cuadraturaTbody.querySelectorAll('tr'));
+        if (!filas.length) return;
 
-            // El guardado en Supabase ya se hizo; ahora se envía la
-            // cuadratura corregida completa de ese día (no solo esta fila) a
-            // los administradores, tal como quedó después del cambio.
-            boton.disabled = true;
-            llamarApiAdmin('cuadratura-corregida', { fecha: fechaCuadratura }).then(function (data) {
-                boton.disabled = false;
-                if (data && data.ok === false) {
-                    window.alert('El cambio se guardó, pero no se pudo enviar la cuadratura corregida por correo: ' + (data.motivo || 'error desconocido') + '. Volvé a apretar "Guardar y enviar" para reintentarlo.');
+        var confirmado = window.confirm(
+            'Estás editando la cuadratura del ' + formatFechaCorta(fechaCuadratura) + ', un día anterior ya cerrado.\n\n' +
+            'Al guardar, se va a enviar automáticamente la cuadratura corregida de ese día por correo a los administradores. Esto es obligatorio para poder guardar.\n\n' +
+            '¿Guardar y enviar la cuadratura corregida?'
+        );
+        if (!confirmado) return;
+
+        var lecturas = filas.map(function (row) {
+            return { row: row, datos: leerDatosFilaCuadratura(row) };
+        });
+
+        var conError = lecturas.find(function (l) { return l.datos.error; });
+        if (conError) {
+            window.alert('Revisá la fila de ' + etiquetaFilaCuadratura(conError.row) + ': ' + conError.datos.error);
+            return;
+        }
+
+        el.cuadraturaGuardadoTodo.hidden = true;
+        el.btnCuadraturaGuardarTodo.disabled = true;
+
+        Promise.all(lecturas.map(function (l) {
+            return sb.from('reservas').update(l.datos.payload).eq('id', l.datos.id).select();
+        })).then(function (resultados) {
+            var errores = [];
+            var faltaColumna = false;
+            resultados.forEach(function (result, i) {
+                if (result.error) {
+                    if (esErrorColumnaFaltante(result.error)) faltaColumna = true;
+                    errores.push(etiquetaFilaCuadratura(lecturas[i].row) + ': ' + result.error.message);
+                } else if (!result.data || !result.data.length) {
+                    errores.push(etiquetaFilaCuadratura(lecturas[i].row) + ': no se modificó (¿problema de permisos?).');
                 }
+            });
+
+            cargarReservas();
+
+            if (errores.length) {
+                el.btnCuadraturaGuardarTodo.disabled = false;
+                window.alert(faltaColumna
+                    ? 'Falta aplicar algún parche pendiente en Supabase (add_cuadratura_reservas.sql, add_pago2_fecha.sql y/o add_pago3_reservas.sql) antes de poder guardar estos campos.'
+                    : 'No se pudieron guardar todas las filas:\n' + errores.join('\n') + '\n\nNo se envió la cuadratura corregida. Corregí lo que falló y volvé a intentar.');
+                return;
+            }
+
+            // Todas las filas quedaron guardadas: ahora se envía un único
+            // correo con la cuadratura corregida completa de ese día.
+            llamarApiAdmin('cuadratura-corregida', { fecha: fechaCuadratura }).then(function (data) {
+                el.btnCuadraturaGuardarTodo.disabled = false;
+                if (data && data.ok === false) {
+                    window.alert('Se guardaron los cambios, pero no se pudo enviar la cuadratura corregida por correo: ' + (data.motivo || 'error desconocido') + '. Volvé a apretar el botón para reintentar el envío.');
+                    return;
+                }
+                el.cuadraturaGuardadoTodo.hidden = false;
             }).catch(function (err) {
-                boton.disabled = false;
-                window.alert('El cambio se guardó, pero no se pudo enviar la cuadratura corregida por correo: ' + err.message + '. Volvé a apretar "Guardar y enviar" para reintentarlo.');
+                el.btnCuadraturaGuardarTodo.disabled = false;
+                window.alert('Se guardaron los cambios, pero no se pudo enviar la cuadratura corregida por correo: ' + err.message + '. Volvé a apretar el botón para reintentar el envío.');
             });
         });
     }
