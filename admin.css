@@ -712,6 +712,15 @@
     margin-bottom: 16px;
 }
 
+.admin-note-alerta {
+    color: var(--rojo-oscuro);
+    font-weight: 600;
+    background-color: #fdecea;
+    border: 1px solid #f5c2bc;
+    border-radius: 6px;
+    padding: 10px 12px;
+}
+
 .tarifa-editor-grid,
 .equipamiento-editor-grid {
     display: flex;

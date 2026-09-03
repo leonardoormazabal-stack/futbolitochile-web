@@ -211,8 +211,17 @@
 
         <!-- VISTA CUADRATURA DIARIA -->
         <section class="admin-view" id="view-cuadratura">
+            <div class="admin-filters">
+                <div class="form-group">
+                    <label for="cuadraturaFechaInput">Ver cuadratura del día</label>
+                    <input type="date" id="cuadraturaFechaInput">
+                </div>
+                <button type="button" class="btn btn-outline" id="btnCuadraturaHoy">Volver a hoy</button>
+            </div>
+
             <p class="admin-note" id="cuadraturaFecha"></p>
-            <p class="admin-note">Incluye las canchas que se juegan hoy y también cualquier pago que haya entrado hoy para una reserva de otro día.</p>
+            <p class="admin-note">Incluye las canchas que se juegan ese día y también cualquier pago que haya entrado ese día para una reserva de otro día.</p>
+            <p class="admin-note admin-note-alerta" id="cuadraturaNotaAnterior" hidden>Estás viendo la cuadratura de un día anterior, ya cerrado. Si guardás un cambio acá, es obligatorio enviar la cuadratura corregida por correo a los administradores: se te va a pedir confirmación y el envío se hace automáticamente al guardar.</p>
 
             <div class="admin-table-wrapper">
                 <table class="admin-table" id="cuadraturaTable">

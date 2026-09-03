@@ -105,6 +105,7 @@
         usuarios: [],
         clientesRenderizados: [],
         filtroFecha: '',
+        cuadraturaFecha: '',
         mostrarCanceladas: false,
         viewMonth: startOfMonth(new Date()),
         esSuperadmin: false,
@@ -174,6 +175,9 @@
         pagosFiltroTipoPago: document.getElementById('pagosFiltroTipoPago'),
         btnLimpiarFiltrosPagos: document.getElementById('btnLimpiarFiltrosPagos'),
 
+        cuadraturaFechaInput: document.getElementById('cuadraturaFechaInput'),
+        btnCuadraturaHoy: document.getElementById('btnCuadraturaHoy'),
+        cuadraturaNotaAnterior: document.getElementById('cuadraturaNotaAnterior'),
         cuadraturaFecha: document.getElementById('cuadraturaFecha'),
         cuadraturaTbody: document.getElementById('cuadraturaTableBody'),
         cuadraturaEmptyMsg: document.getElementById('cuadraturaEmptyMsg'),
@@ -1084,21 +1088,45 @@
         return html;
     }
 
+    if (el.cuadraturaFechaInput) {
+        el.cuadraturaFechaInput.addEventListener('change', function () {
+            state.cuadraturaFecha = el.cuadraturaFechaInput.value || '';
+            renderCuadratura();
+        });
+    }
+    if (el.btnCuadraturaHoy) {
+        el.btnCuadraturaHoy.addEventListener('click', function () {
+            state.cuadraturaFecha = '';
+            el.cuadraturaFechaInput.value = toISODate(new Date());
+            renderCuadratura();
+        });
+    }
+
     function renderCuadratura() {
         if (!el.cuadraturaTbody) return;
 
         var hoy = toISODate(new Date());
-        el.cuadraturaFecha.textContent = 'Cuadratura del ' + formatFechaCorta(hoy);
+        var fechaCuadratura = state.cuadraturaFecha || hoy;
+        var esDiaAnterior = fechaCuadratura < hoy;
 
-        // Incluye tanto las canchas que se juegan hoy como cualquier pago
-        // que haya entrado hoy para una reserva de otro día (ej. alguien que
-        // reserva y paga hoy para jugar la próxima semana): la cuadratura de
-        // caja debe cuadrar todo el dinero que entró en el día, sin importar
-        // para cuándo es la reserva.
+        if (el.cuadraturaFechaInput && !el.cuadraturaFechaInput.value) {
+            el.cuadraturaFechaInput.value = fechaCuadratura;
+        }
+        if (el.cuadraturaNotaAnterior) {
+            el.cuadraturaNotaAnterior.hidden = !esDiaAnterior;
+        }
+
+        el.cuadraturaFecha.textContent = 'Cuadratura del ' + formatFechaCorta(fechaCuadratura) + (fechaCuadratura === hoy ? ' (hoy)' : '');
+
+        // Incluye tanto las canchas que se juegan ese día como cualquier pago
+        // que haya entrado ese día para una reserva de otro día (ej. alguien
+        // que reserva y paga hoy para jugar la próxima semana): la cuadratura
+        // de caja debe cuadrar todo el dinero que entró en el día, sin
+        // importar para cuándo es la reserva.
         var lista = state.reservas.filter(function (r) {
             if (r.estado !== 'confirmada') return false;
             var fechaDePago = toISODate(new Date(r.created_at));
-            return r.fecha === hoy || fechaDePago === hoy;
+            return r.fecha === fechaCuadratura || fechaDePago === fechaCuadratura;
         });
 
         lista.sort(function (a, b) {
@@ -1138,7 +1166,7 @@
                 '<td><strong class="cuadratura-total-valor">' + formatCLP(montoPagado1 + montoPagado2 + montoPagado3) + '</strong></td>' +
                 '<td><input type="text" class="cuadratura-observacion" value="' + (r.observacion || '').replace(/"/g, '&quot;') + '"></td>' +
                 '<td class="celda-accion cuadratura-celda-guardar">' +
-                '<button type="button" class="btn-guardar-cuadratura cuadratura-guardar">Guardar</button>' +
+                '<button type="button" class="btn-guardar-cuadratura cuadratura-guardar">' + (esDiaAnterior ? 'Guardar y enviar' : 'Guardar') + '</button>' +
                 '<span class="contenido-guardado cuadratura-guardado" hidden>Guardado ✓</span>' +
                 '</td>';
             el.cuadraturaTbody.appendChild(row);
@@ -1159,21 +1187,22 @@
 
         el.cuadraturaTbody.querySelectorAll('.cuadratura-guardar').forEach(function (btn) {
             btn.addEventListener('click', function () {
-                guardarFilaCuadratura(btn.closest('tr'));
+                guardarFilaCuadratura(btn.closest('tr'), fechaCuadratura, esDiaAnterior);
             });
         });
 
-        // El resumen de pagos cuadra todo el dinero que entró hoy (lista
+        // El resumen de pagos cuadra todo el dinero que entró ese día (lista
         // completa), pero el % de arriendo por bloque horario es sobre el
-        // uso real de las canchas hoy, así que solo cuenta las reservas
-        // cuya fecha de cancha es hoy (no las pagadas hoy para otro día).
-        var listaCanchasHoy = lista.filter(function (r) { return r.fecha === hoy; });
+        // uso real de las canchas ese día, así que solo cuenta las reservas
+        // cuya fecha de cancha es la del día visto (no las pagadas ese día
+        // para otro día).
+        var listaCanchasHoy = lista.filter(function (r) { return r.fecha === fechaCuadratura; });
 
         renderResumenPagoCuadratura(lista);
         renderOcupacionCuadratura(listaCanchasHoy);
     }
 
-    function guardarFilaCuadratura(row) {
+    function guardarFilaCuadratura(row, fechaCuadratura, esDiaAnterior) {
         var id = row.getAttribute('data-id');
         var abono = parseInt(row.querySelector('.cuadratura-abono').value, 10);
         var montoPagado2 = parseInt(row.querySelector('.cuadratura-pago2').value, 10);
@@ -1198,6 +1227,18 @@
         if (montoPagado3 > 0 && !metodo3) {
             window.alert('Indicaste un monto en Pago 3, pero falta elegir su medio de pago.');
             return;
+        }
+
+        // Editar la cuadratura de un día ya cerrado exige avisarle a los
+        // administradores: no es una opción, así que si cancela acá no se
+        // guarda nada.
+        if (esDiaAnterior) {
+            var confirmado = window.confirm(
+                'Estás editando la cuadratura del ' + formatFechaCorta(fechaCuadratura) + ', un día anterior ya cerrado.\n\n' +
+                'Al guardar, se va a enviar automáticamente la cuadratura corregida de ese día por correo a los administradores. Esto es obligatorio para poder guardar.\n\n' +
+                '¿Guardar y enviar la cuadratura corregida?'
+            );
+            if (!confirmado) return;
         }
 
         // Conserva la fecha original del Pago 2/Pago 3 si el monto no cambió;
@@ -1248,6 +1289,22 @@
             }
             guardadoSpan.hidden = false;
             cargarReservas();
+
+            if (!esDiaAnterior) return;
+
+            // El guardado en Supabase ya se hizo; ahora se envía la
+            // cuadratura corregida completa de ese día (no solo esta fila) a
+            // los administradores, tal como quedó después del cambio.
+            boton.disabled = true;
+            llamarApiAdmin('cuadratura-corregida', { fecha: fechaCuadratura }).then(function (data) {
+                boton.disabled = false;
+                if (data && data.ok === false) {
+                    window.alert('El cambio se guardó, pero no se pudo enviar la cuadratura corregida por correo: ' + (data.motivo || 'error desconocido') + '. Volvé a apretar "Guardar y enviar" para reintentarlo.');
+                }
+            }).catch(function (err) {
+                boton.disabled = false;
+                window.alert('El cambio se guardó, pero no se pudo enviar la cuadratura corregida por correo: ' + err.message + '. Volvé a apretar "Guardar y enviar" para reintentarlo.');
+            });
         });
     }
 
