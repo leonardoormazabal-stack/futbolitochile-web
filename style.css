@@ -519,10 +519,6 @@ ul {
     background-color: var(--gris-claro);
 }
 
-.info-section.escuelas {
-    background-color: var(--blanco);
-}
-
 .info-content {
     max-width: 700px;
     margin: 0 auto;

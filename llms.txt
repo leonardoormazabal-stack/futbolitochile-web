@@ -4,8 +4,9 @@
 
 ## Páginas principales
 
-- [Inicio](https://futbolitochile.cl/): Presentación del recinto, instalaciones (canchas, camarines, piscina, quinchos, kiosco), tarifas y planes, eventos, y escuelas y ligas deportivas.
+- [Inicio](https://futbolitochile.cl/): Presentación del recinto, instalaciones (canchas, camarines, piscina, quinchos, kiosco), tarifas y planes, y eventos.
 - [Reservas](https://futbolitochile.cl/reservas.html): Reserva de cancha en línea eligiendo deporte, fecha, horario y cancha disponible, con pago mediante Mercado Pago, Webpay, GetNet, tarjeta de crédito/débito, transferencia o efectivo.
+- [Escuelas y Ligas](https://futbolitochile.cl/escuelas.html): Escuelas de fútbol oficiales que entrenan en el recinto (Colo-Colo Fresia y Cobreloa San Bernardo), con primera clase gratis para niños y niñas de 4 a 17 años, y convenios para academias y ligas.
 - [Contacto](https://futbolitochile.cl/contacto.html): Formulario de contacto, dirección, teléfono y redes sociales.
 
 ## Servicios y tarifas (CLP)

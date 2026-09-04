@@ -308,7 +308,6 @@
         cTituloInstalaciones: document.getElementById('cTituloInstalaciones'),
         cTituloTarifas: document.getElementById('cTituloTarifas'),
         cTituloEventos: document.getElementById('cTituloEventos'),
-        cTituloEscuelas: document.getElementById('cTituloEscuelas'),
         cTituloPublicidad: document.getElementById('cTituloPublicidad'),
         cTituloReserva: document.getElementById('cTituloReserva'),
         cTituloNosotros: document.getElementById('cTituloNosotros'),
@@ -2474,7 +2473,6 @@
             el.cTituloInstalaciones.value = c.section_instalaciones_titulo || 'Nuestras Instalaciones';
             el.cTituloTarifas.value = c.section_tarifas_titulo || 'Tarifas y Planes';
             el.cTituloEventos.value = c.section_eventos_titulo || 'Eventos y Cumpleaños';
-            el.cTituloEscuelas.value = c.section_escuelas_titulo || 'Escuelas y Ligas';
             el.cTituloPublicidad.value = c.section_publicidad_titulo || 'Publicidad y Convenios';
             el.cTituloReserva.value = c.section_reserva_titulo || '¿Listo para jugar?';
             el.cTituloNosotros.value = c.nosotros_titulo || '¿Quiénes Somos?';
@@ -2754,7 +2752,6 @@
             section_instalaciones_titulo: el.cTituloInstalaciones.value.trim(),
             section_tarifas_titulo: el.cTituloTarifas.value.trim(),
             section_eventos_titulo: el.cTituloEventos.value.trim(),
-            section_escuelas_titulo: el.cTituloEscuelas.value.trim(),
             section_publicidad_titulo: el.cTituloPublicidad.value.trim(),
             section_reserva_titulo: el.cTituloReserva.value.trim(),
             nosotros_titulo: el.cTituloNosotros.value.trim()

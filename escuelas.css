@@ -1,0 +1,122 @@
+/* ==========================================================================
+   ESCUELAS Y LIGAS
+   Usa las variables de color definidas en style.css (:root) y las clases
+   base de botón definidas en style.css/auth.css
+   ========================================================================== */
+
+.escuelas-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 50px 20px 90px;
+}
+
+.escuelas-intro {
+    max-width: 700px;
+    margin: 0 auto 50px;
+    text-align: center;
+}
+
+.escuelas-intro p {
+    color: var(--gris-texto);
+    margin-bottom: 20px;
+}
+
+.escuelas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 30px;
+}
+
+.escuela-card {
+    background-color: var(--blanco);
+    border-radius: 16px;
+    box-shadow: var(--sombra);
+    padding: 30px;
+    border-top: 6px solid var(--azul-primario);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.escuela-card--colocolo {
+    border-top-color: #1a1a1a;
+}
+
+.escuela-card--cobreloa {
+    border-top-color: #e8720c;
+}
+
+.escuela-card-header {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.escuela-badge {
+    display: inline-block;
+    align-self: flex-start;
+    background-color: var(--rojo);
+    color: var(--blanco);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 4px 12px;
+    border-radius: 12px;
+}
+
+.escuela-card-header h2 {
+    color: var(--azul-oscuro);
+    font-size: 24px;
+}
+
+.escuela-card-destacado {
+    color: var(--rojo);
+    font-weight: 700;
+    font-size: 17px;
+}
+
+.escuela-card-datos {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.escuela-card-datos li {
+    color: var(--gris-texto);
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.escuela-card-acciones {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 10px;
+}
+
+.escuela-card-acciones .btn {
+    text-align: center;
+}
+
+.escuela-card-social {
+    color: var(--azul-primario);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.escuela-card-social:hover {
+    text-decoration: underline;
+}
+
+.escuela-card-social--texto {
+    color: var(--gris-texto);
+    cursor: default;
+}
+
+@media (max-width: 480px) {
+    .escuela-card {
+        padding: 24px 20px;
+    }
+}
