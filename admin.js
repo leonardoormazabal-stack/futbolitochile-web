@@ -525,6 +525,7 @@
     });
 
     function renderListado() {
+        var hoy = toISODate(new Date());
         var lista = state.reservas.filter(function (r) {
             if (state.filtroFecha && r.fecha !== state.filtroFecha) return false;
             if (!state.mostrarCanceladas && r.estado === 'cancelada') return false;
@@ -551,10 +552,14 @@
                 ? '<span class="estado-pago-badge abonado">Abonado</span>'
                 : '<span class="estado-pago-badge al-dia">Al día</span>';
 
+            // Una reserva de un día que ya pasó no se puede anular: la
+            // cancha ya se usó (o no) ese día, así que "anularla" ahora no
+            // tiene efecto real y solo genera un registro incorrecto.
+            var esDiaPasado = r.fecha < hoy;
             var accion = r.estado === 'confirmada'
                 ? '<div class="admin-table-actions">' +
                   '<button type="button" class="btn-secundario btn-editar-reserva" data-id="' + r.id + '">Modificar</button>' +
-                  '<button type="button" class="btn-cancelar" data-id="' + r.id + '">Cancelar</button>' +
+                  (esDiaPasado ? '' : '<button type="button" class="btn-cancelar" data-id="' + r.id + '">Cancelar</button>') +
                   '</div>'
                 : '';
 
@@ -646,6 +651,14 @@
             return;
         }
 
+        var reservaAAnular = state.reservas.find(function (r) { return r.id === reservaId; });
+        if (reservaAAnular && reservaAAnular.fecha < toISODate(new Date())) {
+            el.motivoError.textContent = 'No se puede anular una reserva de un día que ya pasó.';
+            el.motivoError.className = 'auth-alert';
+            el.motivoError.hidden = false;
+            return;
+        }
+
         sb.from('reservas').update({
             estado: 'cancelada',
             motivo_cancelacion: motivo,
@@ -655,7 +668,9 @@
             if (result.error) {
                 el.motivoError.textContent = esErrorColumnaFaltante(result.error)
                     ? 'Falta aplicar el parche supabase/add_motivo_cancelacion.sql en el SQL Editor de Supabase antes de poder anular con motivo.'
-                    : 'No pudimos anular la reserva: ' + result.error.message;
+                    : (result.error.message && result.error.message.indexOf('ya pasó') !== -1)
+                        ? 'No se puede anular una reserva de un día que ya pasó.'
+                        : 'No pudimos anular la reserva: ' + result.error.message;
                 el.motivoError.className = 'auth-alert';
                 el.motivoError.hidden = false;
                 return;
