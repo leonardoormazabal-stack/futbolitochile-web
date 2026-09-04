@@ -95,6 +95,15 @@
         return y + '-' + m + '-' + day;
     }
 
+    // Una reserva ya pasó si su hora de inicio (fecha + hora en punto) ya
+    // quedó atrás respecto de ahora. Cubre tanto los días anteriores a hoy
+    // como las horas de hoy que ya se jugaron.
+    function reservaYaPaso(fecha, hora) {
+        var partes = fecha.split('-').map(Number);
+        var inicioReserva = new Date(partes[0], partes[1] - 1, partes[2], hora);
+        return inicioReserva.getTime() <= new Date().getTime();
+    }
+
     /* ======================================================================
        ESTADO
        ====================================================================== */
@@ -555,9 +564,14 @@
             // cancha ya se usó (o no) ese día, así que "anularla" ahora no
             // tiene efecto real y solo genera un registro incorrecto.
             var esDiaPasado = r.fecha < hoy;
+            // Modificar (cambiar fecha/hora) tampoco tiene sentido una vez
+            // que el horario ya se jugó, sea de un día anterior o de una
+            // hora de hoy que ya pasó. Las reservas de días futuros siguen
+            // sin restricción.
+            var yaPaso = reservaYaPaso(r.fecha, r.hora);
             var accion = r.estado === 'confirmada'
                 ? '<div class="admin-table-actions">' +
-                  '<button type="button" class="btn-secundario btn-editar-reserva" data-id="' + r.id + '">Modificar</button>' +
+                  (yaPaso ? '' : '<button type="button" class="btn-secundario btn-editar-reserva" data-id="' + r.id + '">Modificar</button>') +
                   (esDiaPasado ? '' : '<button type="button" class="btn-cancelar" data-id="' + r.id + '">Cancelar</button>') +
                   '</div>'
                 : '';
@@ -691,6 +705,11 @@
     function abrirModalEditarReserva(id) {
         var reserva = state.reservas.find(function (r) { return r.id === id; });
         if (!reserva) return;
+
+        if (reservaYaPaso(reserva.fecha, reserva.hora)) {
+            window.alert('No se puede modificar una reserva cuyo horario ya pasó.');
+            return;
+        }
 
         el.editReservaForm.reset();
         el.editReservaError.hidden = true;
