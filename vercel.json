@@ -22,7 +22,7 @@
     "crons": [
         {
             "path": "/api/reporte-diario",
-            "schedule": "59 3 * * *"
+            "schedule": "0 4 * * *"
         }
     ]
 }

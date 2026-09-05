@@ -2,9 +2,17 @@
    Envía la cuadratura del día anterior a administradores y
    superadministradores: detalle de los pagos que entraron ese día (sean de
    una cancha usada ese mismo día o de una reserva para otra fecha), el total
-   recaudado y el acumulado del mes hasta esa fecha. Lo dispara el Cron Job
-   de Vercel definido en vercel.json (corre a las 03:59 AM, así que reporta
-   el día que recién terminó, no el que empieza).
+   recaudado, el acumulado del mes hasta esa fecha y la ocupación/vacancia
+   por bloque horario. Lo dispara el Cron Job de Vercel definido en
+   vercel.json a la 01:00 AM hora de Chile (media hora después de que se
+   cierra la edición de la cuadratura del día que acaba de terminar, a las
+   00:30), así que reporta el día que recién terminó, no el que empieza.
+
+   Vercel programa los cron en UTC y no ajusta por horario de verano: el
+   schedule "0 4 * * *" cae en la 01:00 AM cuando Chile está en UTC-3
+   (la mayor parte del año), pero en 00:00 AM durante los meses de invierno
+   en que Chile vuelve a UTC-4. Si eso llega a ser un problema, hay que
+   ajustar el schedule a mano según la época del año.
 
    Protegido con CRON_SECRET: Vercel agrega automáticamente el header
    "Authorization: Bearer <CRON_SECRET>" cuando llama a este endpoint, así
@@ -53,8 +61,8 @@ module.exports = async function handler(req, res) {
         return;
     }
 
-    // El cron corre a las 03:59 AM: a esa hora "hoy" recién empieza, así que
-    // el día a cuadrar es el que acaba de terminar (ayer).
+    // El cron corre pasada la medianoche: a esa hora "hoy" recién empieza,
+    // así que el día a cuadrar es el que acaba de terminar (ayer).
     const hoy = fechaChile(new Date());
     const diaReporte = sumarDias(hoy, -1);
 

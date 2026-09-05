@@ -95,6 +95,19 @@
         return y + '-' + m + '-' + day;
     }
 
+    // La jornada de caja termina a las 00:00, pero se deja hasta las 00:30
+    // del día siguiente para seguir cargando/corrigiendo la cuadratura del
+    // día que acaba de cerrar sin que ya cuente como "día anterior" (con su
+    // aviso obligatorio por correo). Pasada esa media hora, sí pasa a serlo.
+    function fechaOperativaCuadratura() {
+        var ahora = new Date();
+        if (ahora.getHours() === 0 && ahora.getMinutes() < 30) {
+            var ayer = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() - 1);
+            return toISODate(ayer);
+        }
+        return toISODate(ahora);
+    }
+
     // Una reserva ya pasó si su hora de inicio (fecha + hora en punto) ya
     // quedó atrás respecto de ahora. Cubre tanto los días anteriores a hoy
     // como las horas de hoy que ya se jugaron.
@@ -1133,7 +1146,7 @@
     if (el.btnCuadraturaHoy) {
         el.btnCuadraturaHoy.addEventListener('click', function () {
             state.cuadraturaFecha = '';
-            el.cuadraturaFechaInput.value = toISODate(new Date());
+            el.cuadraturaFechaInput.value = fechaOperativaCuadratura();
             renderCuadratura();
         });
     }
@@ -1141,7 +1154,7 @@
     function renderCuadratura() {
         if (!el.cuadraturaTbody) return;
 
-        var hoy = toISODate(new Date());
+        var hoy = fechaOperativaCuadratura();
         var fechaCuadratura = state.cuadraturaFecha || hoy;
         var esDiaAnterior = fechaCuadratura < hoy;
 
