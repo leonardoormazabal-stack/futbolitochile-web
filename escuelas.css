@@ -31,11 +31,10 @@
     background-color: var(--blanco);
     border-radius: 16px;
     box-shadow: var(--sombra);
-    padding: 30px;
     border-top: 6px solid var(--azul-primario);
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    gap: 14px;
 }
 
 .escuela-card--colocolo {
@@ -44,6 +43,20 @@
 
 .escuela-card--cobreloa {
     border-top-color: #e8720c;
+}
+
+.escuela-card-banner {
+    width: 100%;
+    aspect-ratio: 3 / 1;
+    object-fit: cover;
+}
+
+.escuela-card-body {
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    flex: 1;
 }
 
 .escuela-card-header {
@@ -116,7 +129,7 @@
 }
 
 @media (max-width: 480px) {
-    .escuela-card {
+    .escuela-card-body {
         padding: 24px 20px;
     }
 }
