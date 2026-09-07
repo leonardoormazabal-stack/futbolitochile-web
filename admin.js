@@ -1167,15 +1167,19 @@
 
         el.cuadraturaFecha.textContent = 'Cuadratura del ' + formatFechaCorta(fechaCuadratura) + (fechaCuadratura === hoy ? ' (hoy)' : '');
 
-        // Incluye tanto las canchas que se juegan ese día como cualquier pago
-        // que haya entrado ese día para una reserva de otro día (ej. alguien
-        // que reserva y paga hoy para jugar la próxima semana): la cuadratura
-        // de caja debe cuadrar todo el dinero que entró en el día, sin
-        // importar para cuándo es la reserva.
+        // Incluye tanto las canchas que se juegan ese día (con o sin pago,
+        // para no perder de vista lo pendiente de cobrar en el recinto) como
+        // cualquier pago que haya entrado ese día para una reserva de otro
+        // día (ej. alguien que reserva y paga hoy para jugar la próxima
+        // semana). Una reserva pendiente para un día posterior que todavía
+        // no tiene ni abono no es un movimiento de caja real de hoy, así que
+        // no se cuenta hasta que tenga algo pagado.
         var lista = state.reservas.filter(function (r) {
             if (r.estado !== 'confirmada') return false;
+            if (r.fecha === fechaCuadratura) return true;
             var fechaDePago = toISODate(new Date(r.created_at));
-            return r.fecha === fechaCuadratura || fechaDePago === fechaCuadratura;
+            var tienePago = (r.monto_pagado || 0) + (r.monto_pagado_2 || 0) + (r.monto_pagado_3 || 0) > 0;
+            return fechaDePago === fechaCuadratura && tienePago;
         });
 
         lista.sort(function (a, b) {
