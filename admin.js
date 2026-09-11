@@ -2231,7 +2231,7 @@
     function eliminarUsuario(userId, nombre) {
         if (!window.confirm('¿Eliminar definitivamente a "' + nombre + '"? Esta acción no se puede deshacer.')) return;
 
-        llamarApiAdmin('admin-delete-user', { userId: userId })
+        llamarApiAdmin('admin-usuarios', { accion: 'eliminar', userId: userId })
             .then(function () {
                 cargarUsuarios();
             })
@@ -2269,7 +2269,7 @@
             return;
         }
 
-        llamarApiAdmin('admin-set-password', { userId: userId, newPassword: nuevaPassword })
+        llamarApiAdmin('admin-usuarios', { accion: 'set-password', userId: userId, newPassword: nuevaPassword })
             .then(function () {
                 cerrarModalPassword();
                 window.alert('Contraseña actualizada correctamente.');
@@ -2306,6 +2306,7 @@
         e.preventDefault();
 
         var payload = {
+            accion: 'crear',
             nombre: el.usrNombre.value.trim(),
             email: el.usrEmail.value.trim(),
             password: el.usrPassword.value,
@@ -2323,7 +2324,7 @@
             return;
         }
 
-        llamarApiAdmin('admin-create-user', payload)
+        llamarApiAdmin('admin-usuarios', payload)
             .then(function () {
                 cerrarModalUsuario();
                 cargarUsuarios();

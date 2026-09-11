@@ -4,7 +4,7 @@
    contenido de la notificación en sí (formato no confirmado con certeza) —
    solo se usa para saber a qué "requestId" hay que reconsultarle el estado
    real a Banchile, con la misma lógica que usa reservas.html al volver del
-   pago (ver lib/banchile.js y api/banchile-estado.js).
+   pago (ver lib/banchile.js y api/banchile.js).
 
    Siempre responde 200 para que Banchile no reintente indefinidamente, aun
    si no se pudo procesar (el error queda en los logs de Vercel).

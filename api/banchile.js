@@ -1,26 +1,32 @@
 /* ============================================================================
-   Crea una transacción de pago con tarjeta vía Banchile Pagos (Web
-   Checkout) para una reserva nueva. Se llama desde reservas.html cuando el
-   cliente elige pagar con tarjeta (ya sea el abono o el total).
+   Pago con tarjeta vía Banchile Pagos (Web Checkout), desde reservas.html.
+   Junta "crear transacción" (POST) y "consultar estado" (GET) en un solo
+   endpoint (en vez de uno por acción) para no pasarse del límite de 12
+   funciones serverless del plan Hobby de Vercel.
 
-   Pasos:
-   1. Recalcula el precio del bloque horario en el servidor (nunca confía en
-      lo que mande el navegador) y valida que el monto a cobrar sea el abono
-      configurado para ese bloque, o el precio completo.
-   2. Verifica que el horario siga libre (ni confirmado ni con otro pago en
-      curso).
-   3. Crea la reserva en estado "pendiente" (bloquea el horario) con un
-      vencimiento de 20 minutos.
-   4. Crea la sesión de pago en Banchile y guarda su requestId en la reserva.
-   5. Devuelve la URL a la que el navegador debe redirigir al cliente.
+   POST: crea la reserva "pendiente" y la sesión de pago en Banchile.
+     1. Recalcula el precio del bloque horario en el servidor (nunca confía
+        en lo que mande el navegador): el abono configurado para ese bloque,
+        o el precio completo, según lo que haya elegido el cliente.
+     2. Verifica que el horario siga libre (ni confirmado ni con otro pago
+        en curso).
+     3. Crea la reserva en estado "pendiente" (bloquea el horario) con un
+        vencimiento de 20 minutos.
+     4. Crea la sesión de pago en Banchile y guarda su requestId.
+     5. Devuelve la URL a la que el navegador debe redirigir al cliente.
+     Si algo fallara después de crear la reserva "pendiente" (Banchile no
+     responde, etc.), se cancela esa reserva para no dejar el horario
+     bloqueado por un intento que nunca llegó a la pasarela de pago.
 
-   Si algo fallara después de crear la reserva "pendiente" (Banchile no
-   responde, etc.), se cancela esa reserva para no dejar el horario
-   bloqueado por un intento que nunca llegó a la pasarela de pago.
+   GET ?reserva=<id>: se llama apenas el cliente vuelve del pago (returnUrl).
+     Reconsulta a Banchile igual que el webhook (api/banchile-notificacion.js):
+     no espera pasivamente a que llegue la notificación, así el cliente ve
+     el resultado real de inmediato aunque el webhook todavía no haya
+     llegado.
    ============================================================================ */
 
 const { getSupabaseAdmin } = require('../lib/supabaseAdmin');
-const { crearSesion } = require('../lib/banchile');
+const { crearSesion, confirmarTransaccion } = require('../lib/banchile');
 
 const SPORT_LABELS = { futbolito: 'Futbolito', padel: 'Pádel' };
 const MINUTOS_EXPIRACION = 20;
@@ -45,20 +51,7 @@ function getAbonoPorHora(tarifas, deporte, hora) {
     return masTardio && masTardio.abono != null ? masTardio.abono : 10000;
 }
 
-module.exports = async function handler(req, res) {
-    if (req.method !== 'POST') {
-        res.status(405).json({ error: 'Método no permitido.' });
-        return;
-    }
-
-    let supabaseAdmin;
-    try {
-        supabaseAdmin = getSupabaseAdmin();
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-        return;
-    }
-
+async function crearTransaccion(req, res, supabaseAdmin) {
     const body = req.body || {};
     const canchaId = body.cancha_id;
     const fecha = body.fecha;
@@ -189,4 +182,75 @@ module.exports = async function handler(req, res) {
     }).eq('id', reservaCreada.id);
 
     res.status(200).json({ ok: true, reservaId: reservaCreada.id, processUrl: sesion.processUrl });
+}
+
+async function consultarEstado(req, res, supabaseAdmin) {
+    const reservaId = (req.query || {}).reserva;
+    if (!reservaId) {
+        res.status(400).json({ error: 'Falta el identificador de la reserva.' });
+        return;
+    }
+
+    const { data: reserva, error } = await supabaseAdmin
+        .from('reservas')
+        .select('id,fecha,hora,precio,monto_pagado,tipo_pago,estado,nombre_contacto,pago_online_request_id,cancha_id,canchas(nombre,deporte)')
+        .eq('id', reservaId)
+        .single();
+
+    if (error || !reserva) {
+        res.status(404).json({ error: 'No encontramos esa reserva.' });
+        return;
+    }
+
+    let resultado;
+    try {
+        resultado = await confirmarTransaccion(supabaseAdmin, reserva);
+    } catch (err) {
+        // Si Banchile no responde, devolvemos el estado que ya teníamos en
+        // vez de dejar al cliente sin ninguna respuesta.
+        resultado = { estado: reserva.estado };
+    }
+
+    if (resultado.transicionAhora) {
+        // Correo de confirmación real, recién ahora que se sabe que el pago
+        // fue aprobado (antes, mientras estaba "pendiente", no correspondía
+        // avisarle a nadie).
+        fetch('https://futbolitochile.cl/api/reserva-confirmacion', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reservaId: reserva.id })
+        }).catch(() => {});
+    }
+
+    const estadoFinal = resultado.estado || reserva.estado;
+    const canchaNombre = reserva.canchas ? reserva.canchas.nombre : reserva.cancha_id;
+    const montoPagado = estadoFinal === 'confirmada'
+        ? (resultado.montoPagado != null ? resultado.montoPagado : reserva.monto_pagado)
+        : null;
+
+    res.status(200).json({
+        estado: estadoFinal,
+        fecha: reserva.fecha,
+        hora: reserva.hora,
+        cancha: canchaNombre,
+        montoPagado,
+        precio: reserva.precio,
+        tipoPago: reserva.tipo_pago,
+        nombreContacto: reserva.nombre_contacto
+    });
+}
+
+module.exports = async function handler(req, res) {
+    let supabaseAdmin;
+    try {
+        supabaseAdmin = getSupabaseAdmin();
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+        return;
+    }
+
+    if (req.method === 'POST') return crearTransaccion(req, res, supabaseAdmin);
+    if (req.method === 'GET') return consultarEstado(req, res, supabaseAdmin);
+
+    res.status(405).json({ error: 'Método no permitido.' });
 };

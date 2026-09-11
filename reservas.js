@@ -841,7 +841,7 @@
     // sesión de pago real y redirige el navegador a la pasarela.
     function iniciarPagoBanchile() {
         resolverUserIdParaReserva().then(function (userId) {
-            fetch('/api/banchile-crear-transaccion', {
+            fetch('/api/banchile', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1039,7 +1039,7 @@
         el.wizardPageNormal.hidden = true;
         el.banchileResultado.hidden = false;
 
-        fetch('/api/banchile-estado?reserva=' + encodeURIComponent(reservaId))
+        fetch('/api/banchile?reserva=' + encodeURIComponent(reservaId))
             .then(function (r) { return r.json(); })
             .then(function (data) {
                 if (data.estado === 'confirmada') {
