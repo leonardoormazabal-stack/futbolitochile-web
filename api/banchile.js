@@ -175,10 +175,7 @@ async function crearTransaccion(req, res, supabaseAdmin) {
             cancelado_en: new Date().toISOString()
         }).eq('id', reservaCreada.id);
 
-        // TODO: volver a "No pudimos conectar con la pasarela de pago" una
-        // vez resuelto el problema real — esto es temporal para poder
-        // diagnosticarlo sin acceso a los logs de Vercel de este proyecto.
-        res.status(502).json({ error: 'No pudimos conectar con la pasarela de pago: ' + err.message });
+        res.status(502).json({ error: 'No pudimos conectar con la pasarela de pago. Intenta de nuevo.' });
         return;
     }
 
