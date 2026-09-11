@@ -167,13 +167,18 @@ async function crearTransaccion(req, res, supabaseAdmin) {
             userAgent: req.headers['user-agent']
         });
     } catch (err) {
+        console.log('[banchile crearSesion] error: ' + err.message);
+
         await supabaseAdmin.from('reservas').update({
             estado: 'cancelada',
             motivo_cancelacion: 'No se pudo crear la sesión de pago en Banchile: ' + err.message,
             cancelado_en: new Date().toISOString()
         }).eq('id', reservaCreada.id);
 
-        res.status(502).json({ error: 'No pudimos conectar con la pasarela de pago. Intenta de nuevo.' });
+        // TODO: volver a "No pudimos conectar con la pasarela de pago" una
+        // vez resuelto el problema real — esto es temporal para poder
+        // diagnosticarlo sin acceso a los logs de Vercel de este proyecto.
+        res.status(502).json({ error: 'No pudimos conectar con la pasarela de pago: ' + err.message });
         return;
     }
 
