@@ -201,6 +201,13 @@
         paymentStatus: document.getElementById('paymentStatus'),
         paymentConfirmation: document.getElementById('paymentConfirmation'),
         paymentMethodsWrap: document.getElementById('paymentMethodsWrap'),
+        btnPagoPresencialSinAbono: document.getElementById('btnPagoPresencialSinAbono'),
+        banchileResultado: document.getElementById('banchileResultado'),
+        banchileResultadoTitulo: document.getElementById('banchileResultadoTitulo'),
+        banchileResultadoTexto: document.getElementById('banchileResultadoTexto'),
+        banchileResultadoBoton: document.getElementById('banchileResultadoBoton'),
+        wizardHeroNormal: document.getElementById('wizardHeroNormal'),
+        wizardPageNormal: document.getElementById('wizardPageNormal'),
         montoOpcionCompleto: document.getElementById('montoOpcionCompleto'),
         montoOpcionAbono: document.getElementById('montoOpcionAbono'),
         summarySport: document.getElementById('summarySport'),
@@ -329,6 +336,7 @@
             c.classList.toggle('payment-card--disabled', !activo);
             c.disabled = !activo;
         });
+        if (el.btnPagoPresencialSinAbono) el.btnPagoPresencialSinAbono.disabled = false;
     }
 
     function obtenerSesionActual() {
@@ -706,7 +714,7 @@
 
         resetDownstreamFrom('datos');
         el.montoOpcionCompleto.textContent = formatCLP(state.precio);
-        el.montoOpcionAbono.textContent = formatCLP(state.precio);
+        el.montoOpcionAbono.textContent = formatCLP(state.abono);
 
         unlockPanel('pago');
         openPanel('pago');
@@ -715,11 +723,11 @@
     /* ======================================================================
        PANEL 6: TIPO DE PAGO + MÉTODO DE PAGO
 
-       "completo" (Pagar Ahora) muestra los medios de pago para cobrar en
-       línea. "abono" (Pagar Presencial) no cobra nada acá: agenda la
-       reserva de inmediato con $0 pagado y el cliente coordina el pago
-       real por WhatsApp, tal como hace un administrador al usar "Pago
-       Presencial" desde su panel.
+       Tanto "completo" (Pagar Ahora) como "abono" (Pagar Presencial)
+       muestran los medios de pago: con tarjeta (Banchile Pagos) se cobra de
+       verdad, ya sea el abono o el total. Quien prefiera no pagar nada
+       ahora y coordinarlo todo en el recinto usa el botón aparte que
+       aparece bajo los medios de pago mientras está en modo "abono".
        ====================================================================== */
     document.querySelectorAll('.tipo-pago-card').forEach(function (card) {
         card.addEventListener('click', function () {
@@ -729,27 +737,29 @@
             card.classList.add('selected');
 
             state.tipoPago = tipo;
-            state.montoAPagar = tipo === 'abono' ? 0 : state.precio;
+            state.montoAPagar = tipo === 'abono' ? state.abono : state.precio;
 
             el.paymentStatus.hidden = true;
             el.paymentConfirmation.hidden = true;
-
-            if (tipo === 'abono') {
-                el.resumenPago.textContent = 'Pago presencial';
-                el.paymentMethodsWrap.hidden = true;
-                el.paymentStatus.hidden = false;
-                el.paymentStatus.className = 'payment-status';
-                el.paymentStatus.textContent = 'Agendando tu reserva...';
-                setTimeout(function () { crearReserva('Pago Presencial'); }, 800);
-                return;
-            }
-
-            el.resumenPago.textContent = 'Pago ahora';
+            el.resumenPago.textContent = tipo === 'abono' ? 'Abono' : 'Pago ahora';
             el.paymentMethodsWrap.hidden = false;
+            if (el.btnPagoPresencialSinAbono) el.btnPagoPresencialSinAbono.hidden = tipo !== 'abono';
             document.querySelectorAll('.payment-card').forEach(function (c) { c.classList.remove('selected'); });
             aplicarEstadoMetodosPago();
         });
     });
+
+    if (el.btnPagoPresencialSinAbono) {
+        el.btnPagoPresencialSinAbono.addEventListener('click', function () {
+            state.montoAPagar = 0;
+            document.querySelectorAll('.payment-card').forEach(function (c) { c.classList.remove('selected'); c.disabled = true; });
+            el.btnPagoPresencialSinAbono.disabled = true;
+            el.paymentStatus.hidden = false;
+            el.paymentStatus.className = 'payment-status';
+            el.paymentStatus.textContent = 'Agendando tu reserva...';
+            setTimeout(function () { crearReserva('Pago Presencial'); }, 800);
+        });
+    }
 
     var METODOS_SIN_REDIRECCION = ['Transferencia', 'Pago Presencial'];
 
@@ -804,9 +814,17 @@
             paymentCards.forEach(function (c) { c.classList.remove('selected'); });
             card.classList.add('selected');
             paymentCards.forEach(function (c) { c.disabled = true; });
+            if (el.btnPagoPresencialSinAbono) el.btnPagoPresencialSinAbono.disabled = true;
 
             el.paymentStatus.hidden = false;
             el.paymentStatus.className = 'payment-status';
+
+            if (metodo === 'Tarjeta de Crédito/Débito') {
+                el.paymentStatus.textContent = 'Redirigiendo a Banchile Pagos...';
+                iniciarPagoBanchile();
+                return;
+            }
+
             el.paymentStatus.textContent = METODOS_SIN_REDIRECCION.indexOf(metodo) === -1
                 ? 'Redirigiendo al medio de pago... (' + metodo + ')'
                 : 'Confirmando tu reserva... (' + metodo + ')';
@@ -816,6 +834,48 @@
             }, 1600);
         });
     });
+
+    // Pago real con tarjeta vía Banchile Pagos (Web Checkout): a diferencia
+    // de los demás medios (que hoy solo registran cómo dice el cliente que
+    // pagó), este crea la reserva "pendiente" en el servidor, abre una
+    // sesión de pago real y redirige el navegador a la pasarela.
+    function iniciarPagoBanchile() {
+        resolverUserIdParaReserva().then(function (userId) {
+            fetch('/api/banchile-crear-transaccion', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: userId,
+                    cancha_id: state.canchaId,
+                    fecha: state.selectedDate,
+                    hora: state.selectedHour,
+                    tipo_pago: state.tipoPago,
+                    nombre_contacto: campos.nombre.value.trim(),
+                    documento_contacto: campos.rut.value.trim(),
+                    telefono_contacto: campos.telefono.value.trim(),
+                    email_contacto: campos.email.value.trim()
+                })
+            }).then(function (r) {
+                return r.json().then(function (data) { return { ok: r.ok, data: data }; });
+            }).then(function (result) {
+                if (!result.ok) {
+                    if (result.data && result.data.ocupada) {
+                        mostrarCanchaOcupada();
+                        return;
+                    }
+                    el.paymentStatus.className = 'payment-status error';
+                    el.paymentStatus.textContent = (result.data && result.data.error) || 'No pudimos iniciar el pago. Intenta de nuevo.';
+                    aplicarEstadoMetodosPago();
+                    return;
+                }
+                window.location.href = result.data.processUrl;
+            }).catch(function () {
+                el.paymentStatus.className = 'payment-status error';
+                el.paymentStatus.textContent = 'No pudimos iniciar el pago. Intenta de nuevo.';
+                aplicarEstadoMetodosPago();
+            });
+        });
+    }
 
     function mostrarCanchaOcupada() {
         el.paymentStatus.hidden = false;
@@ -968,10 +1028,52 @@
     })();
 
     /* ======================================================================
+       VUELTA DESDE BANCHILE PAGOS: al pagar con tarjeta, el cliente sale del
+       sitio y vuelve recién cuando termina en el checkout de Banchile — en
+       ese momento se perdió todo el estado del wizard, así que en vez de
+       intentar retomarlo se muestra una pantalla de resultado aparte,
+       reconsultando el estado real de esa reserva.
+       ====================================================================== */
+    function mostrarResultadoBanchile(reservaId) {
+        el.wizardHeroNormal.hidden = true;
+        el.wizardPageNormal.hidden = true;
+        el.banchileResultado.hidden = false;
+
+        fetch('/api/banchile-estado?reserva=' + encodeURIComponent(reservaId))
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.estado === 'confirmada') {
+                    var detalle = data.tipoPago === 'abono' ? 'de abono' : 'en total';
+                    el.banchileResultadoTitulo.textContent = '¡Pago aprobado!';
+                    el.banchileResultadoTexto.textContent =
+                        (data.cancha || 'Tu cancha') + ' — ' + formatFechaLarga(data.fecha) + ', ' + String(data.hora).padStart(2, '0') + ':00 hrs. ' +
+                        'Pagaste ' + formatCLP(data.montoPagado || 0) + ' ' + detalle + '. Te enviamos la confirmación por correo.';
+                } else if (data.estado === 'pendiente') {
+                    el.banchileResultadoTitulo.textContent = 'Todavía estamos confirmando tu pago';
+                    el.banchileResultadoTexto.textContent = 'Puede tardar unos segundos. Si no se actualiza, escríbenos por WhatsApp con tu nombre y el horario que reservaste.';
+                } else {
+                    el.banchileResultadoTitulo.textContent = 'El pago no se pudo completar';
+                    el.banchileResultadoTexto.textContent = 'Tu horario quedó liberado. Puedes intentar de nuevo cuando quieras.';
+                }
+                el.banchileResultadoBoton.hidden = false;
+            })
+            .catch(function () {
+                el.banchileResultadoTitulo.textContent = 'No pudimos confirmar el resultado';
+                el.banchileResultadoTexto.textContent = 'Escríbenos por WhatsApp para confirmar el estado de tu pago.';
+                el.banchileResultadoBoton.hidden = false;
+            });
+    }
+
+    /* ======================================================================
        INICIALIZACIÓN
        ====================================================================== */
-    renderCalendario();
-    updateSummary();
-    cargarCatalogo();
-    obtenerSesionActual();
+    var banchileReservaId = new URLSearchParams(window.location.search).get('banchile_reserva');
+    if (banchileReservaId) {
+        mostrarResultadoBanchile(banchileReservaId);
+    } else {
+        renderCalendario();
+        updateSummary();
+        cargarCatalogo();
+        obtenerSesionActual();
+    }
 })();

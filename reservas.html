@@ -95,13 +95,20 @@
         </div>
     </header>
 
+    <!-- RESULTADO DEL PAGO CON TARJETA (Banchile Pagos) -->
+    <section class="wizard-hero" id="banchileResultado" hidden>
+        <h1 id="banchileResultadoTitulo">Confirmando tu pago…</h1>
+        <p id="banchileResultadoTexto">Estamos verificando el resultado con Banchile Pagos, un momento.</p>
+        <a href="reservas.html" class="btn btn-primary" id="banchileResultadoBoton" hidden>Hacer otra reserva</a>
+    </section>
+
     <!-- ENCABEZADO -->
-    <section class="wizard-hero">
+    <section class="wizard-hero" id="wizardHeroNormal">
         <h1>Reserva tu Cancha</h1>
         <p>Elige tu deporte, fecha y horario en simples pasos</p>
     </section>
 
-    <main class="wizard-page">
+    <main class="wizard-page" id="wizardPageNormal">
         <div class="wizard-body">
             <div class="wizard-main">
                 <div class="accordion" id="accordion">
@@ -246,9 +253,9 @@
                                     <span class="tipo-pago-monto" id="montoOpcionCompleto">$0</span>
                                 </button>
                                 <button type="button" class="tipo-pago-card" data-tipo="abono">
-                                    <span class="tipo-pago-titulo">Pagar Presencial</span>
+                                    <span class="tipo-pago-titulo">Abonar</span>
                                     <span class="tipo-pago-monto" id="montoOpcionAbono">$0</span>
-                                    <span class="tipo-pago-nota">Coordinas y pagas en el recinto</span>
+                                    <span class="tipo-pago-nota">Pagas el resto en el recinto</span>
                                 </button>
                             </div>
 
@@ -272,6 +279,8 @@
                                     </button>
                                 </div>
                             </div>
+
+                            <button type="button" class="btn btn-outline btn-block" id="btnPagoPresencialSinAbono" hidden>No quiero pagar ahora, prefiero coordinar todo en el recinto</button>
 
                             <div class="payment-status" id="paymentStatus" hidden></div>
                             <div class="payment-confirmation" id="paymentConfirmation" hidden></div>
