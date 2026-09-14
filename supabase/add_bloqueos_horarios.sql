@@ -46,7 +46,7 @@ create or replace view public.disponibilidad as
     where estado = 'confirmada'
        or (estado = 'pendiente' and pendiente_expira_en > now())
     union
-    select c.id as cancha_id, b.fecha, h.hora
+    select c.id as cancha_id, b.fecha, h.hora::smallint as hora
     from public.bloqueos b
     cross join public.canchas c
     cross join generate_series(0, 23) as h(hora)
