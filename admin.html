@@ -72,6 +72,7 @@
                 <button type="button" class="admin-tab" data-tab="usuarios" id="tabUsuarios" hidden>Usuarios</button>
                 <button type="button" class="admin-tab" data-tab="contenido" id="tabContenido" hidden>Contenido</button>
                 <button type="button" class="admin-tab" data-tab="tarifas" id="tabTarifas" hidden>Tarifas</button>
+                <button type="button" class="admin-tab" data-tab="bloqueos" id="tabBloqueos" hidden>Bloqueos</button>
             </div>
             <div class="admin-toolbar-actions">
                 <button type="button" class="btn btn-primary" id="btnNuevoUsuario">+ Nuevo Usuario</button>
@@ -492,6 +493,66 @@
                 <div class="contenido-form-actions">
                     <button type="button" class="btn btn-primary" id="btnGuardarMetodosPago">Guardar Métodos de Pago</button>
                     <span class="contenido-guardado" id="guardadoMetodosPago" hidden>Guardado ✓</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- VISTA BLOQUEOS (solo superadministrador) -->
+        <section class="admin-view" id="view-bloqueos">
+            <div class="contenido-bloque">
+                <h3>Bloquear Horarios o Días</h3>
+                <p class="admin-note">Bloquea una cancha específica o todas, en un horario puntual o el día completo. Un bloqueo evita que esas reservas se puedan hacer desde el sitio, igual que si estuvieran ocupadas.</p>
+
+                <form id="formNuevoBloqueo" class="contenido-form">
+                    <div class="form-group">
+                        <label for="bloqFechaDesde">Desde</label>
+                        <input type="date" id="bloqFechaDesde" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bloqFechaHasta">Hasta (opcional, para un rango de días)</label>
+                        <input type="date" id="bloqFechaHasta">
+                    </div>
+                    <div class="form-group">
+                        <label for="bloqCancha">Cancha</label>
+                        <select id="bloqCancha">
+                            <option value="">Todas las canchas</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="bloqHora">Horario</label>
+                        <select id="bloqHora">
+                            <option value="">Todo el día</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="bloqMotivo">Motivo (opcional)</label>
+                        <input type="text" id="bloqMotivo" placeholder="Ej: Mantención de canchas">
+                    </div>
+
+                    <div class="auth-alert" id="bloqError" hidden></div>
+
+                    <div class="contenido-form-actions">
+                        <button type="submit" class="btn btn-primary">Bloquear</button>
+                        <span class="contenido-guardado" id="bloqGuardado" hidden>Bloqueado ✓</span>
+                    </div>
+                </form>
+
+                <h4 class="contenido-subtitulo">Bloqueos vigentes y futuros</h4>
+                <div class="admin-table-wrapper">
+                    <table class="admin-table" id="bloqueosTable">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Cancha</th>
+                                <th>Horario</th>
+                                <th>Motivo</th>
+                                <th>Bloqueado por</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="bloqueosTableBody"></tbody>
+                    </table>
+                    <p class="admin-empty" id="bloqueosEmptyMsg" hidden>No hay bloqueos vigentes ni futuros.</p>
                 </div>
             </div>
         </section>

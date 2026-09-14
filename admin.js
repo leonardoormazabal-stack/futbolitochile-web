@@ -125,6 +125,7 @@
         canchas: [],
         tarifas: [],
         usuarios: [],
+        bloqueos: [],
         clientesRenderizados: [],
         filtroFecha: '',
         cuadraturaFecha: '',
@@ -318,6 +319,18 @@
 
         tabContenido: document.getElementById('tabContenido'),
         tabTarifas: document.getElementById('tabTarifas'),
+        tabBloqueos: document.getElementById('tabBloqueos'),
+
+        formNuevoBloqueo: document.getElementById('formNuevoBloqueo'),
+        bloqFechaDesde: document.getElementById('bloqFechaDesde'),
+        bloqFechaHasta: document.getElementById('bloqFechaHasta'),
+        bloqCancha: document.getElementById('bloqCancha'),
+        bloqHora: document.getElementById('bloqHora'),
+        bloqMotivo: document.getElementById('bloqMotivo'),
+        bloqError: document.getElementById('bloqError'),
+        bloqGuardado: document.getElementById('bloqGuardado'),
+        bloqueosTbody: document.getElementById('bloqueosTableBody'),
+        bloqueosEmptyMsg: document.getElementById('bloqueosEmptyMsg'),
 
         formMenuSecciones: document.getElementById('formMenuSecciones'),
         guardadoMenuSecciones: document.getElementById('guardadoMenuSecciones'),
@@ -2691,6 +2704,140 @@
         });
     });
 
+    /* ======================================================================
+       BLOQUEOS (solo superadministrador)
+       ====================================================================== */
+    function poblarSelectoresBloqueo() {
+        el.bloqCancha.innerHTML = '<option value="">Todas las canchas</option>';
+        state.canchas.forEach(function (c) {
+            var option = document.createElement('option');
+            option.value = c.id;
+            option.textContent = c.nombre + ' (' + (SPORT_LABELS[c.deporte] || c.deporte) + ')';
+            el.bloqCancha.appendChild(option);
+        });
+
+        el.bloqHora.innerHTML = '<option value="">Todo el día</option>';
+        for (var hora = 12; hora <= 23; hora++) {
+            var opcion = document.createElement('option');
+            opcion.value = hora;
+            opcion.textContent = String(hora).padStart(2, '0') + ':00';
+            el.bloqHora.appendChild(opcion);
+        }
+    }
+
+    function cargarBloqueos() {
+        return sb.from('bloqueos')
+            .select('id,fecha,hora,cancha_id,motivo,creado_por,canchas(nombre)')
+            .gte('fecha', toISODate(new Date()))
+            .order('fecha', { ascending: true })
+            .order('hora', { ascending: true, nullsFirst: true })
+            .then(function (result) {
+                if (result.error) return;
+                state.bloqueos = result.data || [];
+                renderBloqueos();
+            });
+    }
+
+    function renderBloqueos() {
+        if (!el.bloqueosTbody) return;
+
+        var lista = state.bloqueos || [];
+        el.bloqueosTbody.innerHTML = '';
+        el.bloqueosEmptyMsg.hidden = lista.length > 0;
+
+        lista.forEach(function (b) {
+            var creadorNombre = '—';
+            if (b.creado_por) {
+                var usuario = state.usuarios.find(function (u) { return u.id === b.creado_por; });
+                creadorNombre = usuario ? usuario.nombre : '—';
+            }
+
+            var tr = document.createElement('tr');
+            tr.innerHTML =
+                '<td>' + formatFechaCorta(b.fecha) + '</td>' +
+                '<td>' + (b.cancha_id ? (b.canchas ? b.canchas.nombre : b.cancha_id) : 'Todas') + '</td>' +
+                '<td>' + (b.hora != null ? String(b.hora).padStart(2, '0') + ':00' : 'Todo el día') + '</td>' +
+                '<td>' + (b.motivo || '—') + '</td>' +
+                '<td>' + creadorNombre + '</td>' +
+                '<td class="celda-accion"><button type="button" class="btn-cancelar btn-eliminar-bloqueo" data-id="' + b.id + '">Quitar</button></td>';
+            el.bloqueosTbody.appendChild(tr);
+        });
+
+        el.bloqueosTbody.querySelectorAll('.btn-eliminar-bloqueo').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                if (!window.confirm('¿Quitar este bloqueo? El horario volverá a estar disponible para reservar.')) return;
+
+                sb.from('bloqueos').delete().eq('id', btn.getAttribute('data-id')).then(function (result) {
+                    if (result.error) {
+                        window.alert('No pudimos quitar el bloqueo: ' + result.error.message);
+                        return;
+                    }
+                    cargarBloqueos();
+                });
+            });
+        });
+    }
+
+    if (el.formNuevoBloqueo) {
+        el.formNuevoBloqueo.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            el.bloqError.hidden = true;
+
+            var fechaDesde = el.bloqFechaDesde.value;
+            var fechaHasta = el.bloqFechaHasta.value || fechaDesde;
+            var canchaId = el.bloqCancha.value || null;
+            var hora = el.bloqHora.value === '' ? null : parseInt(el.bloqHora.value, 10);
+            var motivo = el.bloqMotivo.value.trim() || null;
+
+            if (!fechaDesde) {
+                el.bloqError.textContent = 'Indica al menos la fecha "Desde".';
+                el.bloqError.className = 'auth-alert';
+                el.bloqError.hidden = false;
+                return;
+            }
+            if (fechaHasta < fechaDesde) {
+                el.bloqError.textContent = 'La fecha "Hasta" no puede ser anterior a la fecha "Desde".';
+                el.bloqError.className = 'auth-alert';
+                el.bloqError.hidden = false;
+                return;
+            }
+
+            // Un bloqueo por cada día del rango: mantiene simple la vista de
+            // disponibilidad (no necesita entender rangos), y cada día se
+            // puede quitar por separado si hace falta.
+            var fechas = [];
+            var cursor = new Date(fechaDesde + 'T00:00:00');
+            var limite = new Date(fechaHasta + 'T00:00:00');
+            while (cursor.getTime() <= limite.getTime()) {
+                fechas.push(toISODate(cursor));
+                cursor.setDate(cursor.getDate() + 1);
+            }
+
+            var nuevosBloqueos = fechas.map(function (fecha) {
+                return {
+                    fecha: fecha,
+                    hora: hora,
+                    cancha_id: canchaId,
+                    motivo: motivo,
+                    creado_por: state.currentUserId
+                };
+            });
+
+            sb.from('bloqueos').insert(nuevosBloqueos).then(function (result) {
+                if (result.error) {
+                    el.bloqError.textContent = 'No pudimos guardar el bloqueo: ' + result.error.message;
+                    el.bloqError.className = 'auth-alert';
+                    el.bloqError.hidden = false;
+                    return;
+                }
+                el.formNuevoBloqueo.reset();
+                mostrarGuardado(el.bloqGuardado);
+                cargarBloqueos();
+            });
+        });
+    }
+
     el.formPlanMensual.addEventListener('submit', function (e) {
         e.preventDefault();
 
@@ -2851,20 +2998,27 @@
         el.gate.hidden = true;
         el.page.hidden = false;
 
-        var tareas = [cargarCatalogo().then(function () {
+        var catalogoListo = cargarCatalogo().then(function () {
             poblarFiltroCanchaPagos();
             renderCuadratura(); // recalcula el % de arriendo si las tarifas llegaron después que las reservas
-        }), cargarReservas()];
+        });
 
         // Se carga para administrador y superadministrador: Cancelaciones
         // (visible para ambos) necesita los nombres para "Cancelado por".
-        tareas.push(cargarUsuarios().then(renderCancelaciones));
+        var usuariosListo = cargarUsuarios().then(renderCancelaciones);
+
+        var tareas = [catalogoListo, cargarReservas(), usuariosListo];
 
         if (state.esSuperadmin) {
             el.tabUsuarios.hidden = false;
             el.tabContenido.hidden = false;
             el.tabTarifas.hidden = false;
+            el.tabBloqueos.hidden = false;
             tareas.push(cargarContenido());
+            tareas.push(Promise.all([catalogoListo, usuariosListo]).then(function () {
+                poblarSelectoresBloqueo();
+                return cargarBloqueos();
+            }));
         }
 
         Promise.all(tareas);
