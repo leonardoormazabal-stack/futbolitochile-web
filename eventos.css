@@ -1,0 +1,72 @@
+/* ==========================================================================
+   EVENTOS Y CUMPLEAÑOS
+   Usa las variables de color definidas en style.css (:root) y las clases
+   base de botón definidas en style.css/auth.css
+   ========================================================================== */
+
+.eventos-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 50px 20px 90px;
+}
+
+.eventos-intro {
+    max-width: 700px;
+    margin: 0 auto 50px;
+    text-align: center;
+}
+
+.eventos-flyer {
+    max-width: 360px;
+    margin: 0 auto 24px;
+    border-radius: 16px;
+    box-shadow: var(--sombra);
+}
+
+.eventos-intro p {
+    color: var(--gris-texto);
+    margin-bottom: 20px;
+}
+
+.eventos-galeria-titulo {
+    text-align: center;
+    color: var(--azul-oscuro);
+    font-size: 26px;
+    margin-bottom: 24px;
+}
+
+.eventos-galeria {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+    margin-bottom: 50px;
+}
+
+.eventos-galeria img {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 12px;
+    box-shadow: var(--sombra);
+}
+
+.eventos-cta-final {
+    text-align: center;
+    background-color: var(--gris-claro);
+    border-radius: 16px;
+    padding: 40px 24px;
+}
+
+.eventos-cta-final p {
+    max-width: 600px;
+    margin: 0 auto 20px;
+    color: var(--gris-texto);
+    font-size: 17px;
+}
+
+@media (max-width: 480px) {
+    .eventos-galeria {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 10px;
+    }
+}
