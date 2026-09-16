@@ -365,6 +365,15 @@
 
         contenidoCardsGrid: document.getElementById('contenidoCardsGrid'),
 
+        formEventosTextos: document.getElementById('formEventosTextos'),
+        cEventosIntro: document.getElementById('cEventosIntro'),
+        cEventosGaleriaTitulo: document.getElementById('cEventosGaleriaTitulo'),
+        cEventosCta: document.getElementById('cEventosCta'),
+        guardadoEventosTextos: document.getElementById('guardadoEventosTextos'),
+        eventosFotosGrid: document.getElementById('eventosFotosGrid'),
+        eventosFotoNuevaInput: document.getElementById('eventosFotoNuevaInput'),
+        guardadoEventosFoto: document.getElementById('guardadoEventosFoto'),
+
         tarifasGrid: document.getElementById('tarifasGrid'),
         btnGuardarTarifas: document.getElementById('btnGuardarTarifas'),
         guardadoTarifas: document.getElementById('guardadoTarifas'),
@@ -2501,7 +2510,8 @@
             cargarTarifasConFallback(),
             sb.from('planes_mensuales').select('id,nombre,horas_incluidas,precio').order('orden', { ascending: true }),
             sb.from('equipamiento').select('id,nombre,precio').order('orden', { ascending: true }),
-            sb.from('metodos_pago').select('id,nombre,activo').order('orden', { ascending: true })
+            sb.from('metodos_pago').select('id,nombre,activo').order('orden', { ascending: true }),
+            sb.from('eventos_fotos').select('id,imagen_url,alt_text').order('orden', { ascending: true })
         ]).then(function (resultados) {
             var contenidoRes = resultados[0];
             var cardsRes = resultados[1];
@@ -2509,6 +2519,7 @@
             var planesRes = resultados[3];
             var equipamientoRes = resultados[4];
             var metodosPagoRes = resultados[5];
+            var eventosFotosRes = resultados[6];
 
             var c = {};
             (contenidoRes.data || []).forEach(function (fila) { c[fila.key] = fila.value; });
@@ -2538,10 +2549,15 @@
             el.cCtaTitulo.value = c.nosotros_cta_titulo || '';
             el.cCtaTexto.value = c.nosotros_cta_texto || '';
 
+            el.cEventosIntro.value = c.eventos_intro_texto || '';
+            el.cEventosGaleriaTitulo.value = c.eventos_galeria_titulo || '';
+            el.cEventosCta.value = c.eventos_cta_texto || '';
+
             renderCardsEditor(cardsRes.data || []);
             renderTarifasEditor(tarifasRes.data || []);
             renderEquipamientoEditor(equipamientoRes.data || []);
             renderMetodosPagoEditor(metodosPagoRes.data || []);
+            renderEventosFotos(eventosFotosRes.data || []);
 
             var plan = (planesRes.data || [])[0];
             if (plan) {
@@ -2919,6 +2935,76 @@
             });
 
             el.contenidoCardsGrid.appendChild(bloque);
+        });
+    }
+
+    /* ======================================================================
+       EVENTOS Y CUMPLEAÑOS (textos + galería de fotos, editable solo por
+       superadministrador desde este módulo de Contenido)
+       ====================================================================== */
+    function crearFotoItemEventos(foto) {
+        var item = document.createElement('div');
+        item.className = 'contenido-foto-item';
+        item.innerHTML =
+            '<img src="' + foto.imagen_url + '" alt="' + (foto.alt_text || '').replace(/"/g, '&quot;') + '">' +
+            '<button type="button" class="btn-quitar-foto" title="Quitar foto">✕</button>';
+
+        item.querySelector('.btn-quitar-foto').addEventListener('click', function () {
+            if (!window.confirm('¿Quitar esta foto de la galería de Eventos?')) return;
+
+            sb.from('eventos_fotos').delete().eq('id', foto.id).then(function (result) {
+                if (result.error) {
+                    window.alert('No pudimos quitar la foto: ' + result.error.message);
+                    return;
+                }
+                item.remove();
+            });
+        });
+
+        return item;
+    }
+
+    function renderEventosFotos(fotos) {
+        el.eventosFotosGrid.innerHTML = '';
+        fotos.forEach(function (foto) {
+            el.eventosFotosGrid.appendChild(crearFotoItemEventos(foto));
+        });
+    }
+
+    if (el.formEventosTextos) {
+        el.formEventosTextos.addEventListener('submit', function (e) {
+            e.preventDefault();
+            guardarSiteContent({
+                eventos_intro_texto: el.cEventosIntro.value.trim(),
+                eventos_galeria_titulo: el.cEventosGaleriaTitulo.value.trim(),
+                eventos_cta_texto: el.cEventosCta.value.trim()
+            }).then(function (result) {
+                if (result.error) {
+                    window.alert('No pudimos guardar los textos de Eventos: ' + result.error.message);
+                    return;
+                }
+                mostrarGuardado(el.guardadoEventosTextos);
+            });
+        });
+    }
+
+    if (el.eventosFotoNuevaInput) {
+        el.eventosFotoNuevaInput.addEventListener('change', function () {
+            var file = el.eventosFotoNuevaInput.files[0];
+            if (!file) return;
+
+            subirImagen(file, 'evento').then(function (url) {
+                var siguienteOrden = el.eventosFotosGrid.children.length + 1;
+                return sb.from('eventos_fotos').insert([{ imagen_url: url, orden: siguienteOrden }]).select().single();
+            }).then(function (result) {
+                if (result.error) throw result.error;
+                el.eventosFotosGrid.appendChild(crearFotoItemEventos(result.data));
+                mostrarGuardado(el.guardadoEventosFoto);
+                el.eventosFotoNuevaInput.value = '';
+            }).catch(function (err) {
+                window.alert('No pudimos añadir la foto: ' + err.message);
+                el.eventosFotoNuevaInput.value = '';
+            });
         });
     }
 

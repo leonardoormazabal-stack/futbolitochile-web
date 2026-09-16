@@ -441,6 +441,40 @@
                 <div class="contenido-cards-grid" id="contenidoCardsGrid"></div>
             </div>
 
+            <div class="contenido-bloque">
+                <h3>Eventos y Cumpleaños</h3>
+                <p class="admin-note">Textos y fotos de la página eventos.html.</p>
+
+                <form id="formEventosTextos" class="contenido-form">
+                    <div class="form-group">
+                        <label for="cEventosIntro">Texto de introducción</label>
+                        <textarea id="cEventosIntro" rows="4"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="cEventosGaleriaTitulo">Título de la galería</label>
+                        <input type="text" id="cEventosGaleriaTitulo">
+                    </div>
+                    <div class="form-group">
+                        <label for="cEventosCta">Texto de cierre (antes del botón de WhatsApp)</label>
+                        <textarea id="cEventosCta" rows="3"></textarea>
+                    </div>
+
+                    <div class="contenido-form-actions">
+                        <button type="submit" class="btn btn-primary">Guardar Textos de Eventos</button>
+                        <span class="contenido-guardado" id="guardadoEventosTextos" hidden>Guardado ✓</span>
+                    </div>
+                </form>
+
+                <h4 class="contenido-subtitulo">Fotos de la galería</h4>
+                <div class="contenido-fotos-grid" id="eventosFotosGrid"></div>
+
+                <label class="btn btn-primary contenido-upload-btn">
+                    + Añadir foto
+                    <input type="file" id="eventosFotoNuevaInput" accept="image/*" hidden>
+                </label>
+                <span class="contenido-guardado" id="guardadoEventosFoto" hidden>Foto añadida ✓</span>
+            </div>
+
         </section>
 
         <!-- VISTA TARIFAS (solo superadministrador) -->

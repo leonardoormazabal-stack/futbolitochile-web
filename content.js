@@ -76,18 +76,34 @@
         }).join('');
     }
 
+    // Solo existe en eventos.html: si hay fotos cargadas desde el panel, se
+    // reemplaza la galería estática del HTML por estas (permite agregar y
+    // quitar fotos sin tocar código). Si la consulta falla o no hay fotos
+    // todavía, la página conserva las fotos que ya trae el HTML.
+    function aplicarGaleriaEventos(fotos) {
+        var galeria = document.getElementById('eventosGaleria');
+        if (!galeria || !fotos.length) return;
+
+        galeria.innerHTML = fotos.map(function (foto) {
+            var alt = (foto.alt_text || 'Foto del salón de eventos de Futbolito Chile').replace(/"/g, '&quot;');
+            return '<img src="' + foto.imagen_url + '" alt="' + alt + '" loading="lazy">';
+        }).join('');
+    }
+
     Promise.all([
         sb.from('site_content').select('key,value'),
         sb.from('instalaciones_cards').select('id,titulo,descripcion,imagen_url').order('orden', { ascending: true }),
         sb.from('tarifas').select('deporte,hora_desde,hora_hasta,precio,abono').order('deporte', { ascending: true }).order('hora_desde', { ascending: true }),
         sb.from('planes_mensuales').select('nombre,horas_incluidas,precio').order('orden', { ascending: true }),
-        sb.from('equipamiento').select('nombre,precio').order('orden', { ascending: true })
+        sb.from('equipamiento').select('nombre,precio').order('orden', { ascending: true }),
+        sb.from('eventos_fotos').select('imagen_url,alt_text').order('orden', { ascending: true })
     ]).then(function (resultados) {
         var contenidoRes = resultados[0];
         var cardsRes = resultados[1];
         var tarifasRes = resultados[2];
         var planesRes = resultados[3];
         var equipamientoRes = resultados[4];
+        var eventosFotosRes = resultados[5];
 
         if (!contenidoRes.error && contenidoRes.data) {
             aplicarTextosEImagenes(contenidoRes.data);
@@ -103,6 +119,9 @@
         }
         if (!equipamientoRes.error && equipamientoRes.data) {
             aplicarEquipamiento(equipamientoRes.data);
+        }
+        if (!eventosFotosRes.error && eventosFotosRes.data) {
+            aplicarGaleriaEventos(eventosFotosRes.data);
         }
     }).catch(function () {
         // Si falla la carga, el sitio simplemente conserva el contenido
