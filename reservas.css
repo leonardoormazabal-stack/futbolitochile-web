@@ -569,9 +569,6 @@
     line-height: 1.2;
 }
 
-.payment-logo--mp { color: #009ee3; }
-.payment-logo--webpay { color: #ee2b39; }
-.payment-logo--getnet { color: #ff6600; }
 .payment-logo--card { color: var(--azul-oscuro); }
 .payment-logo--transferencia { color: #2e9e50; }
 .payment-logo--efectivo { color: #2e9e50; }
@@ -632,8 +629,7 @@
     margin-bottom: 4px;
 }
 
-.transferencia-datos,
-.presencial-datos {
+.transferencia-datos {
     margin-top: 20px;
     padding: 18px 20px;
     border-radius: 10px;
@@ -642,15 +638,13 @@
     text-align: left;
 }
 
-.transferencia-datos h4,
-.presencial-datos h4 {
+.transferencia-datos h4 {
     color: var(--azul-oscuro);
     margin: 0 0 10px;
     font-size: 15px;
 }
 
-.transferencia-datos p,
-.presencial-datos p {
+.transferencia-datos p {
     color: var(--gris-texto);
     font-size: 14px;
     margin: 0 0 4px;

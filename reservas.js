@@ -201,7 +201,6 @@
         paymentStatus: document.getElementById('paymentStatus'),
         paymentConfirmation: document.getElementById('paymentConfirmation'),
         paymentMethodsWrap: document.getElementById('paymentMethodsWrap'),
-        btnPagoPresencialSinAbono: document.getElementById('btnPagoPresencialSinAbono'),
         banchileResultado: document.getElementById('banchileResultado'),
         banchileResultadoTitulo: document.getElementById('banchileResultadoTitulo'),
         banchileResultadoTexto: document.getElementById('banchileResultadoTexto'),
@@ -336,7 +335,6 @@
             c.classList.toggle('payment-card--disabled', !activo);
             c.disabled = !activo;
         });
-        if (el.btnPagoPresencialSinAbono) el.btnPagoPresencialSinAbono.disabled = false;
     }
 
     function obtenerSesionActual() {
@@ -723,11 +721,11 @@
     /* ======================================================================
        PANEL 6: TIPO DE PAGO + MÉTODO DE PAGO
 
-       Tanto "completo" (Pagar Ahora) como "abono" (Pagar Presencial)
-       muestran los medios de pago: con tarjeta (Banchile Pagos) se cobra de
-       verdad, ya sea el abono o el total. Quien prefiera no pagar nada
-       ahora y coordinarlo todo en el recinto usa el botón aparte que
-       aparece bajo los medios de pago mientras está en modo "abono".
+       Tanto "completo" (Pagar Ahora) como "abono" muestran los mismos dos
+       medios de pago: tarjeta (Banchile Pagos, cobra de verdad) o
+       transferencia (queda pendiente hasta que un administrador confirme el
+       comprobante). Ya no existe la opción de agendar sin pagar nada y
+       coordinar todo presencial al llegar a jugar.
        ====================================================================== */
     document.querySelectorAll('.tipo-pago-card').forEach(function (card) {
         card.addEventListener('click', function () {
@@ -743,25 +741,12 @@
             el.paymentConfirmation.hidden = true;
             el.resumenPago.textContent = tipo === 'abono' ? 'Abono' : 'Pago ahora';
             el.paymentMethodsWrap.hidden = false;
-            if (el.btnPagoPresencialSinAbono) el.btnPagoPresencialSinAbono.hidden = tipo !== 'abono';
             document.querySelectorAll('.payment-card').forEach(function (c) { c.classList.remove('selected'); });
             aplicarEstadoMetodosPago();
         });
     });
 
-    if (el.btnPagoPresencialSinAbono) {
-        el.btnPagoPresencialSinAbono.addEventListener('click', function () {
-            state.montoAPagar = 0;
-            document.querySelectorAll('.payment-card').forEach(function (c) { c.classList.remove('selected'); c.disabled = true; });
-            el.btnPagoPresencialSinAbono.disabled = true;
-            el.paymentStatus.hidden = false;
-            el.paymentStatus.className = 'payment-status';
-            el.paymentStatus.textContent = 'Agendando tu reserva...';
-            setTimeout(function () { crearReserva('Pago Presencial'); }, 800);
-        });
-    }
-
-    var METODOS_SIN_REDIRECCION = ['Transferencia', 'Pago Presencial'];
+    var METODOS_SIN_REDIRECCION = ['Transferencia'];
 
     function construirDatosTransferenciaHtml(tipoPago, canchaNombre, fechaLarga, horaTexto) {
         var conceptoPago = tipoPago === 'abono' ? 'abono' : 'pago';
@@ -781,23 +766,6 @@
             '</div>';
     }
 
-    function construirLinkWhatsappPresencial(canchaNombre, fechaLarga, horaTexto) {
-        var mensajeWa = 'Hola, quiero confirmar mi reserva con pago presencial: ' +
-            SPORT_LABELS[state.sport] + ' — ' + canchaNombre + ' el ' + fechaLarga + ' a las ' + horaTexto +
-            ' hrs. Total a pagar: ' + formatCLP(state.precio) + '.';
-        return 'https://wa.me/56944087803?text=' + encodeURIComponent(mensajeWa);
-    }
-
-    function construirCoordinacionPresencialHtml(canchaNombre, fechaLarga, horaTexto) {
-        var linkWa = construirLinkWhatsappPresencial(canchaNombre, fechaLarga, horaTexto);
-
-        return '<div class="presencial-datos">' +
-            '<h4>Coordina tu pago presencial</h4>' +
-            '<p class="pago-nota">Tu reserva quedó agendada con el pago pendiente. Te estamos redirigiendo a WhatsApp para coordinar el pago en el recinto; si no se abre, usa este botón.</p>' +
-            '<a href="' + linkWa + '" target="_blank" rel="noopener" class="btn btn-primary btn-block pago-whatsapp-btn">Abrir WhatsApp</a>' +
-            '</div>';
-    }
-
     function construirBotonCompartirHtml(canchaNombre, fechaLarga, horaTexto) {
         var mensaje = '¡Reservé una cancha en Futbolito Chile! ⚽ ' + SPORT_LABELS[state.sport] + ' — ' + canchaNombre +
             ' el ' + fechaLarga + ' a las ' + horaTexto + ' hrs. ¿Te vienes a jugar? Reserva la tuya en https://futbolitochile.cl/reservas.html';
@@ -814,7 +782,6 @@
             paymentCards.forEach(function (c) { c.classList.remove('selected'); });
             card.classList.add('selected');
             paymentCards.forEach(function (c) { c.disabled = true; });
-            if (el.btnPagoPresencialSinAbono) el.btnPagoPresencialSinAbono.disabled = true;
 
             el.paymentStatus.hidden = false;
             el.paymentStatus.className = 'payment-status';
@@ -962,12 +929,7 @@
                 var fechaLarga = formatFechaLarga(state.selectedDate);
                 var horaTexto = String(state.selectedHour).padStart(2, '0') + ':00';
 
-                var mensajePago;
-                if (metodo === 'Pago Presencial') {
-                    mensajePago = 'Pago pendiente: ' + formatCLP(state.precio) + ' a pagar en el recinto.';
-                } else {
-                    mensajePago = 'Total pagado: ' + formatCLP(state.montoAPagar) + ' vía ' + metodo + '.';
-                }
+                var mensajePago = 'Total pagado: ' + formatCLP(state.montoAPagar) + ' vía ' + metodo + '.';
 
                 el.paymentStatus.hidden = true;
                 el.paymentConfirmation.hidden = false;
@@ -978,17 +940,7 @@
                     '<p>' + mensajePago + '</p>' +
                     '<p>Te enviamos la confirmación a ' + campos.email.value.trim() + '.</p>' +
                     construirBotonCompartirHtml(state.canchaNombre, fechaLarga, horaTexto) +
-                    (metodo === 'Transferencia' ? construirDatosTransferenciaHtml(state.tipoPago, state.canchaNombre, fechaLarga, horaTexto) : '') +
-                    (metodo === 'Pago Presencial' ? construirCoordinacionPresencialHtml(state.canchaNombre, fechaLarga, horaTexto) : '');
-
-                if (metodo === 'Pago Presencial') {
-                    // Pequeño margen para que el aviso al correo (fetch de
-                    // enviarCorreosReserva) alcance a salir antes de que esta
-                    // pestaña navegue a WhatsApp.
-                    setTimeout(function () {
-                        window.location.href = construirLinkWhatsappPresencial(state.canchaNombre, fechaLarga, horaTexto);
-                    }, 900);
-                }
+                    (metodo === 'Transferencia' ? construirDatosTransferenciaHtml(state.tipoPago, state.canchaNombre, fechaLarga, horaTexto) : '');
             });
         });
     }
