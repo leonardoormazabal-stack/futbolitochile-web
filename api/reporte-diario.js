@@ -4,13 +4,17 @@
    una cancha usada ese mismo día o de una reserva para otra fecha), el total
    recaudado, el acumulado del mes hasta esa fecha y la ocupación/vacancia
    por bloque horario. Lo dispara el Cron Job de Vercel definido en
-   vercel.json a la 01:00 AM hora de Chile (media hora después de que se
-   cierra la edición de la cuadratura del día que acaba de terminar, a las
-   00:30), así que reporta el día que recién terminó, no el que empieza.
+   vercel.json a las 2:00 AM hora de Chile, así que reporta el día que
+   recién terminó, no el que empieza.
+
+   Si un administrador (ej. David al cerrar caja) ya envió manualmente la
+   cuadratura corregida de ese día antes de que el cron llegue a correr, este
+   endpoint no vuelve a enviar: se saltaría solo para evitar el duplicado que
+   antes se producía (ver lib/cuadratura.js: yaSeEnvioCuadraturaCorregida).
 
    Vercel programa los cron en UTC y no ajusta por horario de verano: el
-   schedule "0 4 * * *" cae en la 01:00 AM cuando Chile está en UTC-3
-   (la mayor parte del año), pero en 00:00 AM durante los meses de invierno
+   schedule "0 5 * * *" cae en las 2:00 AM cuando Chile está en UTC-3
+   (la mayor parte del año), pero en la 1:00 AM durante los meses de invierno
    en que Chile vuelve a UTC-4. Si eso llega a ser un problema, hay que
    ajustar el schedule a mano según la época del año.
 
@@ -32,7 +36,9 @@ const {
     sumarDias,
     sumaMontoPagado,
     cargarDatosCuadratura,
-    construirHtmlCuadratura
+    construirHtmlCuadratura,
+    yaSeEnvioCuadraturaCorregida,
+    registrarEnvioCuadratura
 } = require('../lib/cuadratura');
 
 module.exports = async function handler(req, res) {
@@ -66,6 +72,17 @@ module.exports = async function handler(req, res) {
     const hoy = fechaChile(new Date());
     const diaReporte = sumarDias(hoy, -1);
 
+    const yaEnviada = await yaSeEnvioCuadraturaCorregida(supabaseAdmin, diaReporte);
+    if (yaEnviada) {
+        res.status(200).json({
+            ok: true,
+            omitido: true,
+            fecha: diaReporte,
+            motivo: 'Ya se envió la cuadratura corregida de este día, no se duplica el envío automático.'
+        });
+        return;
+    }
+
     const datos = await cargarDatosCuadratura(supabaseAdmin, diaReporte);
     if (datos.error) {
         res.status(200).json({ ok: false, motivo: datos.error });
@@ -89,6 +106,8 @@ module.exports = async function handler(req, res) {
         res.status(200).json({ ok: false, motivo: err.message });
         return;
     }
+
+    await registrarEnvioCuadratura(supabaseAdmin, diaReporte, 'automatica');
 
     res.status(200).json({
         ok: true,

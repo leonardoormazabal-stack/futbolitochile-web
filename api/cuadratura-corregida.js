@@ -14,7 +14,12 @@
 
 const { getSupabaseAdmin, requireAdmin } = require('../lib/supabaseAdmin');
 const { enviarCorreo, getTransporter } = require('../lib/mailer');
-const { fechaChile, cargarDatosCuadratura, construirHtmlCuadratura } = require('../lib/cuadratura');
+const {
+    fechaChile,
+    cargarDatosCuadratura,
+    construirHtmlCuadratura,
+    registrarEnvioCuadratura
+} = require('../lib/cuadratura');
 
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -81,6 +86,11 @@ module.exports = async function handler(req, res) {
         res.status(200).json({ ok: false, motivo: err.message });
         return;
     }
+
+    // Deja constancia de que David (u otro administrador) ya cerró y envió
+    // la cuadratura corregida de este día, para que el cron automático de
+    // las 2 AM no la duplique si todavía no ha corrido.
+    await registrarEnvioCuadratura(supabaseAdmin, fecha, 'corregida');
 
     res.status(200).json({ ok: true, fecha, enviadoA: datos.adminEmails.length });
 };
