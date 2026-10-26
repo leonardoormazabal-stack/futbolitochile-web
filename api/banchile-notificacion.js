@@ -36,7 +36,7 @@ module.exports = async function handler(req, res) {
 
     const { data: reserva, error } = await supabaseAdmin
         .from('reservas')
-        .select('id,fecha,hora,precio,tipo_pago,estado,pago_online_request_id')
+        .select('id,fecha,hora,precio,tipo_pago,estado,pago_online_request_id,monto_solicitado_online')
         .eq('pago_online_request_id', String(requestId))
         .single();
 

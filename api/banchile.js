@@ -134,6 +134,10 @@ async function crearTransaccion(req, res, supabaseAdmin) {
         email_contacto: emailContacto,
         metodo_pago: 'Tarjeta de Crédito/Débito',
         estado: 'pendiente',
+        // Lo que le vamos a pedir a Banchile que cobre (el abono o el precio
+        // completo, según tipoPago). Sirve de respaldo si más adelante la
+        // confirmación del pago no trae el monto exacto cobrado.
+        monto_solicitado_online: montoACobrar,
         pendiente_expira_en: new Date(Date.now() + MINUTOS_EXPIRACION * 60 * 1000).toISOString()
     };
 
@@ -195,7 +199,7 @@ async function consultarEstado(req, res, supabaseAdmin) {
 
     const { data: reserva, error } = await supabaseAdmin
         .from('reservas')
-        .select('id,fecha,hora,precio,monto_pagado,tipo_pago,estado,nombre_contacto,pago_online_request_id,cancha_id,canchas(nombre,deporte)')
+        .select('id,fecha,hora,precio,monto_pagado,tipo_pago,estado,nombre_contacto,pago_online_request_id,monto_solicitado_online,cancha_id,canchas(nombre,deporte)')
         .eq('id', reservaId)
         .single();
 
