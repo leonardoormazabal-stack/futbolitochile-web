@@ -10,17 +10,6 @@
         return '$' + n.toLocaleString('es-CL');
     }
 
-    function generarId() {
-        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
-            return window.crypto.randomUUID();
-        }
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-            var r = Math.random() * 16 | 0;
-            var v = c === 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
-    }
-
     function enviarCorreosReserva(reservaId) {
         fetch('/api/reserva-confirmacion', {
             method: 'POST',
@@ -882,46 +871,45 @@
         }).catch(function () { return null; });
     }
 
+    // Transferencia no se cobra de forma instantánea: queda condicionada a
+    // verificar el comprobante. Por eso la crea el servidor en estado
+    // "pendiente" con un vencimiento (igual que el pago con tarjeta, ver
+    // api/reserva-transferencia.js) en vez de registrarla confirmada de
+    // una: si el cliente nunca llega a transferir, el horario queda libre
+    // de nuevo solo, sin que un administrador tenga que anularla a mano.
     function crearReserva(metodo) {
         resolverUserIdParaReserva().then(function (userId) {
-            var reservaId = generarId();
-
-            // Transferencia no se cobra de forma instantánea: queda condicionada
-            // a verificar el comprobante. Por eso el monto queda en 0 (Pendiente)
-            // hasta que un administrador confirme el pago real, en vez de
-            // registrarlo como pagado apenas se reserva.
-            var montoPagadoConfirmado = METODOS_SIN_REDIRECCION.indexOf(metodo) === -1 ? state.montoAPagar : 0;
-
-            var reserva = {
-                id: reservaId,
-                user_id: userId,
-                cancha_id: state.canchaId,
-                fecha: state.selectedDate,
-                hora: state.selectedHour,
-                precio: state.precio,
-                monto_pagado: montoPagadoConfirmado,
-                tipo_pago: state.tipoPago,
-                nombre_contacto: campos.nombre.value.trim(),
-                documento_contacto: campos.rut.value.trim(),
-                telefono_contacto: campos.telefono.value.trim(),
-                email_contacto: campos.email.value.trim(),
-                metodo_pago: metodo
-            };
-
-            sb.from('reservas').insert([reserva]).then(function (result) {
-                if (result.error) {
-                    if (result.error.code === '23505') {
+            fetch('/api/reserva-transferencia', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: userId,
+                    cancha_id: state.canchaId,
+                    fecha: state.selectedDate,
+                    hora: state.selectedHour,
+                    tipo_pago: state.tipoPago,
+                    nombre_contacto: campos.nombre.value.trim(),
+                    documento_contacto: campos.rut.value.trim(),
+                    telefono_contacto: campos.telefono.value.trim(),
+                    email_contacto: campos.email.value.trim()
+                })
+            }).then(function (r) {
+                return r.json().then(function (data) { return { ok: r.ok, data: data }; });
+            }).then(function (result) {
+                if (!result.ok) {
+                    if (result.data && result.data.ocupada) {
                         mostrarCanchaOcupada();
                         return;
                     }
 
                     el.paymentStatus.hidden = false;
                     el.paymentStatus.className = 'payment-status error';
-                    el.paymentStatus.textContent = 'No pudimos confirmar tu reserva. Intenta de nuevo.';
+                    el.paymentStatus.textContent = (result.data && result.data.error) || 'No pudimos confirmar tu reserva. Intenta de nuevo.';
                     aplicarEstadoMetodosPago();
                     return;
                 }
 
+                var reservaId = result.data.reservaId;
                 enviarCorreosReserva(reservaId);
 
                 completePanel('pago');
@@ -941,6 +929,11 @@
                     '<p>Te enviamos la confirmación a ' + campos.email.value.trim() + '.</p>' +
                     construirBotonCompartirHtml(state.canchaNombre, fechaLarga, horaTexto) +
                     (metodo === 'Transferencia' ? construirDatosTransferenciaHtml(state.tipoPago, state.canchaNombre, fechaLarga, horaTexto) : '');
+            }).catch(function () {
+                el.paymentStatus.hidden = false;
+                el.paymentStatus.className = 'payment-status error';
+                el.paymentStatus.textContent = 'No pudimos confirmar tu reserva. Intenta de nuevo.';
+                aplicarEstadoMetodosPago();
             });
         });
     }

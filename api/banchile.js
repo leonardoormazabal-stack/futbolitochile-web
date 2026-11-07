@@ -27,29 +27,10 @@
 
 const { getSupabaseAdmin } = require('../lib/supabaseAdmin');
 const { crearSesion, confirmarTransaccion } = require('../lib/banchile');
+const { getPrecioPorHora, getAbonoPorHora, liberarPendienteVencida, horarioOcupado } = require('../lib/reservaSlots');
 
 const SPORT_LABELS = { futbolito: 'Futbolito', padel: 'Pádel' };
 const MINUTOS_EXPIRACION = 20;
-
-function getPrecioPorHora(tarifas, deporte, hora) {
-    const tabla = tarifas.filter((t) => t.deporte === deporte);
-    for (const t of tabla) {
-        if (hora >= t.hora_desde && hora < t.hora_hasta) return t.precio;
-    }
-    let masTardio = null;
-    tabla.forEach((t) => { if (!masTardio || t.hora_desde > masTardio.hora_desde) masTardio = t; });
-    return masTardio ? masTardio.precio : 0;
-}
-
-function getAbonoPorHora(tarifas, deporte, hora) {
-    const tabla = tarifas.filter((t) => t.deporte === deporte);
-    for (const t of tabla) {
-        if (hora >= t.hora_desde && hora < t.hora_hasta) return t.abono != null ? t.abono : 10000;
-    }
-    let masTardio = null;
-    tabla.forEach((t) => { if (!masTardio || t.hora_desde > masTardio.hora_desde) masTardio = t; });
-    return masTardio && masTardio.abono != null ? masTardio.abono : 10000;
-}
 
 async function crearTransaccion(req, res, supabaseAdmin) {
     const body = req.body || {};
@@ -96,27 +77,19 @@ async function crearTransaccion(req, res, supabaseAdmin) {
         return;
     }
 
-    // El horario está ocupado si ya hay una reserva confirmada, o una
-    // "pendiente" con un pago todavía en curso (no vencido).
-    const { data: ocupantes, error: errorOcupantes } = await supabaseAdmin
-        .from('reservas')
-        .select('id,estado,pendiente_expira_en')
-        .eq('cancha_id', canchaId)
-        .eq('fecha', fecha)
-        .eq('hora', hora);
+    // Antes de revisar disponibilidad, libera cualquier reserva "pendiente"
+    // de ese horario cuyo plazo ya venció (de un intento de pago anterior
+    // que nadie completó): si no se hace esto acá, la restricción UNIQUE de
+    // la tabla igual bloquearía la reserva nueva más abajo.
+    try {
+        await liberarPendienteVencida(supabaseAdmin, canchaId, fecha, hora);
 
-    if (errorOcupantes) {
-        res.status(500).json({ error: 'No se pudo verificar la disponibilidad.' });
-        return;
-    }
-
-    const ahoraIso = new Date().toISOString();
-    const ocupado = (ocupantes || []).some((r) => {
-        return r.estado === 'confirmada' || (r.estado === 'pendiente' && r.pendiente_expira_en && r.pendiente_expira_en > ahoraIso);
-    });
-
-    if (ocupado) {
-        res.status(409).json({ ocupada: true, error: 'Ese horario ya no está disponible.' });
+        if (await horarioOcupado(supabaseAdmin, canchaId, fecha, hora)) {
+            res.status(409).json({ ocupada: true, error: 'Ese horario ya no está disponible.' });
+            return;
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
         return;
     }
 
