@@ -908,6 +908,38 @@
         </div>
     </div>
 
+    <!-- MODAL: CONFIRMAR PAGO DE UNA RESERVA PENDIENTE (ej. transferencia ya verificada) -->
+    <div class="admin-modal-overlay" id="confirmarPagoModalOverlay" hidden>
+        <div class="admin-modal">
+            <div class="admin-modal-header">
+                <h2>Confirmar Pago</h2>
+                <button type="button" class="admin-modal-close" id="btnCerrarConfirmarPagoModal" aria-label="Cerrar">&times;</button>
+            </div>
+            <form id="confirmarPagoForm" novalidate>
+                <p id="confirmarPagoFormInfo" class="admin-modal-subtitle"></p>
+                <div class="form-group">
+                    <label for="confirmarPagoMonto">Monto recibido</label>
+                    <input type="number" id="confirmarPagoMonto" min="1" step="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="confirmarPagoMetodo">Método de pago</label>
+                    <select id="confirmarPagoMetodo">
+                        <option value="Transferencia">Transferencia</option>
+                        <option value="Efectivo">Efectivo</option>
+                        <option value="Mercado Pago">Mercado Pago</option>
+                        <option value="Webpay (Transbank)">Webpay (Transbank)</option>
+                        <option value="GetNet">GetNet</option>
+                        <option value="Tarjeta de Crédito/Débito">Tarjeta de Crédito/Débito</option>
+                    </select>
+                </div>
+
+                <div class="auth-alert" id="confirmarPagoError" hidden></div>
+
+                <button type="submit" class="btn btn-primary btn-block">Confirmar Pago y Reserva</button>
+            </form>
+        </div>
+    </div>
+
     <!-- MODAL: EDITAR HORARIO/DÍA DE UNA RESERVA -->
     <div class="admin-modal-overlay" id="editReservaModalOverlay" hidden>
         <div class="admin-modal">

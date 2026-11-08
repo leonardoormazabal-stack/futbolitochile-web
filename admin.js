@@ -288,6 +288,14 @@
         motivoTexto: document.getElementById('motivoTexto'),
         motivoError: document.getElementById('motivoError'),
 
+        confirmarPagoModalOverlay: document.getElementById('confirmarPagoModalOverlay'),
+        btnCerrarConfirmarPagoModal: document.getElementById('btnCerrarConfirmarPagoModal'),
+        confirmarPagoForm: document.getElementById('confirmarPagoForm'),
+        confirmarPagoFormInfo: document.getElementById('confirmarPagoFormInfo'),
+        confirmarPagoMonto: document.getElementById('confirmarPagoMonto'),
+        confirmarPagoMetodo: document.getElementById('confirmarPagoMetodo'),
+        confirmarPagoError: document.getElementById('confirmarPagoError'),
+
         editReservaModalOverlay: document.getElementById('editReservaModalOverlay'),
         btnCerrarEditReservaModal: document.getElementById('btnCerrarEditReservaModal'),
         editReservaForm: document.getElementById('editReservaForm'),
@@ -619,7 +627,10 @@
                   (esDiaPasado ? '' : '<button type="button" class="btn-cancelar" data-id="' + r.id + '">Cancelar</button>') +
                   '</div>'
                 : r.estado === 'pendiente'
-                    ? '<div class="admin-table-actions"><button type="button" class="btn-cancelar" data-id="' + r.id + '">Cancelar</button></div>'
+                    ? '<div class="admin-table-actions">' +
+                      '<button type="button" class="btn-secundario btn-confirmar-pago" data-id="' + r.id + '">Confirmar pago</button>' +
+                      '<button type="button" class="btn-cancelar" data-id="' + r.id + '">Cancelar</button>' +
+                      '</div>'
                     : '';
 
             tr.innerHTML =
@@ -664,7 +675,80 @@
                 abrirModalEditarReserva(btn.getAttribute('data-id'));
             });
         });
+
+        el.tbody.querySelectorAll('.btn-confirmar-pago').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                abrirModalConfirmarPago(btn.getAttribute('data-id'));
+            });
+        });
     }
+
+    // Una reserva "pendiente" por Transferencia que el administrador ya
+    // verificó (comprobante real en la cuenta) se confirma acá: registra lo
+    // que efectivamente llegó y recién ahí pasa a "confirmada", liberando el
+    // horario del límite de tiempo. Antes no existía ninguna forma de hacer
+    // esto desde el panel para una reserva pendiente (solo se podía anular).
+    function abrirModalConfirmarPago(id) {
+        var reserva = state.reservas.find(function (r) { return r.id === id; });
+        if (!reserva) return;
+
+        el.confirmarPagoForm.reset();
+        el.confirmarPagoError.hidden = true;
+        el.confirmarPagoForm.setAttribute('data-reserva-id', id);
+
+        var canchaNombre = reserva.canchas ? reserva.canchas.nombre : reserva.cancha_id;
+        el.confirmarPagoFormInfo.textContent = 'Reserva de ' + (reserva.nombre_contacto || '—') + ' — ' +
+            canchaNombre + ', ' + formatFechaCorta(reserva.fecha) + ' ' + String(reserva.hora).padStart(2, '0') + ':00. ' +
+            'Precio: ' + formatCLP(reserva.precio) + (reserva.tipo_pago === 'abono' ? ' (puede pagar solo el abono).' : '.');
+
+        el.confirmarPagoMetodo.value = reserva.metodo_pago || 'Transferencia';
+        el.confirmarPagoModalOverlay.hidden = false;
+    }
+
+    function cerrarModalConfirmarPago() {
+        el.confirmarPagoModalOverlay.hidden = true;
+    }
+
+    el.btnCerrarConfirmarPagoModal.addEventListener('click', cerrarModalConfirmarPago);
+    el.confirmarPagoModalOverlay.addEventListener('click', function (e) {
+        if (e.target === el.confirmarPagoModalOverlay) cerrarModalConfirmarPago();
+    });
+
+    el.confirmarPagoForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        var reservaId = el.confirmarPagoForm.getAttribute('data-reserva-id');
+        var monto = parseInt(el.confirmarPagoMonto.value, 10);
+        var metodo = el.confirmarPagoMetodo.value;
+
+        if (isNaN(monto) || monto <= 0) {
+            el.confirmarPagoError.textContent = 'Indica el monto que realmente se recibió.';
+            el.confirmarPagoError.className = 'auth-alert';
+            el.confirmarPagoError.hidden = false;
+            return;
+        }
+
+        sb.from('reservas').update({
+            monto_pagado: monto,
+            metodo_pago: metodo,
+            estado: 'confirmada'
+        }).eq('id', reservaId).eq('estado', 'pendiente').select().then(function (result) {
+            if (result.error) {
+                el.confirmarPagoError.textContent = 'No pudimos confirmar el pago: ' + result.error.message;
+                el.confirmarPagoError.className = 'auth-alert';
+                el.confirmarPagoError.hidden = false;
+                return;
+            }
+            if (!result.data || !result.data.length) {
+                el.confirmarPagoError.textContent = 'No se pudo actualizar la reserva (puede que ya haya vencido o cambiado de estado). Refresca la página.';
+                el.confirmarPagoError.className = 'auth-alert';
+                el.confirmarPagoError.hidden = false;
+                return;
+            }
+            cerrarModalConfirmarPago();
+            cargarReservas();
+        });
+    });
 
     function cancelarReserva(id) {
         abrirModalMotivo(id);
