@@ -327,6 +327,11 @@
     color: #777;
 }
 
+.estado-badge.pendiente {
+    background-color: #fdf2e0;
+    color: #a3620a;
+}
+
 .origen-badge {
     display: inline-block;
     padding: 4px 12px;

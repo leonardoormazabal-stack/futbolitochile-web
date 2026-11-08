@@ -583,8 +583,14 @@
             var canchaNombre = r.canchas ? r.canchas.nombre : r.cancha_id;
             var deporte = r.canchas ? SPORT_LABELS[r.canchas.deporte] : '';
 
+            // "pendiente" es un pago online en curso (tarjeta o transferencia
+            // todavía sin confirmar, con vencimiento propio): no es lo mismo
+            // que "cancelada" y hay que distinguirlo, si no un administrador
+            // ve "Cancelada" en una reserva que en realidad sigue bloqueando
+            // el horario y no tiene forma de anularla desde acá.
+            var ESTADO_LABELS = { confirmada: 'Confirmada', pendiente: 'Pendiente', cancelada: 'Cancelada' };
             var estadoBadge = '<span class="estado-badge ' + r.estado + '">' +
-                (r.estado === 'confirmada' ? 'Confirmada' : 'Cancelada') + '</span>';
+                (ESTADO_LABELS[r.estado] || 'Cancelada') + '</span>';
 
             var origenBadge = '<span class="origen-badge ' + (r.origen || 'web') + '">' +
                 (r.origen === 'admin' ? 'Administrador' : 'Web') + '</span>';
@@ -603,12 +609,18 @@
             // hora de hoy que ya pasó. Las reservas de días futuros siguen
             // sin restricción.
             var yaPaso = reservaYaPaso(r.fecha, r.hora);
+            // Una "pendiente" también se puede anular a mano (ej. un pago
+            // online que quedó a medias y el administrador no quiere
+            // esperar a que venza solo), pero no tiene sentido "Modificar"
+            // su fecha/hora mientras el pago sigue en curso.
             var accion = r.estado === 'confirmada'
                 ? '<div class="admin-table-actions">' +
                   (yaPaso ? '' : '<button type="button" class="btn-secundario btn-editar-reserva" data-id="' + r.id + '">Modificar</button>') +
                   (esDiaPasado ? '' : '<button type="button" class="btn-cancelar" data-id="' + r.id + '">Cancelar</button>') +
                   '</div>'
-                : '';
+                : r.estado === 'pendiente'
+                    ? '<div class="admin-table-actions"><button type="button" class="btn-cancelar" data-id="' + r.id + '">Cancelar</button></div>'
+                    : '';
 
             tr.innerHTML =
                 '<td data-label="Fecha">' + formatFechaCorta(r.fecha) + '</td>' +
