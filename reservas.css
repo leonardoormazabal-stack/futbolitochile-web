@@ -17,6 +17,14 @@
     padding: 60px 20px;
 }
 
+.banchile-resultado-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 10px;
+}
+
 .wizard-hero h1 {
     font-size: 38px;
     margin-bottom: 10px;

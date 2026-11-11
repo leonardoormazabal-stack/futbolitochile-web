@@ -194,6 +194,7 @@
         banchileResultadoTitulo: document.getElementById('banchileResultadoTitulo'),
         banchileResultadoTexto: document.getElementById('banchileResultadoTexto'),
         banchileResultadoBoton: document.getElementById('banchileResultadoBoton'),
+        banchileResultadoWhatsapp: document.getElementById('banchileResultadoWhatsapp'),
         wizardHeroNormal: document.getElementById('wizardHeroNormal'),
         wizardPageNormal: document.getElementById('wizardPageNormal'),
         montoOpcionCompleto: document.getElementById('montoOpcionCompleto'),
@@ -984,9 +985,15 @@
         el.wizardPageNormal.hidden = true;
         el.banchileResultado.hidden = false;
 
+        function construirLinkWhatsappResultado(mensaje) {
+            return 'https://wa.me/56944087803?text=' + encodeURIComponent(mensaje);
+        }
+
         fetch('/api/banchile?reserva=' + encodeURIComponent(reservaId))
             .then(function (r) { return r.json(); })
             .then(function (data) {
+                el.banchileResultadoBoton.textContent = 'Hacer otra reserva';
+
                 if (data.estado === 'confirmada') {
                     var detalle = data.tipoPago === 'abono' ? 'de abono' : 'en total';
                     el.banchileResultadoTitulo.textContent = '¡Pago aprobado!';
@@ -996,16 +1003,35 @@
                 } else if (data.estado === 'pendiente') {
                     el.banchileResultadoTitulo.textContent = 'Todavía estamos confirmando tu pago';
                     el.banchileResultadoTexto.textContent = 'Puede tardar unos segundos. Si no se actualiza, escríbenos por WhatsApp con tu nombre y el horario que reservaste.';
+                    el.banchileResultadoWhatsapp.href = construirLinkWhatsappResultado(
+                        'Hola, mi pago todavía aparece pendiente para una reserva que hice recién. ¿Pueden confirmarme el estado?'
+                    );
+                    el.banchileResultadoWhatsapp.hidden = false;
                 } else {
-                    el.banchileResultadoTitulo.textContent = 'El pago no se pudo completar';
-                    el.banchileResultadoTexto.textContent = 'Tu horario quedó liberado. Puedes intentar de nuevo cuando quieras.';
+                    // El pago fue rechazado (o cancelado) en Banchile: la cancha NO
+                    // queda reservada para este intento (el horario ya quedó
+                    // liberado del lado del servidor), así que hay que decírselo
+                    // claro y ofrecer reintentar o coordinar otra forma de pago
+                    // directamente, en vez de dejarlo solo con un botón genérico.
+                    el.banchileResultadoTitulo.textContent = 'No se realizó el pago';
+                    el.banchileResultadoTexto.textContent = 'Tu horario quedó liberado, no se te cobró nada. Reintenta o contáctanos directamente para reservar y ver otra forma de pagar.';
+                    el.banchileResultadoBoton.textContent = 'Reintentar';
+                    el.banchileResultadoWhatsapp.href = construirLinkWhatsappResultado(
+                        'Hola, intenté pagar con tarjeta en la web para reservar una cancha y no se realizó el pago. ¿Me ayudan a reservar con otra forma de pago?'
+                    );
+                    el.banchileResultadoWhatsapp.hidden = false;
                 }
                 el.banchileResultadoBoton.hidden = false;
             })
             .catch(function () {
                 el.banchileResultadoTitulo.textContent = 'No pudimos confirmar el resultado';
                 el.banchileResultadoTexto.textContent = 'Escríbenos por WhatsApp para confirmar el estado de tu pago.';
+                el.banchileResultadoBoton.textContent = 'Hacer otra reserva';
                 el.banchileResultadoBoton.hidden = false;
+                el.banchileResultadoWhatsapp.href = construirLinkWhatsappResultado(
+                    'Hola, pagué con tarjeta para una reserva pero la página no me confirmó el resultado. ¿Pueden ayudarme a verificarlo?'
+                );
+                el.banchileResultadoWhatsapp.hidden = false;
             });
     }
 
