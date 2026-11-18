@@ -377,15 +377,6 @@
         </div>
     </section>
 
-    <!-- PROMOCIÓN DE TEMPORADA (se muestra/oculta sola según el interruptor
-         "Activa" de la promo en el panel admin, pestaña Tarifas) -->
-    <section class="promo-banner" id="promoBanner" hidden>
-        <div class="promo-banner-content">
-            <img src="pictures/promo-verano.jpg" alt="Promoción canchas de futbolito: sábados y domingos de 19:00 a 22:00 hrs, $30.000. Válida solo por temporada de verano." class="promo-banner-img" width="1145" height="1374" loading="lazy">
-            <a href="reservas.html" class="btn btn-primary promo-banner-btn">Reservar ahora</a>
-        </div>
-    </section>
-
     <!-- INSTALACIONES -->
     <section class="instalaciones" id="instalaciones">
         <div class="section-header">
@@ -673,11 +664,22 @@
         </svg>
     </a>
 
+    <!-- POPUP DE PROMOCIÓN (se dispara a los 5 segundos, solo si hay una
+         promo activa en Tarifas → Promoción de Horario del panel admin;
+         no vuelve a aparecer en la misma pestaña una vez cerrado) -->
+    <div class="promo-popup-overlay" id="promoPopupOverlay" hidden>
+        <div class="promo-popup">
+            <button type="button" class="promo-popup-close" id="promoPopupClose" aria-label="Cerrar">&times;</button>
+            <img src="pictures/promo-verano.jpg" alt="Promoción canchas de futbolito: sábados y domingos de 19:00 a 22:00 hrs, $30.000. Válida solo por temporada de verano." class="promo-popup-img" width="1145" height="1374" loading="lazy">
+            <a href="reservas.html" class="btn btn-primary promo-popup-btn" id="promoPopupReservar">Reservar ahora</a>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
     <script src="supabase-client.js" defer></script>
     <script src="auth.js" defer></script>
     <script src="content.js" defer></script>
-    <script src="promo-banner.js" defer></script>
+    <script src="promo-popup.js" defer></script>
     <script src="hero-video.js" defer></script>
 </body>
 </html>

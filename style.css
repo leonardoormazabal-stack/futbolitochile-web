@@ -353,28 +353,54 @@ ul {
 }
 
 /* ==========================================================================
-   BANNER DE PROMOCIÓN (temporada de verano, se muestra solo si hay una
-   promo activa — ver promo-banner.js)
+   POPUP DE PROMOCIÓN (se dispara a los 5s, solo si hay una promo activa —
+   ver promo-popup.js)
    ========================================================================== */
-.promo-banner {
-    background-color: var(--azul-oscuro);
-    padding: 40px 20px;
-    text-align: center;
+.promo-popup-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(13, 59, 102, 0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 1000;
 }
 
-.promo-banner-content {
-    max-width: 360px;
-    margin: 0 auto;
-}
-
-.promo-banner-img {
+.promo-popup {
+    position: relative;
+    max-width: 340px;
+    width: 100%;
+    background-color: var(--blanco);
     border-radius: 16px;
+    padding: 20px;
+    text-align: center;
     box-shadow: var(--sombra);
-    margin-bottom: 20px;
 }
 
-.promo-banner-btn {
+.promo-popup-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background-color: var(--gris-claro);
+    color: var(--gris-texto);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.promo-popup-img {
+    border-radius: 12px;
+    margin-bottom: 16px;
+}
+
+.promo-popup-btn {
     display: inline-block;
+    width: 100%;
 }
 
 /* ==========================================================================
