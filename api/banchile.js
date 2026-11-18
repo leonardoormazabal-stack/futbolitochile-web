@@ -27,7 +27,7 @@
 
 const { getSupabaseAdmin } = require('../lib/supabaseAdmin');
 const { crearSesion, confirmarTransaccion } = require('../lib/banchile');
-const { getPrecioPorHora, getAbonoPorHora, liberarPendienteVencida, horarioOcupado } = require('../lib/reservaSlots');
+const { getPrecioPorHora, getAbonoPorHora, getPromoAplicable, liberarPendienteVencida, horarioOcupado } = require('../lib/reservaSlots');
 
 const SPORT_LABELS = { futbolito: 'Futbolito', padel: 'Pádel' };
 const MINUTOS_EXPIRACION = 20;
@@ -69,8 +69,17 @@ async function crearTransaccion(req, res, supabaseAdmin) {
         return;
     }
 
-    const precio = getPrecioPorHora(tarifas, cancha.deporte, hora);
-    const montoACobrar = tipoPago === 'abono' ? getAbonoPorHora(tarifas, cancha.deporte, hora) : precio;
+    const { data: promos } = await supabaseAdmin
+        .from('promos_horario')
+        .select('deporte,dias_semana,hora_desde,hora_hasta,precio,activo');
+
+    // Una promo de horario (ej. "Sábados y Domingos 19-22h") es pago
+    // completo únicamente: si aplica, ignora el tipo_pago que haya elegido
+    // el cliente y cobra el precio promocional entero.
+    const promo = getPromoAplicable(promos, cancha.deporte, hora, fecha);
+    const tipoPagoFinal = promo ? 'completo' : tipoPago;
+    const precio = promo ? promo.precio : getPrecioPorHora(tarifas, cancha.deporte, hora);
+    const montoACobrar = promo ? promo.precio : (tipoPagoFinal === 'abono' ? getAbonoPorHora(tarifas, cancha.deporte, hora) : precio);
 
     if (!montoACobrar || montoACobrar <= 0) {
         res.status(400).json({ error: 'No se pudo calcular el monto a cobrar.' });
@@ -100,7 +109,7 @@ async function crearTransaccion(req, res, supabaseAdmin) {
         hora,
         precio,
         monto_pagado: 0,
-        tipo_pago: tipoPago,
+        tipo_pago: tipoPagoFinal,
         nombre_contacto: nombreContacto,
         documento_contacto: documentoContacto,
         telefono_contacto: telefonoContacto,
@@ -136,7 +145,7 @@ async function crearTransaccion(req, res, supabaseAdmin) {
     try {
         sesion = await crearSesion({
             referencia: reservaCreada.id,
-            descripcion: (tipoPago === 'abono' ? 'Abono' : 'Pago') + ' reserva ' + deporteLabel + ' — ' + cancha.nombre + ' ' + fecha + ' ' + String(hora).padStart(2, '0') + ':00',
+            descripcion: (promo ? 'Promo' : tipoPagoFinal === 'abono' ? 'Abono' : 'Pago') + ' reserva ' + deporteLabel + ' — ' + cancha.nombre + ' ' + fecha + ' ' + String(hora).padStart(2, '0') + ':00',
             montoClp: montoACobrar,
             returnUrl,
             expiracionMinutos: MINUTOS_EXPIRACION,

@@ -353,6 +353,31 @@ ul {
 }
 
 /* ==========================================================================
+   BANNER DE PROMOCIÓN (temporada de verano, se muestra solo si hay una
+   promo activa — ver promo-banner.js)
+   ========================================================================== */
+.promo-banner {
+    background-color: var(--azul-oscuro);
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.promo-banner-content {
+    max-width: 360px;
+    margin: 0 auto;
+}
+
+.promo-banner-img {
+    border-radius: 16px;
+    box-shadow: var(--sombra);
+    margin-bottom: 20px;
+}
+
+.promo-banner-btn {
+    display: inline-block;
+}
+
+/* ==========================================================================
    INSTALACIONES
    ========================================================================== */
 .instalaciones {

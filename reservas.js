@@ -47,6 +47,8 @@
         montoAPagar: 0,
         canchas: [],           // desde Supabase: {id, nombre, deporte, descripcion}
         tarifas: [],            // desde Supabase: {deporte, hora_desde, hora_hasta, precio}
+        promos: [],              // desde Supabase: promos_horario (precio promocional por día/hora)
+        esPromo: false,          // true si el horario elegido tiene precio promocional
         metodosPago: {},        // desde Supabase: { 'Mercado Pago': true, 'Transferencia': false, ... }
         ocupadosPorHora: {},    // { hora: cantidadDeCanchasOcupadas } para el deporte/fecha elegidos
         totalCanchasDeporte: 0, // cuántas canchas tiene el deporte elegido
@@ -129,6 +131,25 @@
         return masTardio && masTardio.abono != null ? masTardio.abono : 10000;
     }
 
+    // 0 = domingo ... 6 = sábado, igual que JS Date.getDay().
+    function diaSemanaDeFecha(fechaISO) {
+        var partes = fechaISO.split('-').map(Number);
+        return new Date(partes[0], partes[1] - 1, partes[2]).getDay();
+    }
+
+    // Promo de horario (ej. "Sábados y Domingos 19-22h $30.000") activa para
+    // ese deporte/fecha/hora, o null si ninguna matchea. Es pago completo
+    // únicamente: cuando aplica, se oculta la opción de abonar (ver el
+    // listener de .tipo-pago-card).
+    function getPromoAplicable(sport, horaInicio, fechaISO) {
+        if (!fechaISO) return null;
+        var dia = diaSemanaDeFecha(fechaISO);
+        return state.promos.find(function (p) {
+            return p.activo && p.deporte === sport && (p.dias_semana || []).indexOf(dia) !== -1 &&
+                horaInicio >= p.hora_desde && horaInicio < p.hora_hasta;
+        }) || null;
+    }
+
     /* ======================================================================
        VALIDACIÓN DE RUT CHILENO
        ====================================================================== */
@@ -199,6 +220,8 @@
         wizardPageNormal: document.getElementById('wizardPageNormal'),
         montoOpcionCompleto: document.getElementById('montoOpcionCompleto'),
         montoOpcionAbono: document.getElementById('montoOpcionAbono'),
+        tipoPagoAbonoCard: document.getElementById('tipoPagoAbonoCard'),
+        tipoPagoPromoNota: document.getElementById('tipoPagoPromoNota'),
         summarySport: document.getElementById('summarySport'),
         summaryFecha: document.getElementById('summaryFecha'),
         summaryHora: document.getElementById('summaryHora'),
@@ -251,7 +274,7 @@
             lockPanel(PANEL_ORDER[i]);
         }
         if (idx < PANEL_ORDER.indexOf('fecha')) { el.resumenFecha.textContent = ''; state.selectedDate = null; }
-        if (idx < PANEL_ORDER.indexOf('horario')) { el.resumenHorario.textContent = ''; state.selectedHour = null; state.precio = 0; state.abono = 0; }
+        if (idx < PANEL_ORDER.indexOf('horario')) { el.resumenHorario.textContent = ''; state.selectedHour = null; state.precio = 0; state.abono = 0; state.esPromo = false; }
         if (idx < PANEL_ORDER.indexOf('cancha')) { el.resumenCancha.textContent = ''; state.canchaId = null; state.canchaNombre = null; }
         if (idx < PANEL_ORDER.indexOf('datos')) { el.resumenDatos.textContent = ''; }
         if (idx < PANEL_ORDER.indexOf('pago')) {
@@ -274,26 +297,28 @@
         return Promise.all([
             sb.from('canchas').select('id,nombre,deporte,descripcion'),
             sb.from('tarifas').select('deporte,hora_desde,hora_hasta,precio,abono'),
-            sb.from('metodos_pago').select('nombre,activo')
+            sb.from('metodos_pago').select('nombre,activo'),
+            sb.from('promos_horario').select('deporte,dias_semana,hora_desde,hora_hasta,precio,activo')
         ]).then(function (resultados) {
             var canchasRes = resultados[0];
             var tarifasRes = resultados[1];
             var metodosPagoRes = resultados[2];
+            var promosRes = resultados[3];
 
             // Si la columna "abono" todavía no existe (falta correr el parche SQL),
             // reintentamos sin ella en vez de bloquear toda la reserva: el abono
             // simplemente usa el valor por defecto de $10.000 (ver getAbonoPorHora).
             if (esErrorColumnaFaltante(tarifasRes.error)) {
                 return sb.from('tarifas').select('deporte,hora_desde,hora_hasta,precio').then(function (fallbackRes) {
-                    return finalizarCatalogo(canchasRes, fallbackRes, metodosPagoRes);
+                    return finalizarCatalogo(canchasRes, fallbackRes, metodosPagoRes, promosRes);
                 });
             }
 
-            return finalizarCatalogo(canchasRes, tarifasRes, metodosPagoRes);
+            return finalizarCatalogo(canchasRes, tarifasRes, metodosPagoRes, promosRes);
         });
     }
 
-    function finalizarCatalogo(canchasRes, tarifasRes, metodosPagoRes) {
+    function finalizarCatalogo(canchasRes, tarifasRes, metodosPagoRes, promosRes) {
         if (canchasRes.error || tarifasRes.error) {
             el.catalogoError.hidden = false;
             el.catalogoError.textContent = 'No pudimos cargar los deportes disponibles. Intenta recargar la página.';
@@ -302,6 +327,9 @@
 
         state.canchas = canchasRes.data || [];
         state.tarifas = tarifasRes.data || [];
+        // Si la tabla "promos_horario" todavía no existe (falta correr el
+        // parche SQL), simplemente no hay promo: no bloquea el resto.
+        state.promos = (promosRes && promosRes.data) || [];
 
         // Si la tabla "metodos_pago" todavía no existe (falta correr el parche
         // SQL), dejamos el mapa vacío: aplicarEstadoMetodosPago() trata "sin
@@ -484,6 +512,11 @@
             btn.className = 'horario-slot';
             btn.textContent = String(hora).padStart(2, '0') + ':00';
 
+            if (getPromoAplicable(state.sport, hora, state.selectedDate)) {
+                btn.classList.add('horario-slot--promo');
+                btn.title = 'Precio promocional';
+            }
+
             if (ocupado) {
                 btn.disabled = true;
             } else {
@@ -492,9 +525,11 @@
                 }
                 btn.addEventListener('click', function (evtHora) {
                     return function () {
+                        var promo = getPromoAplicable(state.sport, evtHora, state.selectedDate);
                         state.selectedHour = evtHora;
-                        state.precio = getPrecioPorHora(state.sport, evtHora);
-                        state.abono = getAbonoPorHora(state.sport, evtHora);
+                        state.esPromo = !!promo;
+                        state.precio = promo ? promo.precio : getPrecioPorHora(state.sport, evtHora);
+                        state.abono = promo ? promo.precio : getAbonoPorHora(state.sport, evtHora);
                         renderHorarios();
 
                         completePanel('horario');
@@ -703,6 +738,11 @@
         resetDownstreamFrom('datos');
         el.montoOpcionCompleto.textContent = formatCLP(state.precio);
         el.montoOpcionAbono.textContent = formatCLP(state.abono);
+
+        // El precio promocional es pago completo únicamente: no tiene
+        // sentido mostrar la opción de abonar.
+        el.tipoPagoAbonoCard.hidden = state.esPromo;
+        el.tipoPagoPromoNota.hidden = !state.esPromo;
 
         unlockPanel('pago');
         openPanel('pago');

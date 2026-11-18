@@ -363,6 +363,19 @@
     transform: translateY(-2px);
 }
 
+.horario-slot.horario-slot--promo {
+    background-color: #d99a00;
+    position: relative;
+}
+
+.horario-slot.horario-slot--promo::after {
+    content: '🏷️';
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    font-size: 10px;
+}
+
 .horario-slot.seleccionado {
     background-color: var(--rojo);
 }
@@ -476,6 +489,16 @@
     margin-top: -14px;
     color: var(--rojo-oscuro);
     font-size: 13px;
+}
+
+.tipo-pago-promo-nota {
+    text-align: center;
+    font-weight: 700;
+    color: #a3620a;
+    background-color: #fdf2e0;
+    padding: 10px 14px;
+    border-radius: 10px;
+    margin-bottom: 14px;
 }
 
 .tipo-pago-selector {

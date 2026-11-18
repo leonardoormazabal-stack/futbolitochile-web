@@ -17,7 +17,7 @@
 
 const crypto = require('crypto');
 const { getSupabaseAdmin } = require('../lib/supabaseAdmin');
-const { getPrecioPorHora, liberarPendienteVencida, horarioOcupado } = require('../lib/reservaSlots');
+const { getPrecioPorHora, getPromoAplicable, liberarPendienteVencida, horarioOcupado } = require('../lib/reservaSlots');
 
 const MINUTOS_EXPIRACION = 60;
 
@@ -71,7 +71,15 @@ module.exports = async function handler(req, res) {
         return;
     }
 
-    const precio = getPrecioPorHora(tarifas, cancha.deporte, hora);
+    const { data: promos } = await supabaseAdmin
+        .from('promos_horario')
+        .select('deporte,dias_semana,hora_desde,hora_hasta,precio,activo');
+
+    // Una promo de horario es pago completo únicamente: si aplica, ignora
+    // el tipo_pago que haya elegido el cliente.
+    const promo = getPromoAplicable(promos, cancha.deporte, hora, fecha);
+    const tipoPagoFinal = promo ? 'completo' : tipoPago;
+    const precio = promo ? promo.precio : getPrecioPorHora(tarifas, cancha.deporte, hora);
 
     try {
         await liberarPendienteVencida(supabaseAdmin, canchaId, fecha, hora);
@@ -97,7 +105,7 @@ module.exports = async function handler(req, res) {
         // La transferencia no se cobra de forma instantánea: queda en 0
         // hasta que un administrador confirme el comprobante real.
         monto_pagado: 0,
-        tipo_pago: tipoPago,
+        tipo_pago: tipoPagoFinal,
         nombre_contacto: nombreContacto,
         documento_contacto: documentoContacto,
         telefono_contacto: telefonoContacto,

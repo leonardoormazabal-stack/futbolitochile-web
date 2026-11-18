@@ -124,6 +124,7 @@
         reservas: [],
         canchas: [],
         tarifas: [],
+        promos: [],
         usuarios: [],
         bloqueos: [],
         clientesRenderizados: [],
@@ -167,6 +168,29 @@
         }
         var masTardio = bloqueMasTardio(tabla);
         return masTardio ? masTardio.precio : 0;
+    }
+
+    // 0 = domingo ... 6 = sábado, igual que JS Date.getDay(). "fechaISO" es
+    // opcional: sin ella (o sin promos cargadas) simplemente no hay promo.
+    function diaSemanaDeFecha(fechaISO) {
+        var partes = fechaISO.split('-').map(Number);
+        return new Date(partes[0], partes[1] - 1, partes[2]).getDay();
+    }
+
+    function getPromoAplicable(sport, horaInicio, fechaISO) {
+        if (!fechaISO) return null;
+        var dia = diaSemanaDeFecha(fechaISO);
+        return (state.promos || []).find(function (p) {
+            return p.activo && p.deporte === sport && (p.dias_semana || []).indexOf(dia) !== -1 &&
+                horaInicio >= p.hora_desde && horaInicio < p.hora_hasta;
+        }) || null;
+    }
+
+    // Igual que getPrecioPorHora, pero reemplazado por el precio promocional
+    // (ej. "Sábados y Domingos 19-22h") cuando corresponde a esa fecha.
+    function getPrecioConPromo(sport, horaInicio, fechaISO) {
+        var promo = getPromoAplicable(sport, horaInicio, fechaISO);
+        return promo ? promo.precio : getPrecioPorHora(sport, horaInicio);
     }
 
     /* ======================================================================
@@ -398,7 +422,11 @@
 
         metodosPagoGrid: document.getElementById('metodosPagoGrid'),
         btnGuardarMetodosPago: document.getElementById('btnGuardarMetodosPago'),
-        guardadoMetodosPago: document.getElementById('guardadoMetodosPago')
+        guardadoMetodosPago: document.getElementById('guardadoMetodosPago'),
+
+        promoHorarioGrid: document.getElementById('promoHorarioGrid'),
+        btnGuardarPromoHorario: document.getElementById('btnGuardarPromoHorario'),
+        guardadoPromoHorario: document.getElementById('guardadoPromoHorario')
     };
 
     /* ======================================================================
@@ -407,10 +435,14 @@
     function cargarCatalogo() {
         return Promise.all([
             sb.from('canchas').select('id,nombre,deporte,descripcion'),
-            sb.from('tarifas').select('deporte,hora_desde,hora_hasta,precio')
+            sb.from('tarifas').select('deporte,hora_desde,hora_hasta,precio'),
+            sb.from('promos_horario').select('deporte,dias_semana,hora_desde,hora_hasta,precio,activo')
         ]).then(function (resultados) {
             state.canchas = resultados[0].data || [];
             state.tarifas = resultados[1].data || [];
+            // Si la tabla "promos_horario" todavía no existe (falta correr el
+            // parche SQL), simplemente no hay promo: no bloquea el resto.
+            state.promos = resultados[2].data || [];
         });
     }
 
@@ -941,7 +973,7 @@
         // reserva a otra hora, se recalcula para no dejarla con un precio
         // que ya no corresponde a su nuevo horario. Lo ya pagado no cambia.
         var deporte = reserva.canchas ? reserva.canchas.deporte : null;
-        var nuevoPrecio = deporte ? getPrecioPorHora(deporte, nuevaHora) : reserva.precio;
+        var nuevoPrecio = deporte ? getPrecioConPromo(deporte, nuevaHora, nuevaFecha) : reserva.precio;
         var pagado = (reserva.monto_pagado || 0) + (reserva.monto_pagado_2 || 0);
 
         sb.from('reservas').update({
@@ -2115,7 +2147,7 @@
             return;
         }
 
-        var precio = getPrecioPorHora(deporte, parseInt(hora, 10));
+        var precio = getPrecioConPromo(deporte, parseInt(hora, 10), fecha);
         var montoPagado = parseInt(montoTexto, 10);
 
         if (isNaN(montoPagado) || montoPagado < 0) {
@@ -2607,7 +2639,8 @@
             sb.from('planes_mensuales').select('id,nombre,horas_incluidas,precio').order('orden', { ascending: true }),
             sb.from('equipamiento').select('id,nombre,precio').order('orden', { ascending: true }),
             sb.from('metodos_pago').select('id,nombre,activo').order('orden', { ascending: true }),
-            sb.from('eventos_fotos').select('id,imagen_url,alt_text').order('orden', { ascending: true })
+            sb.from('eventos_fotos').select('id,imagen_url,alt_text').order('orden', { ascending: true }),
+            sb.from('promos_horario').select('id,deporte,dias_semana,hora_desde,hora_hasta,precio,activo')
         ]).then(function (resultados) {
             var contenidoRes = resultados[0];
             var cardsRes = resultados[1];
@@ -2616,6 +2649,7 @@
             var equipamientoRes = resultados[4];
             var metodosPagoRes = resultados[5];
             var eventosFotosRes = resultados[6];
+            var promoHorarioRes = resultados[7];
 
             var c = {};
             (contenidoRes.data || []).forEach(function (fila) { c[fila.key] = fila.value; });
@@ -2654,6 +2688,10 @@
             renderEquipamientoEditor(equipamientoRes.data || []);
             renderMetodosPagoEditor(metodosPagoRes.data || []);
             renderEventosFotos(eventosFotosRes.data || []);
+            // Si la tabla "promos_horario" todavía no existe (falta correr el
+            // parche SQL), la grilla queda vacía en vez de romper el resto
+            // de la pestaña Tarifas.
+            renderPromoHorarioEditor(promoHorarioRes.data || []);
 
             var plan = (planesRes.data || [])[0];
             if (plan) {
@@ -2811,6 +2849,82 @@
                 return;
             }
             mostrarGuardado(el.guardadoMetodosPago);
+        });
+    });
+
+    // 0 = domingo ... 6 = sábado, igual que JS Date.getDay(), para que
+    // coincida con cómo lib/reservaSlots.js y reservas.js leen dias_semana.
+    var DIAS_SEMANA_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+    function renderPromoHorarioEditor(promos) {
+        el.promoHorarioGrid.innerHTML = '';
+
+        promos.forEach(function (p) {
+            var diasSemana = p.dias_semana || [];
+            var checkboxesDias = DIAS_SEMANA_LABELS.map(function (label, dia) {
+                return '<label class="promo-horario-dia">' +
+                    '<input type="checkbox" class="promo-horario-dia-check" value="' + dia + '"' + (diasSemana.indexOf(dia) !== -1 ? ' checked' : '') + '>' +
+                    label + '</label>';
+            }).join('');
+
+            var row = document.createElement('div');
+            row.className = 'promo-horario-row';
+            row.setAttribute('data-id', p.id);
+            row.innerHTML =
+                '<span class="promo-horario-deporte">' + (SPORT_LABELS[p.deporte] || p.deporte) + '</span>' +
+                '<div class="promo-horario-dias">' + checkboxesDias + '</div>' +
+                '<label>Desde <input type="number" class="promo-horario-desde" min="0" max="23" value="' + p.hora_desde + '"></label>' +
+                '<label>Hasta <input type="number" class="promo-horario-hasta" min="0" max="24" value="' + p.hora_hasta + '"></label>' +
+                '<label>Precio <input type="number" class="promo-horario-precio" min="0" step="1" value="' + p.precio + '"></label>' +
+                '<div class="promo-horario-activo-wrap">' +
+                '<span>Activa</span>' +
+                '<label class="metodo-pago-switch">' +
+                '<input type="checkbox" class="promo-horario-activo"' + (p.activo ? ' checked' : '') + '>' +
+                '<span class="metodo-pago-switch-track"></span>' +
+                '</label>' +
+                '</div>';
+            el.promoHorarioGrid.appendChild(row);
+        });
+    }
+
+    el.btnGuardarPromoHorario.addEventListener('click', function () {
+        var filas = Array.from(el.promoHorarioGrid.querySelectorAll('.promo-horario-row')).map(function (row) {
+            var diasSemana = Array.from(row.querySelectorAll('.promo-horario-dia-check:checked')).map(function (cb) {
+                return parseInt(cb.value, 10);
+            });
+            return {
+                id: row.getAttribute('data-id'),
+                dias_semana: diasSemana,
+                hora_desde: parseInt(row.querySelector('.promo-horario-desde').value, 10),
+                hora_hasta: parseInt(row.querySelector('.promo-horario-hasta').value, 10),
+                precio: parseInt(row.querySelector('.promo-horario-precio').value, 10),
+                activo: row.querySelector('.promo-horario-activo').checked
+            };
+        });
+
+        var invalida = filas.some(function (f) {
+            return isNaN(f.hora_desde) || isNaN(f.hora_hasta) || isNaN(f.precio) || (f.activo && !f.dias_semana.length);
+        });
+        if (invalida) {
+            window.alert('Revisa los horarios y el precio, y que una promo activa tenga al menos un día marcado.');
+            return;
+        }
+
+        Promise.all(filas.map(function (fila) {
+            return sb.from('promos_horario').update({
+                dias_semana: fila.dias_semana,
+                hora_desde: fila.hora_desde,
+                hora_hasta: fila.hora_hasta,
+                precio: fila.precio,
+                activo: fila.activo
+            }).eq('id', fila.id);
+        })).then(function (resultados) {
+            var conError = resultados.find(function (r) { return r.error; });
+            if (conError) {
+                window.alert('No pudimos guardar la promoción: ' + (esErrorColumnaFaltante(conError.error) ? 'falta correr el parche add_promos_horario.sql en Supabase.' : conError.error.message));
+                return;
+            }
+            mostrarGuardado(el.guardadoPromoHorario);
         });
     });
 
