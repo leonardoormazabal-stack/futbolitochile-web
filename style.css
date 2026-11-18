@@ -367,6 +367,14 @@ ul {
     z-index: 1000;
 }
 
+/* "display: flex" de la regla de arriba tiene la misma especificidad que el
+   "display: none" del atributo [hidden] del navegador, y como la nuestra
+   carga después, le ganaba: el popup no se podía cerrar nunca. Esta regla
+   (una clase + [hidden], más específica) fuerza que oculto sí sea oculto. */
+.promo-popup-overlay[hidden] {
+    display: none;
+}
+
 .promo-popup {
     position: relative;
     max-width: 340px;
