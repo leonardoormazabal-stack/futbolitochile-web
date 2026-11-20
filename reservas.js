@@ -49,6 +49,7 @@
         tarifas: [],            // desde Supabase: {deporte, hora_desde, hora_hasta, precio}
         promos: [],              // desde Supabase: promos_horario (precio promocional por día/hora)
         esPromo: false,          // true si el horario elegido tiene precio promocional
+        esPromoSinAbono: false,  // true si esa promo es pago completo únicamente (no tiene abono configurado)
         metodosPago: {},        // desde Supabase: { 'Mercado Pago': true, 'Transferencia': false, ... }
         ocupadosPorHora: {},    // { hora: cantidadDeCanchasOcupadas } para el deporte/fecha elegidos
         totalCanchasDeporte: 0, // cuántas canchas tiene el deporte elegido
@@ -274,7 +275,7 @@
             lockPanel(PANEL_ORDER[i]);
         }
         if (idx < PANEL_ORDER.indexOf('fecha')) { el.resumenFecha.textContent = ''; state.selectedDate = null; }
-        if (idx < PANEL_ORDER.indexOf('horario')) { el.resumenHorario.textContent = ''; state.selectedHour = null; state.precio = 0; state.abono = 0; state.esPromo = false; }
+        if (idx < PANEL_ORDER.indexOf('horario')) { el.resumenHorario.textContent = ''; state.selectedHour = null; state.precio = 0; state.abono = 0; state.esPromo = false; state.esPromoSinAbono = false; }
         if (idx < PANEL_ORDER.indexOf('cancha')) { el.resumenCancha.textContent = ''; state.canchaId = null; state.canchaNombre = null; }
         if (idx < PANEL_ORDER.indexOf('datos')) { el.resumenDatos.textContent = ''; }
         if (idx < PANEL_ORDER.indexOf('pago')) {
@@ -298,7 +299,7 @@
             sb.from('canchas').select('id,nombre,deporte,descripcion'),
             sb.from('tarifas').select('deporte,hora_desde,hora_hasta,precio,abono'),
             sb.from('metodos_pago').select('nombre,activo'),
-            sb.from('promos_horario').select('deporte,dias_semana,hora_desde,hora_hasta,precio,activo')
+            sb.from('promos_horario').select('deporte,dias_semana,hora_desde,hora_hasta,precio,abono,activo')
         ]).then(function (resultados) {
             var canchasRes = resultados[0];
             var tarifasRes = resultados[1];
@@ -347,11 +348,14 @@
     }
 
     function aplicarEstadoMetodosPago() {
+        // Un método desactivado desde el panel (Tarifas → Métodos de Pago)
+        // se oculta directo en vez de mostrarse en gris: si solo queda uno
+        // disponible, no tiene sentido ofrecer a elegir entre dos tarjetas
+        // cuando una ni siquiera se puede usar.
         document.querySelectorAll('.payment-card').forEach(function (c) {
             var metodo = c.getAttribute('data-method');
             var activo = state.metodosPago[metodo] !== false;
-            c.classList.toggle('payment-card--disabled', !activo);
-            c.disabled = !activo;
+            c.hidden = !activo;
         });
     }
 
@@ -528,8 +532,12 @@
                         var promo = getPromoAplicable(state.sport, evtHora, state.selectedDate);
                         state.selectedHour = evtHora;
                         state.esPromo = !!promo;
+                        // Una promo admite abono solo si tiene un monto de
+                        // abono configurado; si no, es pago completo
+                        // únicamente (ver listener de reservaForm más abajo).
+                        state.esPromoSinAbono = !!promo && promo.abono == null;
                         state.precio = promo ? promo.precio : getPrecioPorHora(state.sport, evtHora);
-                        state.abono = promo ? promo.precio : getAbonoPorHora(state.sport, evtHora);
+                        state.abono = promo ? (promo.abono != null ? promo.abono : promo.precio) : getAbonoPorHora(state.sport, evtHora);
                         renderHorarios();
 
                         completePanel('horario');
@@ -739,10 +747,11 @@
         el.montoOpcionCompleto.textContent = formatCLP(state.precio);
         el.montoOpcionAbono.textContent = formatCLP(state.abono);
 
-        // El precio promocional es pago completo únicamente: no tiene
-        // sentido mostrar la opción de abonar.
-        el.tipoPagoAbonoCard.hidden = state.esPromo;
-        el.tipoPagoPromoNota.hidden = !state.esPromo;
+        // Una promo sin abono configurado es pago completo únicamente: no
+        // tiene sentido mostrar la opción de abonar. Si la promo sí tiene
+        // abono, se muestran ambas opciones igual que un precio normal.
+        el.tipoPagoAbonoCard.hidden = state.esPromoSinAbono;
+        el.tipoPagoPromoNota.hidden = !state.esPromoSinAbono;
 
         unlockPanel('pago');
         openPanel('pago');

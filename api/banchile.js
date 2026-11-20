@@ -71,15 +71,17 @@ async function crearTransaccion(req, res, supabaseAdmin) {
 
     const { data: promos } = await supabaseAdmin
         .from('promos_horario')
-        .select('deporte,dias_semana,hora_desde,hora_hasta,precio,activo');
+        .select('deporte,dias_semana,hora_desde,hora_hasta,precio,abono,activo');
 
-    // Una promo de horario (ej. "Sábados y Domingos 19-22h") es pago
-    // completo únicamente: si aplica, ignora el tipo_pago que haya elegido
-    // el cliente y cobra el precio promocional entero.
+    // Una promo de horario (ej. "Sábados y Domingos 19-22h") admite abono
+    // solo si tiene un monto de abono configurado; si no, es pago completo
+    // únicamente y se ignora el tipo_pago que haya elegido el cliente.
     const promo = getPromoAplicable(promos, cancha.deporte, hora, fecha);
-    const tipoPagoFinal = promo ? 'completo' : tipoPago;
+    const tipoPagoFinal = promo ? (promo.abono != null && tipoPago === 'abono' ? 'abono' : 'completo') : tipoPago;
     const precio = promo ? promo.precio : getPrecioPorHora(tarifas, cancha.deporte, hora);
-    const montoACobrar = promo ? promo.precio : (tipoPagoFinal === 'abono' ? getAbonoPorHora(tarifas, cancha.deporte, hora) : precio);
+    const montoACobrar = promo
+        ? (tipoPagoFinal === 'abono' ? promo.abono : promo.precio)
+        : (tipoPagoFinal === 'abono' ? getAbonoPorHora(tarifas, cancha.deporte, hora) : precio);
 
     if (!montoACobrar || montoACobrar <= 0) {
         res.status(400).json({ error: 'No se pudo calcular el monto a cobrar.' });

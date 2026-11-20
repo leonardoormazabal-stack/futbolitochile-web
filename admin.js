@@ -436,7 +436,7 @@
         return Promise.all([
             sb.from('canchas').select('id,nombre,deporte,descripcion'),
             sb.from('tarifas').select('deporte,hora_desde,hora_hasta,precio'),
-            sb.from('promos_horario').select('deporte,dias_semana,hora_desde,hora_hasta,precio,activo')
+            sb.from('promos_horario').select('deporte,dias_semana,hora_desde,hora_hasta,precio,abono,activo')
         ]).then(function (resultados) {
             state.canchas = resultados[0].data || [];
             state.tarifas = resultados[1].data || [];
@@ -2653,7 +2653,7 @@
             sb.from('equipamiento').select('id,nombre,precio').order('orden', { ascending: true }),
             sb.from('metodos_pago').select('id,nombre,activo').order('orden', { ascending: true }),
             sb.from('eventos_fotos').select('id,imagen_url,alt_text').order('orden', { ascending: true }),
-            sb.from('promos_horario').select('id,deporte,dias_semana,hora_desde,hora_hasta,precio,activo')
+            sb.from('promos_horario').select('id,deporte,dias_semana,hora_desde,hora_hasta,precio,abono,activo')
         ]).then(function (resultados) {
             var contenidoRes = resultados[0];
             var cardsRes = resultados[1];
@@ -2889,6 +2889,7 @@
                 '<label>Desde <input type="number" class="promo-horario-desde" min="0" max="23" value="' + p.hora_desde + '"></label>' +
                 '<label>Hasta <input type="number" class="promo-horario-hasta" min="0" max="24" value="' + p.hora_hasta + '"></label>' +
                 '<label>Precio <input type="number" class="promo-horario-precio" min="0" step="1" value="' + p.precio + '"></label>' +
+                '<label>Abono <input type="number" class="promo-horario-abono" min="0" step="1" value="' + (p.abono != null ? p.abono : '') + '" placeholder="vacío = sin abono"></label>' +
                 '<div class="promo-horario-activo-wrap">' +
                 '<span>Activa</span>' +
                 '<label class="metodo-pago-switch">' +
@@ -2905,18 +2906,21 @@
             var diasSemana = Array.from(row.querySelectorAll('.promo-horario-dia-check:checked')).map(function (cb) {
                 return parseInt(cb.value, 10);
             });
+            var abonoTexto = row.querySelector('.promo-horario-abono').value.trim();
             return {
                 id: row.getAttribute('data-id'),
                 dias_semana: diasSemana,
                 hora_desde: parseInt(row.querySelector('.promo-horario-desde').value, 10),
                 hora_hasta: parseInt(row.querySelector('.promo-horario-hasta').value, 10),
                 precio: parseInt(row.querySelector('.promo-horario-precio').value, 10),
+                // Vacío = esa promo no admite abono (pago completo únicamente).
+                abono: abonoTexto === '' ? null : parseInt(abonoTexto, 10),
                 activo: row.querySelector('.promo-horario-activo').checked
             };
         });
 
         var invalida = filas.some(function (f) {
-            return isNaN(f.hora_desde) || isNaN(f.hora_hasta) || isNaN(f.precio) || (f.activo && !f.dias_semana.length);
+            return isNaN(f.hora_desde) || isNaN(f.hora_hasta) || isNaN(f.precio) || (f.abono != null && isNaN(f.abono)) || (f.activo && !f.dias_semana.length);
         });
         if (invalida) {
             window.alert('Revisa los horarios y el precio, y que una promo activa tenga al menos un día marcado.');
