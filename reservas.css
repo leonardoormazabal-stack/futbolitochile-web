@@ -577,6 +577,15 @@
     transition: border-color 0.2s ease, transform 0.2s ease;
 }
 
+/* "display: flex" de la regla de arriba tiene la misma especificidad que el
+   "display: none" del atributo [hidden] del navegador, y como la nuestra
+   carga después, le ganaba: un método de pago desactivado quedaba oculto
+   en el DOM pero seguía viéndose (mismo bug que ya se corrigió una vez en
+   el popup de promoción — ver esa regla en style.css). */
+.payment-card[hidden] {
+    display: none;
+}
+
 .payment-card:hover {
     transform: translateY(-3px);
     border-color: var(--azul-primario);
