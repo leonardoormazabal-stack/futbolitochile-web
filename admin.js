@@ -462,25 +462,49 @@
         return match ? match[1] : null;
     }
 
+    // Supabase/PostgREST corta en silencio cualquier .select() sin paginar
+    // en 1000 filas (el límite por defecto): con la tabla "reservas" ya
+    // sobre esa marca, el panel dejaba de ver las reservas más nuevas sin
+    // ningún aviso de error (pasó de verdad: 13 reservas confirmadas de un
+    // día, el calendario solo mostraba 8). Se trae todo en páginas de 1000
+    // hasta que una página vuelve incompleta.
+    var RESERVAS_PAGE_SIZE = 1000;
+
     function consultarReservasConColumnas(columnas) {
         var select = columnas.join(',') + ',canchas(nombre,deporte)';
-        return sb.from('reservas').select(select)
-            .order('fecha', { ascending: true })
-            .order('hora', { ascending: true })
-            .then(function (result) {
-                if (!result.error) return result;
 
-                var faltante = extraerColumnaFaltante(result.error);
-                if (faltante && columnas.indexOf(faltante) !== -1) {
-                    return consultarReservasConColumnas(columnas.filter(function (c) { return c !== faltante; }));
-                }
-                // No se pudo identificar cuál columna exacta falta: cae
-                // directo al set base en vez de quedar sin datos.
-                if (esErrorColumnaFaltante(result.error) && columnas.length > COLUMNAS_RESERVAS_BASE.length) {
-                    return consultarReservasConColumnas(COLUMNAS_RESERVAS_BASE);
-                }
-                return result;
-            });
+        function pagina(desde, acumulado) {
+            return sb.from('reservas').select(select)
+                .order('fecha', { ascending: true })
+                .order('hora', { ascending: true })
+                .range(desde, desde + RESERVAS_PAGE_SIZE - 1)
+                .then(function (result) {
+                    if (result.error) return result;
+
+                    var filas = result.data || [];
+                    var todas = acumulado.concat(filas);
+
+                    if (filas.length === RESERVAS_PAGE_SIZE) {
+                        return pagina(desde + RESERVAS_PAGE_SIZE, todas);
+                    }
+                    return { data: todas, error: null };
+                });
+        }
+
+        return pagina(0, []).then(function (result) {
+            if (!result.error) return result;
+
+            var faltante = extraerColumnaFaltante(result.error);
+            if (faltante && columnas.indexOf(faltante) !== -1) {
+                return consultarReservasConColumnas(columnas.filter(function (c) { return c !== faltante; }));
+            }
+            // No se pudo identificar cuál columna exacta falta: cae
+            // directo al set base en vez de quedar sin datos.
+            if (esErrorColumnaFaltante(result.error) && columnas.length > COLUMNAS_RESERVAS_BASE.length) {
+                return consultarReservasConColumnas(COLUMNAS_RESERVAS_BASE);
+            }
+            return result;
+        });
     }
 
     function cargarReservas() {
