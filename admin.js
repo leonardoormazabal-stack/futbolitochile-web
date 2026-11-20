@@ -462,36 +462,19 @@
         return match ? match[1] : null;
     }
 
-    // Supabase/PostgREST corta en silencio cualquier .select() sin paginar
-    // en 1000 filas (el límite por defecto): con la tabla "reservas" ya
-    // sobre esa marca, el panel dejaba de ver las reservas más nuevas sin
-    // ningún aviso de error (pasó de verdad: 13 reservas confirmadas de un
-    // día, el calendario solo mostraba 8). Se trae todo en páginas de 1000
-    // hasta que una página vuelve incompleta.
-    var RESERVAS_PAGE_SIZE = 1000;
-
     function consultarReservasConColumnas(columnas) {
         var select = columnas.join(',') + ',canchas(nombre,deporte)';
 
-        function pagina(desde, acumulado) {
+        // "reservas" crece con cada reserva nueva (ver fetch-todas-las-filas.js):
+        // sin paginar, pasadas las 1000 filas las más nuevas empezaban a
+        // desaparecer en silencio (pasó de verdad: 13 reservas confirmadas
+        // de un día, el calendario solo mostraba 8).
+        return window.fetchTodasLasFilas(function (desde, hasta) {
             return sb.from('reservas').select(select)
                 .order('fecha', { ascending: true })
                 .order('hora', { ascending: true })
-                .range(desde, desde + RESERVAS_PAGE_SIZE - 1)
-                .then(function (result) {
-                    if (result.error) return result;
-
-                    var filas = result.data || [];
-                    var todas = acumulado.concat(filas);
-
-                    if (filas.length === RESERVAS_PAGE_SIZE) {
-                        return pagina(desde + RESERVAS_PAGE_SIZE, todas);
-                    }
-                    return { data: todas, error: null };
-                });
-        }
-
-        return pagina(0, []).then(function (result) {
+                .range(desde, hasta);
+        }).then(function (result) {
             if (!result.error) return result;
 
             var faltante = extraerColumnaFaltante(result.error);
@@ -2298,13 +2281,19 @@
     }
 
     function cargarUsuarios() {
-        return sb.from('profiles')
-            .select('id,nombre,email,tipo_documento,documento,telefono,rol,created_at')
-            .order('created_at', { ascending: false })
-            .then(function (result) {
-                state.usuarios = result.data || [];
-                renderUsuarios();
-            });
+        // "profiles" crece con cada cliente nuevo: sin paginar, pasadas las
+        // 1000 filas los clientes más antiguos (va ordenado por creación
+        // descendente) empezarían a desaparecer en silencio de Usuarios y
+        // Clientes, igual que pasó con "reservas" (ver fetch-todas-las-filas.js).
+        return window.fetchTodasLasFilas(function (desde, hasta) {
+            return sb.from('profiles')
+                .select('id,nombre,email,tipo_documento,documento,telefono,rol,created_at')
+                .order('created_at', { ascending: false })
+                .range(desde, hasta);
+        }).then(function (result) {
+            state.usuarios = result.data || [];
+            renderUsuarios();
+        });
     }
 
     // Normaliza texto y RUTs (sin puntos/guión) para poder buscar sin
